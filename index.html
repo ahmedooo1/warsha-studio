@@ -1549,7 +1549,7 @@ function tableItem(g, c, it){
   const chair = (x, z, rot) => { const cg = new THREE.Group(); cg.position.set(x, 0, z); cg.rotation.y = rot; g.add(cg);
     box(cg, seat, -.22, .22, .44, .5, -.22, .22, {r: .03, seg: 2}); box(cg, seat, -.21, .21, .5, .9, .2, .25, {r: .03, seg: 2});
     for (const [lx, lz] of [[-.19, -.19], [.19, -.19], [-.19, .19], [.19, .19]]) box(cg, leg, lx - .015, lx + .015, 0, .44, lz - .015, lz + .015); };
-  for (let i = 0; i < n; i++) { const x = -w / 2 + (i + .5) * w / n; chair(x, -d / 2 - .18, 0); chair(x, d / 2 + .18, Math.PI); }
+  for (let i = 0; i < n; i++) { const x = -w / 2 + (i + .5) * w / n; chair(x, -d / 2 - .18, Math.PI); chair(x, d / 2 + .18, 0); }
   if (w >= 1.8) { chair(-w / 2 - .22, 0, -Math.PI / 2); chair(w / 2 + .22, 0, Math.PI / 2); }
   cyl(g, XM.ceramic, .16, .06, 0, h + .03, 0, {seg: 32, r2: .1});
 }
