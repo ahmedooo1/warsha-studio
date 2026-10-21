@@ -68,6 +68,7 @@ button{cursor:pointer}
 .hud{position:absolute;inset-inline:12px;bottom:12px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:flex-end;pointer-events:none}
 .hud > *{pointer-events:auto}
 .seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px;box-shadow:0 6px 18px rgba(0,0,0,.08)}
+.seg button:disabled{opacity:.35;cursor:default}
 .seg button{border:0;background:transparent;padding:6px 11px;border-radius:7px;font-size:13.5px;font-weight:500;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 .seg button svg{width:16px;height:16px}
@@ -298,6 +299,10 @@ svg.uv .over .lb{fill:var(--bad)}
         <button data-cam="front" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="16" height="12" rx="1"/></svg><span class="lbl">أمامي</span></button>
         <button data-cam="angle" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M12 12v8M4 8l8 4 8-4"/></svg><span class="lbl">زاوية</span></button>
         <button data-cam="top" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 10h6v10"/></svg><span class="lbl">مخطط</span></button>
+      </div>
+      <div class="seg" role="group" aria-label="تراجع وإعادة">
+        <button id="undoBtn" disabled title="تراجع (Ctrl+Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 7H8.5a4.5 4.5 0 0 0 0 9H17"/><path d="M12 3.5 15.5 7 12 10.5"/></svg><span class="lbl">تراجع</span></button>
+        <button id="redoBtn" disabled title="إعادة (Ctrl+Y)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 7h6.5a4.5 4.5 0 0 1 0 9H7"/><path d="M12 3.5 8.5 7 12 10.5"/></svg><span class="lbl">إعادة</span></button>
       </div>
       <div class="seg" role="group" aria-label="الإضاءة والمقاسات">
         <button id="lightBtn" aria-pressed="false" title="إضاءة المساء"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><span class="lbl">مساء</span></button>
@@ -534,8 +539,7 @@ const ROOM_UNITS = {
   free:     {b:ALL_B, u:ALL_U},
 };
 const COUNTER = Object.keys(UNIT).filter(t => UNIT[t].counter);
-const HOLE_OK = ['window'];           // types that cut a hole: only on walls A and B
-const palFor = (run, lvl, room = cfg.room) => { const L = (ROOM_UNITS[room] || ROOM_UNITS.free)[lvl]; return run === 'C' ? L.filter(t => !HOLE_OK.includes(t) && t !== 'rdoor') : L; };
+const palFor = (run, lvl, room = cfg.room) => (ROOM_UNITS[room] || ROOM_UNITS.free)[lvl];
 const optsOf = m => { const o = {}; for (const d of UNIT[m.t]?.opts || []) o[d.k] = m.o && m.o[d.k] !== undefined ? m.o[d.k] : d.def; return o; };
 
 /* ================= freestanding items ================= */
@@ -770,7 +774,7 @@ function sanitizeUnits(u){
   const cleanO = (t, o) => { if (!o || typeof o !== 'object') return undefined; const out = {}; for (const d of UNIT[t].opts || []) { const v = o[d.k]; if (v === undefined) continue; if (d.type === 'bool') out[d.k] = !!v; else if (d.type === 'num') { const n = Number(v); if (isFinite(n)) out[d.k] = Math.round(clamp(n, d.min, d.max)); } else if (String(v) in d.vals) out[d.k] = String(v); } return Object.keys(out).length ? out : undefined; };
   const clean = (arr, allowed) => Array.isArray(arr) ? arr.slice(0, 40).map(x => { if (!x || typeof x !== 'object' || !allowed.includes(x.t)) return null; const m = {t: x.t, w: Math.round(clamp(Number(x.w) || UNIT[x.t].w, UNIT[x.t].min, UNIT[x.t].max))}; const o = cleanO(x.t, x.o); if (o) m.o = o; return m; }).filter(Boolean) : [];
   const out = {};
-  for (const r of ['A', 'B', 'C']) out[r] = {b: clean(u[r]?.b, r === 'C' ? ALL_B.filter(t => t !== 'rdoor') : ALL_B), u: clean(u[r]?.u, r === 'C' ? ALL_U.filter(t => !HOLE_OK.includes(t)) : ALL_U)};
+  for (const r of ['A', 'B', 'C']) out[r] = {b: clean(u[r]?.b, ALL_B), u: clean(u[r]?.u, ALL_U)};
   if (u.W?.b && !out.B.b.length) out.B.b = clean(u.W.b, ALL_B);   // designs saved before the room system
   return out;
 }
@@ -1237,9 +1241,14 @@ function shell(c, o){
   const lw = new THREE.Mesh(wallWithHoles(len + t, o.H, t, lh), [wm, wm]); lw.position.set(0, 0, -t); lw.castShadow = lw.receiveShadow = true; left.add(lw);
   for (const h of lh) windowIn(left, h, t);
   ao(left, len, .14, .35, len / 2, .07, .002, 0, 0).rotation.z = Math.PI;
+  // right wall: same frame as run C (local x from the back corner towards the front), with thickness and window holes
   if (o.right) {
-    const g = new THREE.PlaneGeometry(o.right.len, o.H); boxUV(g, 2.2);
-    const rw = new THREE.Mesh(g, wm); rw.rotation.y = -Math.PI / 2; rw.position.set(o.W, o.H / 2, o.right.len / 2); rw.receiveShadow = true; rw.castShadow = true; world.add(rw);
+    const rlen = o.right.len, rh = o.right.holes || [];
+    const right = new THREE.Group(); right.rotation.y = -Math.PI / 2; right.position.set(o.W, 0, 0); world.add(right);
+    const rw = new THREE.Mesh(wallWithHoles(rlen + t, o.H, t, rh.map(h => shift(h, t))), [wm, wm]); rw.position.set(-t, 0, -t); rw.castShadow = rw.receiveShadow = true; right.add(rw);
+    for (const h of rh) windowIn(right, h, t);
+    ao(right, rlen, .14, .35, rlen / 2, .07, .002, 0, 0).rotation.z = Math.PI;
+    box(world, M.slab, o.W, o.W + t, o.H, o.H + .004, -t, rlen, {cast: false});
   }
   box(world, M.slab, -t, o.W, o.H, o.H + .004, -t, 0, {cast: false}); box(world, M.slab, -t, 0, o.H, o.H + .004, 0, len, {cast: false});
 }
@@ -1632,7 +1641,7 @@ function buildRoom(c){
   if (hasB) runGroups.B = run(0, B, Math.PI / 2);
   if (hasC) runGroups.C = run(A, 0, -Math.PI / 2);
   const st = {top: 0, wt: [], island: 0};
-  const wins = {A: [], B: []};
+  const wins = {A: [], B: [], C: []};
   const sp = c.splash !== 'paint' ? splashMat(c.splash, c.worktop) : null, spT = c.splash === 'top' ? .02 : .012;
   for (const r of runsOf(c)) {
     const g = runGroups[r.id], {pb, pu} = layoutRun(c, r);
@@ -1688,7 +1697,7 @@ function buildRoom(c){
       if (s1 - s0 < .01) continue;
       worktop(g, c, s0, s1, holes); st.top += (s1 - s0) * .62; st.wt.push([Math.round((s1 - s0) * 1000), 620]);
     }
-    const winR = r.id !== 'C' ? pu.filter(m => m.fit && m.t === 'window').map(m => [m.s0 / 100, m.s1 / 100]) : [];
+    const winR = pu.filter(m => m.fit && m.t === 'window').map(m => [m.s0 / 100, m.s1 / 100]);
     if (sp && segs.length) for (let [s0, s1] of segs) {
       if (K && r.id === 'B' && s1 >= B - .601) s1 = B - spT;
       if (K && r.id === 'C' && s0 <= .601) s0 = spT;
@@ -1701,7 +1710,13 @@ function buildRoom(c){
       const a = m.s0 / 100, b = m.s1 / 100, mg = modGroup(g, r.id, 'u', m.i), o = optsOf(m);
       switch (m.t) {
         case 'hood': hood(mg, c, (a + b) / 2, H, b - a, o.s); break;
-        case 'window': if (r.id !== 'C') { wins[r.id].push({a, b, y0: (+o.y) / 100, y1: K ? Math.min(2.2, H - .3) : Math.min(2.3, H - .25)}); if (o.c) curtains(mg, a, b, H); } break;
+        case 'window': {
+          const y0 = (+o.y) / 100, y1 = K ? Math.min(2.2, H - .3) : Math.min(2.3, H - .25);
+          wins[r.id].push({a, b, y0, y1}); if (o.c) curtains(mg, a, b, H);
+          // invisible target so the window can be picked in 3D (its frame belongs to the wall)
+          const hit = new THREE.Mesh(new THREE.BoxGeometry(b - a, y1 - y0, .04), std('hit', {visible: false})); hit.position.set((a + b) / 2, (y0 + y1) / 2, .02); mg.add(hit);
+          break;
+        }
         case 'udoor': case 'glass': case 'lift': case 'uopen': upperModule(mg, c, a, b, 1.45, m.i, m.t); leds.push([a, b]); break;
         case 'shelf': shelfUnit(mg, c, a, b, m); break;
         case 'mcab': mirrorCabinet(mg, c, a, b, m); break;
@@ -1745,7 +1760,8 @@ function buildRoom(c){
   if (!K) { const pl = new THREE.PointLight(0xFFE2BC, 0, 9, 2); pl.position.set(A / 2, H - .3, D / 2); pl.userData = {day: 0, eve: 9}; world.add(pl); dynLights.push(pl); }
   const holesOf = (list, len) => mergeRanges(list.map(w => [w.a, w.b])).map(([a, b]) => { const w = list.find(x => x.a >= a - 1e-3 && x.b <= b + 1e-3) || list[0]; return {x0: Math.max(.05, a + .05), x1: Math.min(len - .05, b - .05), y0: w.y0, y1: w.y1}; }).filter(h => h.x1 - h.x0 > .2);
   const backHoles = holesOf(wins.A, A), leftHoles = hasB ? holesOf(wins.B, B).map(h => ({...h, x0: B - h.x1, x1: B - h.x0})).filter(h => h.x0 > .04 && h.x1 < D - .04) : [];
-  shell(c, {W: A, D, H, back: {holes: backHoles}, left: {len: D, holes: leftHoles}, right: hasC ? {len: Cw} : null});
+  const rightHoles = hasC ? holesOf(wins.C, Cw).filter(h => h.x1 < Cw - .04) : [];
+  shell(c, {W: A, D, H, back: {holes: backHoles}, left: {len: D, holes: leftHoles}, right: hasC ? {len: Cw, holes: rightHoles} : null});
   if (backHoles.length) { const wx = (backHoles[0].x0 + backHoles[0].x1) / 2; sun.position.set(wx + 1.2, H + 2.8, -3.2); sun.target.position.set(wx - .2, .4, 1.6); }
   else if (leftHoles.length) { const wz = (leftHoles[0].x0 + leftHoles[0].x1) / 2; sun.position.set(-3.6, H + 2.5, wz + .6); sun.target.position.set(1.6, 0, wz); }
   else { sun.position.set(A / 2 + 1.2, H + 2.8, -3.2); sun.target.position.set(A / 2 - .2, .4, 1.6); }
@@ -1843,7 +1859,31 @@ function loop(){
 }
 
 /* ================= selection, elevation drawing, editor ================= */
-let sel = null, view = {run: 'A', lvl: 'b'}, undo = [], selHelper = null, selDim = null;
+let sel = null, view = {run: 'A', lvl: 'b'}, selHelper = null, selDim = null;
+
+/* ================= history: undo / redo of every change ================= */
+const hist = {past: [], future: [], key: null, at: 0};
+// Called before a change. Repeated changes of the same setting within a moment
+// (dragging a slider) count as one step.
+function record(key = null){
+  const now = performance.now();
+  if (key && key === hist.key && now - hist.at < 900) { hist.at = now; return; }
+  hist.key = key; hist.at = now;
+  const s = JSON.stringify(cfg);
+  if (hist.past[hist.past.length - 1] !== s) { hist.past.push(s); if (hist.past.length > 80) hist.past.shift(); }
+  hist.future = []; syncHist();
+}
+function resetHistory(){ hist.past = []; hist.future = []; hist.key = null; syncHist(); }
+function syncHist(){ const u = $('#undoBtn'), r = $('#redoBtn'); if (u) u.disabled = !hist.past.length; if (r) r.disabled = !hist.future.length; }
+function restore(s){
+  const prev = cfg; cfg = JSON.parse(s); sel = null; hist.key = null;
+  if (!runsOf(cfg).some(r => r.id === view.run)) view = {run: 'A', lvl: 'b'};
+  renderAll(); syncPressed(); build(); applyLight();
+  if (prev.room !== cfg.room || prev.layout !== cfg.layout) setCam(camMode);
+  syncHist();
+}
+function undoStep(){ if (!hist.past.length) return; hist.future.push(JSON.stringify(cfg)); restore(hist.past.pop()); }
+function redoStep(){ if (!hist.future.length) return; hist.past.push(JSON.stringify(cfg)); restore(hist.future.pop()); }
 const selLineMat = new THREE.LineBasicMaterial({color: 0xF4B400, depthTest: false, transparent: true, toneMapped: false});
 function selBounds(){
   if (!sel || sel.item !== undefined) return null;
@@ -2063,7 +2103,7 @@ function renderUnits(){
   if (order.length > 1) h += `<div class="grp"><h3>الجدار</h3><div class="choice" data-uv="run">${order.map(id => `<button type="button" data-v="${id}" aria-pressed="${view.run === id}">${runs.find(x => x.id === id).name}</button>`).join('')}</div></div>`;
   h += `<div class="grp"><h3>واجهة ${r.name} <small>اضغط على وحدة لتعديلها</small></h3><div class="elev">${elevation(ctx)}</div>
     ${capLine('على الأرض', availOf(r, talls, 'b'), sumW(U.b), c.room === 'kitchen' ? 'base' : 'other')}${capLine('على الجدار', availOf(r, talls, 'u'), sumW(U.u), 'upper')}
-    <div class="ued-row">${c.auto ? '<p class="hint grow">التوزيع تلقائي حسب المقاسات، وأي تعديل هنا يجعله يدوياً.</p>' : '<p class="hint grow">التوزيع يدوي.</p><button type="button" class="btn sm" data-act="auto">توزيع تلقائي</button>'}${undo.length ? '<button type="button" class="btn sm" data-act="undo">تراجع</button>' : ''}</div></div>`;
+    <div class="ued-row">${c.auto ? '<p class="hint grow">التوزيع تلقائي حسب المقاسات، وأي تعديل هنا يجعله يدوياً.</p>' : '<p class="hint grow">التوزيع يدوي.</p><button type="button" class="btn sm" data-act="auto">توزيع تلقائي</button>'}</div></div>`;
   if (sm) {
     const T = UNIT[sm.t], L = U[sel.lvl];
     h += `<div class="ued" id="unitEditor"><div class="ued-h"><b>${T.n}</b><span>${sm.w} سم</span></div>
@@ -2099,15 +2139,14 @@ function select(m, from3D = false){
   drawSel(); renderUnits();
   if (sel && from3D) requestAnimationFrame(() => $(sel.item !== undefined ? '#itemEditor' : '#unitEditor')?.scrollIntoView({block: 'nearest', behavior: 'smooth'}));
 }
-function snapState(){ return JSON.stringify({auto: cfg.auto, units: cfg.units, itemsAuto: cfg.itemsAuto, items: cfg.items}); }
 function editUnits(fn){
-  undo.push(snapState()); if (undo.length > 40) undo.shift();
+  record();
   const u = JSON.parse(JSON.stringify(cfg.units)); fn(u);
   cfg = {...cfg, auto: false, units: sanitizeUnits(u)};
   build(); renderSpace();
 }
 function editItems(fn){
-  undo.push(snapState()); if (undo.length > 40) undo.shift();
+  record();
   const L = JSON.parse(JSON.stringify(cfg.items || [])); fn(L);
   cfg = {...cfg, itemsAuto: false, items: sanitizeItems(L, cfg)};
   build();
@@ -2127,7 +2166,12 @@ function unitAction(act){
   if (!sel || sel.item !== undefined) return; const {run, lvl, i} = sel;
   editUnits(u => {
     const L = u[run][lvl], m = L[i]; if (!m) return;
-    if (act === 'del') { L.splice(i, 1); sel = null; }
+    if (act === 'del') {
+      // removing a window or a room door must not slide the cabinets that follow it: leave the space empty
+      if ((m.t === 'window' || m.t === 'rdoor') && i < L.length - 1) L[i] = {t: lvl === 'u' ? 'ugap' : 'bgap', w: m.w};
+      else L.splice(i, 1);
+      sel = null;
+    }
     else if (act === 'dup') { L.splice(i + 1, 0, JSON.parse(JSON.stringify(m))); sel = {run, lvl, i: i + 1}; }
     else if (act === 'left' && i > 0) { [L[i - 1], L[i]] = [L[i], L[i - 1]]; sel = {run, lvl, i: i - 1}; }
     else if (act === 'right' && i < L.length - 1) { [L[i + 1], L[i]] = [L[i], L[i + 1]]; sel = {run, lvl, i: i + 1}; }
@@ -2144,7 +2188,12 @@ function itemAction(act){
   if (!sel || sel.item === undefined) return; const i = sel.item;
   editItems(L => {
     const it = L[i]; if (!it) return;
-    if (act === 'del') { L.splice(i, 1); sel = null; }
+    if (act === 'del') {
+      // removing a window or a room door must not slide the cabinets that follow it: leave the space empty
+      if ((m.t === 'window' || m.t === 'rdoor') && i < L.length - 1) L[i] = {t: lvl === 'u' ? 'ugap' : 'bgap', w: m.w};
+      else L.splice(i, 1);
+      sel = null;
+    }
     else if (act === 'dup') { L.push({...JSON.parse(JSON.stringify(it)), x: it.x + 30, z: it.z + 30}); sel = {item: L.length - 1}; }
     else if (act === 'rot') it.r = (it.r + 90) % 360;
     else if (act[0] === 'w') { const I = ITEM[it.t]; it.w = clamp(it.w + Number(act.slice(1)), I.min, I.max); }
@@ -2152,9 +2201,9 @@ function itemAction(act){
 }
 function setItemField(k, v){ editItems(L => { const it = L[sel.item]; if (!it) return; if (k === 'w') { const I = ITEM[it.t]; it.w = Math.round(clamp(v || it.w, I.min, I.max)); } else it[k] = Math.round(v || 0); }); }
 function setItemOpt(k, v){ editItems(L => { const it = L[sel.item]; if (!it) return; it.o = {...iopts(it), [k]: v}; }); }
-function autoReset(){ undo.push(snapState()); cfg = {...cfg, auto: true}; sel = null; build(); renderSpace(); toast('أُعيد توزيع الوحدات تلقائياً'); }
-function itemsAutoReset(){ undo.push(snapState()); cfg = {...cfg, itemsAuto: true}; sel = null; build(); toast('أُعيد ترتيب القطع تلقائياً'); }
-function undoUnits(){ const s = undo.pop(); if (!s) return; const o = JSON.parse(s); cfg = {...cfg, auto: o.auto, units: sanitizeUnits(o.units), itemsAuto: o.itemsAuto, items: sanitizeItems(o.items, cfg)}; sel = null; build(); renderSpace(); }
+function autoReset(){ record(); cfg = {...cfg, auto: true}; sel = null; build(); renderSpace(); toast('أُعيد توزيع الوحدات تلقائياً'); }
+function itemsAutoReset(){ record(); cfg = {...cfg, itemsAuto: true}; sel = null; build(); toast('أُعيد ترتيب القطع تلقائياً'); }
+function undoUnits(){ undoStep(); }
 
 /* tap a piece in the 3D view to edit it; drag freestanding pieces on the floor */
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -2703,7 +2752,8 @@ function renderAll(){ renderSpace(); renderMat(); }
 let raf = 0;
 function set(k, v, {ui = true} = {}){
   if (cfg[k] === v) return;
-  if (k === 'room') { cfg = sanitize({...cfg, ...ROOM_PRESET[v], room: v}, cfg); undo = []; }
+  record(k);
+  if (k === 'room') cfg = sanitize({...cfg, ...ROOM_PRESET[v], room: v}, cfg);
   else cfg = sanitize({...cfg, [k]: v}, cfg);
   if (k === 'room' || k === 'layout') { cfg.auto = true; cfg.itemsAuto = true; sel = null; view = {run: 'A', lvl: 'b'}; }
   if (k === 'room' || k === 'layout') renderSpace();
@@ -2787,10 +2837,10 @@ function renderClients(){
     + `<p class="hint">${store.db ? 'التصاميم محفوظة في هذه الصفحة، ويراها كل من تشاركه الرابط مع صلاحية التعديل.' : 'التصاميم محفوظة على هذا الجهاز فقط.'}</p>`;
 }
 $('#clientBtn').onclick = () => { renderClients(); $('#clientsSheet').hidden = false; };
-$('#newClient').onclick = () => { setClient(null); sel = null; undo = []; cfg = {...DEFAULT, light: cfg.light}; renderAll(); build(); setCam('angle'); $('#clientsSheet').hidden = true; toast('بدأت تصميماً جديداً'); };
+$('#newClient').onclick = () => { setClient(null); sel = null; resetHistory(); cfg = {...DEFAULT, light: cfg.light}; renderAll(); build(); setCam('angle'); $('#clientsSheet').hidden = true; toast('بدأت تصميماً جديداً'); };
 $('#clientList').addEventListener('click', async e => {
   const o = e.target.closest('[data-open]'); const del = e.target.closest('[data-del]');
-  if (o) { const d = store.list.find(x => x.id === o.dataset.open); if (!d) return; sel = null; undo = []; cfg = sanitize(d.cfg, DEFAULT); setClient({id: d.id, name: d.name, phone: d.phone || '', note: d.note || ''}); renderAll(); build(); setCam('angle'); $('#clientsSheet').hidden = true; return; }
+  if (o) { const d = store.list.find(x => x.id === o.dataset.open); if (!d) return; sel = null; resetHistory(); cfg = sanitize(d.cfg, DEFAULT); setClient({id: d.id, name: d.name, phone: d.phone || '', note: d.note || ''}); renderAll(); build(); setCam('angle'); $('#clientsSheet').hidden = true; return; }
   if (del) {
     if (del.dataset.armed) { try { await store.remove(del.dataset.del); if (current?.id === del.dataset.del) setClient(null); renderClients(); toast('حُذف التصميم'); } catch { toast('تعذّر الحذف، تحقق من صلاحياتك على الصفحة'); } }
     else { del.dataset.armed = '1'; del.textContent = 'اضغط للتأكيد'; del.style.color = 'var(--bad)'; setTimeout(() => { if (del.isConnected) { delete del.dataset.armed; del.textContent = 'حذف'; del.style.color = ''; } }, 3000); }
@@ -2854,8 +2904,15 @@ $('#shotSave').onclick = async () => {
   const r = await saveFile((current ? current.name : 'تصميم') + '، ورشة العرض.jpg', shotBlob);
   if (r === 'saved') toast('حُفظت الصورة'); else if (r !== 'declined') $('#shotHint').textContent = 'تعذّر الحفظ هنا، اضغط مطولاً على الصورة لحفظها.';
 };
+$('#undoBtn').onclick = undoStep;
+$('#redoBtn').onclick = redoStep;
 document.addEventListener('keydown', e => {
   const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
+  if ((e.ctrlKey || e.metaKey) && !typing) {
+    const k = e.key.toLowerCase();
+    if (k === 'z' && !e.shiftKey) { e.preventDefault(); undoStep(); return; }
+    if (k === 'y' || (k === 'z' && e.shiftKey)) { e.preventDefault(); redoStep(); return; }
+  }
   if (e.key === 'Escape') { const open = $$('.sheet').some(s => !s.hidden); $$('.sheet').forEach(s => s.hidden = true); if (!open && sel) select(null); }
   if ((e.key === 'Delete' || e.key === 'Backspace') && sel && !typing && $$('.sheet').every(s => s.hidden)) { e.preventDefault(); if (sel.item !== undefined) itemAction('del'); else unitAction('del'); }
 });
@@ -2882,7 +2939,7 @@ units: pieces fixed on each wall, or null to generate them automatically for the
   b = standing on the floor (lengths: kitchen A = wallA minus 60 per corner, B = wallB-60, C = wallC-60; other rooms A = wallA, B and C lose the depth of A's units at the corner). u = hung on the wall, starts at the left end, skips tall units automatically; use gap types to position pieces.
   Floor types: ${ALL_B.map(t => t + ' (' + UNIT[t].n + (UNIT[t].opts ? '; o: ' + UNIT[t].opts.map(d => d.k + (d.vals ? '=' + Object.keys(d.vals).join('|') : d.type === 'bool' ? ' bool' : ' ' + d.min + '-' + d.max)).join(', ') : '') + ')').join('; ')}
   Wall types: ${ALL_U.map(t => t + ' (' + UNIT[t].n + (UNIT[t].opts ? '; o: ' + UNIT[t].opts.map(d => d.k + (d.vals ? '=' + Object.keys(d.vals).join('|') : d.type === 'bool' ? ' bool' : ' ' + d.min + '-' + d.max)).join(', ') : '') + ')').join('; ')}
-  window and rdoor only on A or B. Widths in cm within each type's range.
+  Widths in cm within each type's range.
 items: freestanding pieces, or null to place them automatically. Each {"t":type,"w":cm,"x":cm from left wall to centre,"z":cm from main wall to centre,"r":0|90|180|270,"o":{options}}. r=0 faces into the room with its back or headboard to the main wall; r=180 faces the main wall (sofa looking at the TV wall).
   Item types: ${Object.keys(ITEM).map(t => t + ' (' + ITEM[t].n + ', depth ' + ITEM[t].d + (ITEM[t].opts ? '; o: ' + ITEM[t].opts.map(d => d.k + (d.vals ? '=' + Object.keys(d.vals).join('|') : d.type === 'bool' ? ' bool' : ' ' + d.min + '-' + d.max)).join(', ') : '') + ')').join('; ')}`;
 }
@@ -2912,7 +2969,7 @@ Reply with only JSON of this shape: {"cfg": {<full configuration with every fiel
     if (!res || typeof res.cfg !== 'object') throw {code: 'invalid_json'};
     const hasUnits = !!res.cfg.units && typeof res.cfg.units === 'object', hasItems = Array.isArray(res.cfg.items), raw = {...res.cfg};
     if (!hasUnits) delete raw.units; if (!hasItems) delete raw.items;
-    undo.push(snapState());
+    record();
     cfg = sanitize(raw, cfg); cfg.auto = !hasUnits; cfg.itemsAuto = !hasItems; sel = null;
     renderAll(); build(); setCam(camMode === 'top' ? 'angle' : camMode);
     note.className = 'note ok'; note.textContent = String(res.note || 'جُهّز التصميم.').slice(0, 400);
