@@ -98,6 +98,20 @@ try {
   await page.waitForTimeout(1200);
   await page.reload(); await page.waitForFunction(() => window.__wr, null, {timeout: 120000}); await page.waitForTimeout(1500);
   ok(await page.evaluate(() => window.__wr.cfg.room) === 'office', 'استرجاع العمل غير المحفوظ بعد إعادة فتح الصفحة');
+  for (const l of ['fr', 'tr']) {
+    console.log('اللغة ' + l);
+    await page.selectOption('#langSel', l); await page.waitForTimeout(1500);
+    for (const tab of ['space', 'units', 'free', 'mat', 'cost']) { await page.click(`[data-tab="${tab}"]`); await page.waitForTimeout(250); }
+    const left = await page.evaluate(() => { const out = []; const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      for (let n = w.nextNode(); n; n = w.nextNode()) if (/[\u0600-\u06FF]/.test(n.data) && !n.parentElement.closest('[data-notr],script,style') && n.parentElement.offsetParent) out.push(n.data.trim().slice(0, 40));
+      return [...new Set(out)]; });
+    ok(left.length === 0, 'الواجهة مترجمة بالكامل' + (left.length ? ': ' + left.slice(0, 5).join(' | ') : ''));
+    ok(await page.evaluate(() => document.documentElement.dir) === 'ltr', 'اتجاه الصفحة من اليسار');
+    const pdf = await page.evaluate(async () => { const q = await window.__wr.bq(); return new TextDecoder().decode(new Uint8Array(await q.blob.arrayBuffer()).slice(0, 5)); });
+    ok(pdf === '%PDF-', 'عرض السعر بهذه اللغة');
+  }
+  await page.selectOption('#langSel', 'ar'); await page.waitForTimeout(1200);
+  ok(await page.evaluate(() => document.documentElement.dir === 'rtl' && document.querySelector('[data-tab="free"]').textContent.startsWith('تصميم حر')), 'الرجوع إلى العربية');
   console.log('وضع العرض');
   await page.evaluate(() => window.__wr.setPresent(true)); await page.waitForTimeout(300);
   ok(await page.evaluate(() => getComputedStyle(document.querySelector('#panel')).display === 'none' && getComputedStyle(document.querySelector('.bar')).display === 'none'), 'الأدوات مخفية في وضع العرض');

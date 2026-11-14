@@ -40,6 +40,8 @@
   --stage:#1A1F24; --stage2:#0E1114; --ok:#5DBB86; --bad:#E2705E; color-scheme:dark }
 html,body{height:100%}
 body{direction:rtl}
+html[dir=ltr] body{direction:ltr}
+.lang{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:6px 8px;font-size:13px}
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;overflow:hidden}
 *{box-sizing:border-box}
@@ -345,7 +347,8 @@ body.present .pres-exit kbd{font-family:var(--f-num);font-size:11px;background:r
       <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect x="2" y="5" width="26" height="22" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M2 16h26M15 5v22" stroke="currentColor" stroke-width="2"/><rect x="2" y="1" width="26" height="4" rx="1" fill="#F4B400"/><path d="M6 1v2.2M10 1v1.4M14 1v2.2M18 1v1.4M22 1v2.2M26 1v1.4" stroke="#1B1600" stroke-width="1"/><path d="M11 10v3M19 19v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       <b>ورشة العرض</b>
     </div>
-    <button class="client" id="clientBtn" title="الزبائن"><span class="dot" id="clientDot">ت</span><span id="clientName">تصميم تجريبي</span></button>
+    <button class="client" id="clientBtn" title="الزبائن"><span class="dot" id="clientDot" data-notr>ت</span><span id="clientName" data-notr>تصميم تجريبي</span></button>
+    <select class="lang" id="langSel" data-notr aria-label="اللغة / Langue / Dil"><option value="ar">العربية</option><option value="fr">Français</option><option value="tr">Türkçe</option></select>
     <button class="btn" id="presentBtn" title="عرض للزبون بملء الشاشة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8"/><path d="M10 8l4 2-4 2z" fill="currentColor"/></svg><span class="lbl">عرض للزبون</span></button>
     <button class="btn" id="exportBtn" title="صورة للزبون"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3.5"/><path d="M8 5l1.5-2h5L16 5"/></svg><span class="lbl">صورة للزبون</span></button>
     <button class="btn primary" id="saveBtn" title="حفظ التصميم"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/></svg><span class="lbl">حفظ</span></button>
@@ -477,6 +480,7 @@ body.present .pres-exit kbd{font-family:var(--f-num);font-size:11px;background:r
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/lights/RectAreaLightUniformsLib.js"></script>
 <script src="js/fab.js"></script>
+<script src="js/i18n.js"></script>
 <script>
 (() => {
 'use strict';
@@ -3474,7 +3478,7 @@ function newDoc(title){
     if (d.pages.length > 1) { d.set(16, 500, 'b', MUTED); x.textAlign = 'right'; x.fillText(`${prices.shop || 'ورشة العرض'}، ${title}`, PW - PM, PM - 30); x.fillStyle = RULE; x.fillRect(PM, PM - 16, PW - 2 * PM, 2); } };
   d.set = (sz, w = 400, f = 'b', color = INK) => { d.x.font = `${w} ${sz}px ${FF[f]}`; d.x.fillStyle = color; d.x.direction = 'rtl'; };
   d.need = h => { if (d.y + h > PH - PM - 20) d.page(); };
-  d.wrap = (str, maxW) => { const words = String(str ?? '').split(/\s+/), out = []; let cur = ''; for (const w of words) { const t = cur ? cur + ' ' + w : w; if (d.x.measureText(t).width > maxW && cur) { out.push(cur); cur = w; } else cur = t; } out.push(cur); return out; };
+  d.wrap = (str, maxW) => { const words = String(I18N.t(String(str ?? ''))).split(/\s+/), out = []; let cur = ''; for (const w of words) { const t = cur ? cur + ' ' + w : w; if (d.x.measureText(t).width > maxW && cur) { out.push(cur); cur = w; } else cur = t; } out.push(cur); return out; };
   d.text = (str, {sz = 20, w = 400, f = 'b', color = INK, align = 'right', x, maxW = PW - 2 * PM, lh = 1.55, gap = 0} = {}) => {
     d.set(sz, w, f, color); const lines = d.wrap(str, maxW);
     for (const ln of lines) { d.need(sz * lh); d.set(sz, w, f, color); d.x.textAlign = align; d.x.fillText(ln, x ?? (align === 'right' ? PW - PM : align === 'left' ? PM : PW / 2), d.y + sz); d.y += sz * lh; }
@@ -3851,13 +3855,13 @@ const store = {
   }
 };
 function setClient(c){
-  current = c; $('#clientName').textContent = c ? c.name : 'تصميم تجريبي'; $('#clientDot').textContent = c ? (c.name.trim()[0] || 'ز') : 'ت';
+  current = c; $('#clientName').textContent = c ? c.name : I18N.t('تصميم تجريبي'); $('#clientDot').textContent = c ? (c.name.trim()[0] || 'ز') : I18N.t('تصميم تجريبي').trim()[0].toUpperCase();
 }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 function renderClients(){
   const L = [...store.list].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
   $('#clientList').innerHTML = (L.length ? L.map(d => `<div class="cl" data-id="${esc(d.id)}">${d.thumb ? `<img src="${esc(d.thumb)}" alt="">` : '<div class="ph"></div>'}
-    <div style="min-width:0"><h4>${esc(d.name)}${d.variant ? ` <span class="vtag">${esc(d.variant)}</span>` : ''}${d.demo ? ' <span class="vtag">تجريبي</span>' : ''}</h4><p>${ROOMS[d.cfg?.room] || ''}، ${LAYOUTS[d.cfg?.layout] || ''}، ${new Date(d.updatedAt || Date.now()).toLocaleDateString('ar')}</p>
+    <div style="min-width:0"><h4 data-notr>${esc(d.name)}${d.variant ? ` <span class="vtag">${esc(d.variant)}</span>` : ''}${d.demo ? ' <span class="vtag">تجريبي</span>' : ''}</h4><p>${ROOMS[d.cfg?.room] || ''}، ${LAYOUTS[d.cfg?.layout] || ''}، ${new Date(d.updatedAt || Date.now()).toLocaleDateString('ar')}</p>
     ${d.phone ? `<p class="tel">${esc(d.phone)}</p>` : ''}${d.note ? `<p>${esc(d.note)}</p>` : ''}
     <div class="acts"><button class="btn" data-open="${esc(d.id)}">فتح</button><button class="btn ghost" data-variant="${esc(d.id)}">نسخة بديلة</button><button class="btn ghost" data-exp="${esc(d.id)}">تصدير</button><button class="btn ghost" data-del="${esc(d.id)}">حذف</button></div></div></div>`).join('')
     : `<div class="empty">لا يوجد زبائن محفوظون بعد. صمّم لزبونك ثم اضغط «حفظ»، أو افتح أحد المشاريع التجريبية.</div>`)
@@ -3958,7 +3962,7 @@ function openDemo(i){
   const D0 = DEMOS[i]; if (!D0) return;
   sel = null; resetHistory(); setClient(null); cfg = sanitize({...DEFAULT, ...D0.cfg, auto: true, itemsAuto: true, units: null, items: []}, DEFAULT);
   renderAll(); build(); if (D0.after) { D0.after(); resetHistory(); } select(null);
-  $('#clientName').textContent = D0.name; setCam('angle'); $('#clientsSheet').hidden = true; toast('مشروع تجريبي: ' + D0.name);
+  $('#clientName').textContent = I18N.t(D0.name); setCam('angle'); $('#clientsSheet').hidden = true; toast('مشروع تجريبي: ' + D0.name);
 }
 
 /* ================= client presentation: the room only, no editing tools ================= */
@@ -4101,6 +4105,9 @@ setCam('angle', true);
 loop();
 requestAnimationFrame(() => requestAnimationFrame(() => $('#veil').classList.add('off')));
 store.init();
+// interface language: Arabic, French or Turkish
+I18N.applyDoc(); I18N.start(); $('#langSel').value = I18N.lang;
+$('#langSel').onchange = e => { I18N.setLang(e.target.value); setClient(current); renderAll(); build(); setTimeout(() => { resize(); dirty = true; }, 50); };
 // warm the remaining swatch textures in idle time so the material tab opens instantly
 const idle = window.requestIdleCallback || (f => setTimeout(f, 200));
 ['walnut','quartz','granite','concrete','oakTop','tile','terrazzo','cement'].forEach((id, i) => idle(() => texCanvas(id)));
