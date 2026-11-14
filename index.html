@@ -284,6 +284,21 @@ svg.uv [data-cell]{cursor:pointer}
 .issues button{border:0;background:none;text-align:start;padding:4px 0;font-size:13.5px;color:var(--ink);display:flex;gap:8px;align-items:baseline}
 .issues button::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--bad);transform:translateY(-1px)}
 .issues button:hover{text-decoration:underline}
+.logo-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.logo-row img{height:56px;max-width:160px;object-fit:contain;border:1px solid var(--line);border-radius:8px;background:#fff;padding:4px}
+.logo-row .ph{width:56px;height:56px;border:1px dashed var(--line);border-radius:8px;display:grid;place-items:center;font-size:12px;color:var(--muted)}
+.issues p{margin:4px 0;font-size:13.5px}
+.vtag{display:inline-block;font-size:11.5px;font-weight:500;background:var(--sunk);border-radius:6px;padding:0 6px;margin-inline-start:4px;vertical-align:2px}
+.pres-brand,.pres-exit{display:none}
+body.present .app{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);grid-template-areas:"stage"}
+body.present .bar,body.present .panel,body.present .qbar,body.present .tag,body.present #snapBtn,body.present #dimBtn,body.present #undoBtn,body.present #redoBtn{display:none!important}
+body.present .pres-brand{display:flex;position:absolute;top:16px;inset-inline-start:16px;z-index:4;align-items:center;gap:12px;background:rgba(255,255,255,.88);backdrop-filter:blur(8px);border-radius:14px;padding:10px 16px;box-shadow:0 8px 30px rgba(0,0,0,.12);color:#14191E}
+body.present .pres-brand img{height:44px;max-width:120px;object-fit:contain}
+body.present .pres-brand b{display:block;font-family:var(--f-display);font-size:20px;line-height:1.2}
+body.present .pres-brand span{font-size:13px;color:#5A646C}
+body.present .pres-exit{display:inline-flex;position:absolute;top:16px;inset-inline-end:16px;z-index:4;align-items:center;gap:8px;border:0;border-radius:10px;padding:9px 14px;background:rgba(20,25,30,.78);color:#fff;font-size:14px}
+body.present .pres-exit kbd{font-family:var(--f-num);font-size:11px;background:rgba(255,255,255,.18);border-radius:4px;padding:1px 5px}
+@media (max-width: 760px){ body.present .pres-exit kbd{display:none} body.present .pres-brand{top:10px;inset-inline-start:10px;padding:8px 12px} body.present .pres-exit{top:10px;inset-inline-end:10px} }
 .exrow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center}
 .exrow > input{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:7px 10px;min-width:0}
 .exrow .x{width:30px;height:30px}
@@ -331,6 +346,7 @@ svg.uv [data-cell]{cursor:pointer}
       <b>ورشة العرض</b>
     </div>
     <button class="client" id="clientBtn" title="الزبائن"><span class="dot" id="clientDot">ت</span><span id="clientName">تصميم تجريبي</span></button>
+    <button class="btn" id="presentBtn" title="عرض للزبون بملء الشاشة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8"/><path d="M10 8l4 2-4 2z" fill="currentColor"/></svg><span class="lbl">عرض للزبون</span></button>
     <button class="btn" id="exportBtn" title="صورة للزبون"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3.5"/><path d="M8 5l1.5-2h5L16 5"/></svg><span class="lbl">صورة للزبون</span></button>
     <button class="btn primary" id="saveBtn" title="حفظ التصميم"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/></svg><span class="lbl">حفظ</span></button>
   </header>
@@ -339,6 +355,8 @@ svg.uv [data-cell]{cursor:pointer}
     <canvas id="gl" aria-label="المشهد ثلاثي الأبعاد"></canvas>
     <canvas id="dims" aria-hidden="true"></canvas>
     <div class="tag" id="tag"></div>
+    <div class="pres-brand" id="presBrand"></div>
+    <button type="button" class="pres-exit" id="presExit" aria-label="إنهاء العرض">إنهاء العرض <kbd>Esc</kbd></button>
     <div class="hud">
       <div class="seg" role="group" aria-label="زاوية الكاميرا">
         <button data-cam="front" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="16" height="12" rx="1"/></svg><span class="lbl">أمامي</span></button>
@@ -458,6 +476,7 @@ svg.uv [data-cell]{cursor:pointer}
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/environments/RoomEnvironment.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/lights/RectAreaLightUniformsLib.js"></script>
+<script src="js/fab.js"></script>
 <script>
 (() => {
 'use strict';
@@ -466,6 +485,8 @@ const $$ = s => [...document.querySelectorAll(s)];
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+// like lsSet, but says whether the write really happened (full storage, private mode)
+const lsSafeSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } };
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); }
 
 /* ================= catalogue ================= */
@@ -2125,7 +2146,7 @@ function build(){
   key.position.set(f.W * .25, f.H + 2.2, f.D + 3); key.target.position.set(f.W * .55, .5, f.D * .2);
   applyLight();
   renderer.shadowMap.needsUpdate = true; dirty = true;
-  drawSel(); updateTag(); renderCost(); renderUnits();
+  drawSel(); updateTag(); renderCost(); renderUnits(); queueDraft();
 }
 function applyLight(){
   const eve = cfg.light === 'evening';
@@ -2644,7 +2665,7 @@ function select(m, from3D = false){
   if (sel && from3D) openTab(sel.item !== undefined ? 'free' : 'units');
   if (sel && sel.item === undefined && from3D) { const r = runsOf(cfg).find(x => x.id === sel.run), L = r && layoutRun(cfg, r), m = L && (sel.lvl === 'b' ? L.pb : L.pu)[sel.i]; if (m && FREE_UNITS.includes(m.t) && !select.hinted) { select.hinted = true; toast('اسحب الوحدة الآن لتحريكها بحرية'); } }
   drawSel(); renderUnits();
-  if (sel && from3D) requestAnimationFrame(() => $(sel.item !== undefined ? '#itemEditor' : '#unitEditor')?.scrollIntoView({block: 'nearest', behavior: 'smooth'}));
+  if (sel && from3D) { const target = sel.item !== undefined ? '#itemEditor' : '#unitEditor'; requestAnimationFrame(() => $(target)?.scrollIntoView({block: 'nearest', behavior: 'smooth'})); }
 }
 function editUnits(fn){
   record();
@@ -2859,10 +2880,12 @@ function floorAt(e){ setRay(e); const v = new THREE.Vector3(); return ray.ray.in
 const cmBox = b => ({x0: b.min.x * 100, x1: b.max.x * 100, y0: b.min.y * 100, y1: b.max.y * 100, z0: b.min.z * 100, z1: b.max.z * 100});
 // everything a moving piece can touch, in cm
 function obstacles(skip){
-  const out = [];
+  const out = [], lay = {};
   (cfg.items || []).forEach((it, i) => { if (i !== skip && it.t !== 'rug' && itemBoxes[i]) out.push({...itemBoxes[i], item: i}); });
   world.traverse(o => {
-    if (o.userData.mod) { const b = objBox(o); if (!b.isEmpty()) out.push({...cmBox(b), mod: true}); }
+    if (o.userData.mod) { const m = o.userData.mod, L = lay[m.run] || (lay[m.run] = (() => { const r = runsOf(cfg).find(x => x.id === m.run); return r ? layoutRun(cfg, r) : null; })()), u = L && (m.lvl === 'b' ? L.pb : L.pu)[m.i];
+      if (u && (UNIT[u.t]?.deco || ['clad', 'tv', 'frame', 'mirror', 'hooks', 'window', 'rdoor'].includes(u.t))) return; // wall decor (cladding, screen, frames) is not something to stand a piece on
+      const b = objBox(o); if (!b.isEmpty()) out.push({...cmBox(b), mod: true}); }
     else if (o.userData.freeTop) { if (!o.userData.freeTop.includes(skip)) { const b = objBox(o); if (!b.isEmpty()) out.push(cmBox(b)); } }
     else if (o.isMesh && o.userData.top) { let p = o.parent, inItem = false; while (p) { if (p.userData.item !== undefined || p.userData.freeTop) { inItem = true; break; } p = p.parent; } if (!inItem) out.push(cmBox(objBox(o))); }
   });
@@ -3128,8 +3151,12 @@ function estimate(){ return saleLines().sub - (+prices.install || 0); }
 const HW = {hinge:'مفصلة', runner:'سكة جارور (زوج)', dbox:'جسم جارور', handle:'مقبض', leg:'رجل قابلة للتعديل', lift:'آلية باب قلاب', rod:'قضيب تعليق', pin:'حامل رف', gola:'بروفيل Gola (متر)',
   bracket:'حامل تعليق للجدار', flap:'مسند باب قلاب', tilt:'مفصلة جزامة قلابة', led:'شريط LED (متر)', legMetal:'رجل معدنية', cushion:'وسادة منجّدة', floatbr:'حامل رف مخفي', hook:'شمّاعة', upholstery:'تنجيد (م²)', slats:'قاعدة سرير شرائح'};
 const APPL = {sink:'مجلى', hob:'هوب', oven:'فرن مدمج', dw:'جلاية مدمجة', fridge:'ثلاجة مدمجة', micro:'مايكرويف مدمج', hood:'شفاط', washer:'غسالة', dryer:'نشافة', fridgeFree:'ثلاجة مستقلة', basin:'حوض مغسلة', tv:'شاشة', idoor:'باب داخلي', chairs:'كراسي سفرة', stools:'كراسي بار'};
-const SHEET_M2 = 2.8 * 2.07, MAX_PIECE = 2750, NOSHEET = ['glass', 'mirror', 'stone', 'worktop'];
-const hingesFor = h => h <= 900 ? 2 : h <= 1600 ? 3 : 4;
+const NOSHEET = ['glass', 'mirror', 'stone', 'worktop'];
+// workshop fabrication settings (thicknesses, gaps, sheet, saw), kept on this device
+let fab = WarshaFab.sanitizeFab(lsGet('wr_fab', {}));
+// wood grain matters for wood-look fronts and the decor wood; plain melamine, HDF, glass have none
+const hasGrain = mat => mat === 'accent' || (mat.startsWith('front:') && !!frontDef(mat.slice(6)).wood);
+const hingesFor = WarshaFab.hingesFor;
 function matName(mat){
   if (mat === 'carcass') return 'هيكل ملامين';
   if (mat === 'back') return 'ظهر HDF';
@@ -3145,22 +3172,23 @@ function cutList(c){
   const parts = [], hw = {}, ap = {}, gola = c.handle === 'gola', fid = c.front, ufid = c.upperFront === 'same' ? c.front : c.upperFront, F = id => 'front:' + id;
   const addHw = (k, q = 1) => { if (q) hw[k] = Math.round(((hw[k] || 0) + q) * 10) / 10; };
   const addAp = (k, q = 1) => { ap[k] = (ap[k] || 0) + q; };
+  // a is the size along the wood grain (height for doors and sides, width for drawer faces and shelves)
   const add = (code, kind, a, b, th, qty, mat, ea = 0, eb = 0) => {
-    a = Math.round(a); b = Math.round(b); if (a <= 0 || b <= 0 || qty <= 0) return;
-    if (b > a) { [a, b] = [b, a]; [ea, eb] = [eb, ea]; }
-    if (a > MAX_PIECE && !NOSHEET.includes(mat)) { const n = Math.ceil(a / MAX_PIECE); a = Math.ceil(a / n); qty *= n; }
-    parts.push({code, kind, L: a, W: b, th, qty, mat, ea, eb});
+    const pt = WarshaFab.makePart({code, kind, a, b, th, qty, mat, ea, eb, nosheet: NOSHEET.includes(mat)}, fab, hasGrain(mat));
+    if (pt) parts.push(pt);
   };
+  const T = fab.t, TF = fab.tf, TB = fab.back, GAP = fab.gap, BI = fab.backInset * 2, PL = fab.plinthH;
   const carcass = (code, W, H, D, o = {}) => {
     const m = o.mat || 'carcass', vis = !!o.mat;
-    add(code, 'جانب', H, D, 18, 2, m, vis ? 2 : 1, vis ? 1 : 0);
-    add(code, 'قاعدة', W - 36, D, 18, 1, m, 1, 0);
-    if (o.rails) add(code, 'رافدة علوية', W - 36, 100, 18, 2, m, 1, 0); else add(code, 'سقف', W - 36, D, 18, 1, m, 1, 0);
-    if (o.back !== false) add(code, 'ظهر', W - 4, H - 4, 3, 1, 'back');
-    if (o.shelves) { add(code, 'رف', W - 38, D - 40, 18, o.shelves, m, 1, 0); addHw('pin', 4 * o.shelves); }
+    add(code, 'جانب', H, D, T, 2, m, vis ? 2 : 1, vis ? 1 : 0);
+    add(code, 'قاعدة', W - 2 * T, D, T, 1, m, 1, 0);
+    if (o.rails) add(code, 'رافدة علوية', W - 2 * T, 100, T, 2, m, 1, 0); else add(code, 'سقف', W - 2 * T, D, T, 1, m, 1, 0);
+    if (o.back !== false) add(code, 'ظهر', H - BI, W - BI, TB, 1, 'back');
+    if (o.shelves) { add(code, 'رف', W - 2 * T - 2, D - 40, T, o.shelves, m, 1, 0); addHw('pin', 4 * o.shelves); }
   };
-  const doors = (code, W, h, n, f, kind = 'باب', mat) => { add(code, kind, W / n - 3, h - 3, 18, n, mat || F(f), 2, 2); addHw('hinge', n * hingesFor(h)); if (!gola) addHw('handle', n); };
-  const drawer = (code, W, h, f) => { add(code, 'واجهة جارور', W - 3, h - 3, 18, 1, F(f), 2, 2); addHw('runner'); addHw('dbox'); if (!gola) addHw('handle'); };
+  // doors: grain runs up the door; drawer faces: grain runs across, so a row of drawers reads as one board
+  const doors = (code, W, h, n, f, kind = 'باب', mat) => { add(code, kind, h - GAP, W / n - GAP, TF, n, mat || F(f), 2, 2); addHw('hinge', n * hingesFor(h)); if (!gola) addHw('handle', n); };
+  const drawer = (code, W, h, f) => { add(code, 'واجهة جارور', W - GAP, h - GAP, TF, 1, F(f), 2, 2); addHw('runner'); addHw('dbox'); if (!gola) addHw('handle'); };
   let units = 0, golaM = 0;
   const H = c.height * 10, Ht = Math.min(H - 40, 2300), fh = gola ? 725 : 760, top = Math.min(Ht, 2060), t2 = Ht - top > 120 ? top : Ht;
   const K = c.room === 'kitchen', hasB = c.layout !== 'I', hasC = c.layout === 'U';
@@ -3172,16 +3200,16 @@ function cutList(c){
         case 'sink': units++; addHw('leg', 4); plinth += W; carcass(code, W, 760, 560, {rails: true}); doors(code, W, fh, n2, fid); addAp('sink'); break;
         case 'drawers': { units++; addHw('leg', 4); plinth += W; carcass(code, W, 760, 560, {rails: true}); const n = +o.n; for (let k = 0; k < n; k++) drawer(code, W, fh / n, fid); break; }
         case 'cook': units++; addHw('leg', 4); plinth += W; carcass(code, W, 760, 560, {rails: true, back: false}); drawer(code, W, .14 / .76 * fh, fid); addAp('oven'); addAp('hob'); break;
-        case 'dw': plinth += W; add(code, 'واجهة جلاية', W - 3, fh - 3, 18, 1, F(fid), 2, 2); if (!gola) addHw('handle'); addAp('dw'); break;
+        case 'dw': plinth += W; add(code, 'واجهة جلاية', W - GAP, fh - GAP, TF, 1, F(fid), 2, 2); if (!gola) addHw('handle'); addAp('dw'); break;
         case 'bopen': units++; addHw('leg', 4); plinth += W; carcass(code, W, 760, 560, {shelves: +o.n, mat: F(fid)}); break;
         case 'washer': addAp('washer'); break;
         case 'fridge': units++; addHw('leg', 4); plinth += W;
-          if (o.s === 'free') { add(code, 'جانب تغطية', Ht, 620, 18, 2, F(fid), 2, 1); addAp('fridgeFree'); if (Ht - 1900 > 250) { carcass(code, W, Ht - 1900, 560, {}); doors(code, W, Ht - 1900, 1, fid); } }
+          if (o.s === 'free') { add(code, 'جانب تغطية', Ht, 620, T, 2, F(fid), 2, 1); addAp('fridgeFree'); if (Ht - 1900 > 250) { carcass(code, W, Ht - 1900, 560, {}); doors(code, W, Ht - 1900, 1, fid); } }
           else { carcass(code, W, Ht - 100, 560, {shelves: 1}); doors(code, W, 760, 1, fid); doors(code, W, t2 - 860, 1, fid); if (t2 < Ht) doors(code, W, Ht - t2, 1, fid); addAp('fridge'); }
           break;
         case 'pantry': units++; addHw('leg', 4); plinth += W; carcass(code, W, Ht - 100, 560, {shelves: 4}); doors(code, W, t2 - 100, n2, fid); if (t2 < Ht) doors(code, W, Ht - t2, n2, fid); break;
         case 'oventall': units++; addHw('leg', 4); plinth += W; carcass(code, W, Ht - 100, 560, {shelves: 2}); drawer(code, W, 230, fid); drawer(code, W, 230, fid); doors(code, W, Ht - 1520, 1, fid); addAp('oven'); addAp('micro'); break;
-        case 'wcol': units++; add(code, 'جانب', Ht, 620, 18, 2, F(fid), 2, 1); add(code, 'رف فاصل', W - 40, 600, 18, 1, 'carcass', 1, 0); carcass(code, W - 40, Ht - 1820, 600, {}); doors(code, W - 40, Ht - 1820, 1, fid); addAp('washer'); addAp('dryer'); break;
+        case 'wcol': units++; add(code, 'جانب', Ht, 620, T, 2, F(fid), 2, 1); add(code, 'رف فاصل', W - 40, 600, T, 1, 'carcass', 1, 0); carcass(code, W - 40, Ht - 1820, 600, {}); doors(code, W - 40, Ht - 1820, 1, fid); addAp('washer'); addAp('dryer'); break;
         case 'wdoor': case 'wmirror': case 'wdrawer': case 'wopen': {
           units++; addHw('leg', 4); plinth += W; const ch = H - 80, n = W > 600 ? 2 : 1;
           if (m.t === 'wopen') { carcass(code, W, ch, 580, {shelves: Math.max(2, Math.round(ch / 380) - 1), mat: F(fid)}); break; }
@@ -3191,35 +3219,35 @@ function cutList(c){
           if (m.t === 'wmirror') add(code, 'مرآة', W / n - 100, dh - 220, 4, n, 'mirror');
           break; }
         case 'bookcase': { units++; addHw('leg', 4); const base = o.base ? 800 : 100; if (o.base) { carcass(code, W, 720, 350, {}); doors(code, W, 720, W > 600 ? 2 : 1, fid); } carcass(code, W, H - base, 350, {shelves: Math.max(0, +o.n - 1), mat: F(fid)}); if (o.led) addHw('led', +o.n * W / 1000); break; }
-        case 'vitrine': { units++; addHw('leg', 4); const tp = Math.min(H - 40, 2200), n = W > 640 ? 2 : 1; carcass(code, W, 680, 400, {}); doors(code, W, 680, n, fid); carcass(code, W, tp - 780, 400, {mat: F(fid)}); add(code, 'رف زجاج', W - 40, 360, 6, 3, 'glass'); add(code, 'باب إطار للزجاج', W / n - 3, tp - 780, 18, n, F(fid), 2, 2); add(code, 'زجاج باب', W / n - 93, tp - 870, 4, n, 'glass'); addHw('hinge', n * hingesFor(tp - 780)); if (!gola) addHw('handle', n); if (o.led) addHw('led', W / 1000); break; }
+        case 'vitrine': { units++; addHw('leg', 4); const tp = Math.min(H - 40, 2200), n = W > 640 ? 2 : 1; carcass(code, W, 680, 400, {}); doors(code, W, 680, n, fid); carcass(code, W, tp - 780, 400, {mat: F(fid)}); add(code, 'رف زجاج', W - 40, 360, 6, 3, 'glass'); add(code, 'باب إطار للزجاج', W / n - GAP, tp - 780, TF, n, F(fid), 2, 2); add(code, 'زجاج باب', W / n - 93, tp - 870, 4, n, 'glass'); addHw('hinge', n * hingesFor(tp - 780)); if (!gola) addHw('handle', n); if (o.led) addHw('led', W / 1000); break; }
         case 'coat': { units++; addHw('leg', 4); carcass(code, W, Math.min(H - 40, 2200) - 80, 400, {shelves: 2, mat: F(fid)}); addHw('rod'); break; }
         case 'btall': { units++; const h = Math.min(H - 250, 1900) - 220, h1 = Math.round(h / 2 - 100); carcass(code, W, h, 330, {shelves: 3}); doors(code, W, h1, 1, fid); doors(code, W, h - h1, 1, fid); addHw('bracket', 2); break; }
         case 'tvbase': { units++; const n = Math.max(1, Math.round(W / 600)), sw = W / n, mid = n >= 3 ? Math.floor(n / 2) : -1;
-          carcass(code, W, 420, 400 - 18, {}); add(code, 'سطح', W + 8, 404, 18, 1, F(fid), 2, 2);
-          for (let i = 0; i < n; i++) { if (o.s === 'open' || i === mid) { add(code, 'رف داخلي', sw - 36, 360, 18, 1, F(fid), 1, 0); continue; } if (o.s === 'flaps') { add(code, 'باب قلاب', sw - 3, 417, 18, 1, F(fid), 2, 2); addHw('flap'); addHw('hinge', 2); if (!gola) addHw('handle'); } else drawer(code, sw, 420, fid); }
+          carcass(code, W, 420, 400 - 18, {}); add(code, 'سطح', W + 8, 404, T, 1, F(fid), 2, 2);
+          for (let i = 0; i < n; i++) { if (o.s === 'open' || i === mid) { add(code, 'رف داخلي', sw - 2 * T, 360, T, 1, F(fid), 1, 0); continue; } if (o.s === 'flaps') { add(code, 'باب قلاب', sw - GAP, 417, TF, 1, F(fid), 2, 2); addHw('flap'); addHw('hinge', 2); if (!gola) addHw('handle'); } else drawer(code, sw, 420, fid); }
           if (o.f) addHw('bracket', Math.max(2, n)); else addHw('leg', 4); if (o.led) addHw('led', W / 1000); break; }
         case 'sideboard': { units++; const n = Math.max(2, Math.round(W / 500)), sw = W / n; carcass(code, W, 640, 450 - 18, {}); add(code, 'سطح', W + 10, 460, 25, 1, 'accent', 2, 2); addHw('legMetal', 4);
           for (let i = 0; i < n; i++) { const dr = o.s === 'drawers' || (o.s === 'mixed' && i === Math.floor(n / 2)); if (dr) for (let k = 0; k < 3; k++) drawer(code, sw, 640 / 3, fid); else doors(code, sw, 640, 1, fid); } break; }
         case 'vanity': { units++; const nd = W > 900 ? 2 : 1, h = o.f ? 530 : 730; carcass(code, W, h, 460, {}); for (let k = 0; k < nd; k++) drawer(code, W, h / nd, fid); addAp('basin', +o.b === 2 && W >= 1100 ? 2 : 1); if (o.f) { addHw('bracket', 2); addHw('led', W / 1000); } else addHw('leg', 4); break; }
-        case 'shoe': { units++; const rows = +o.n, rh = rows === 3 ? 300 : 420, n = Math.max(1, Math.round(W / 600)); carcass(code, W, rows * rh, 300 - 18, {shelves: rows - 1}); for (let i = 0; i < n * rows; i++) add(code, 'باب قلاب', W / n - 3, rh - 3, 18, 1, F(fid), 2, 2); addHw('tilt', n * rows); if (!gola) addHw('handle', n * rows); add(code, 'سطح', W + 10, 310, 25, 1, 'accent', 2, 2); addHw('leg', 4); break; }
+        case 'shoe': { units++; const rows = +o.n, rh = rows === 3 ? 300 : 420, n = Math.max(1, Math.round(W / 600)); carcass(code, W, rows * rh, 300 - 18, {shelves: rows - 1}); for (let i = 0; i < n * rows; i++) add(code, 'باب قلاب', W / n - GAP, rh - GAP, TF, 1, F(fid), 2, 2); addHw('tilt', n * rows); if (!gola) addHw('handle', n * rows); add(code, 'سطح', W + 10, 310, 25, 1, 'accent', 2, 2); addHw('leg', 4); break; }
         case 'bench': { units++; const n = Math.max(1, Math.round(W / 600)); carcass(code, W, 360, 400 - 18, {}); for (let i = 0; i < n; i++) drawer(code, W / n, 360, fid); add(code, 'سطح المقعد', W, 405, 25, 1, 'accent', 2, 2); if (o.cushion) addHw('cushion'); addHw('leg', 4); break; }
-        case 'desk': { units++; add(code, 'سطح المكتب', W, 600, 25, 1, 'accent', 2, 2); add(code, 'جانب', 725, 580, 18, o.s === 'drawers' && W >= 900 ? 1 : 2, F(fid), 2, 1); add(code, 'لوح خلفي', W - 50, 300, 18, 1, F(fid), 1, 0);
+        case 'desk': { units++; add(code, 'سطح المكتب', W, 600, 25, 1, 'accent', 2, 2); add(code, 'جانب', 725, 580, T, o.s === 'drawers' && W >= 900 ? 1 : 2, F(fid), 2, 1); add(code, 'لوح خلفي', W - 50, 300, T, 1, F(fid), 1, 0);
           if (o.s === 'drawers' && W >= 900) { carcass(code, 440, 700, 560, {}); for (const h of [200, 200, 290]) drawer(code, 440, h, fid); } break; }
       }
   };
   const cutUpper = (m, code, ufid) => { const o = optsOf(m), W = m.w * 10, n2 = W > 640 ? 2 : 1;
       switch (m.t) {
         case 'udoor': carcass(code, W, 720, 350, {shelves: 1}); doors(code, W, 735, n2, ufid); break;
-        case 'glass': carcass(code, W, 720, 350, {shelves: 1, mat: F(ufid)}); add(code, 'باب إطار للزجاج', W / n2 - 3, 732, 18, n2, F(ufid), 2, 2); add(code, 'زجاج باب', W / n2 - 93, 642, 4, n2, 'glass'); addHw('hinge', 2 * n2); if (!gola) addHw('handle', n2); break;
-        case 'lift': carcass(code, W, 720, 350, {shelves: 1}); add(code, 'باب قلاب', W - 3, 732, 18, 1, F(ufid), 2, 2); addHw('lift'); if (!gola) addHw('handle'); break;
+        case 'glass': carcass(code, W, 720, 350, {shelves: 1, mat: F(ufid)}); add(code, 'باب إطار للزجاج', W / n2 - GAP, 732, TF, n2, F(ufid), 2, 2); add(code, 'زجاج باب', W / n2 - 93, 642, 4, n2, 'glass'); addHw('hinge', 2 * n2); if (!gola) addHw('handle', n2); break;
+        case 'lift': carcass(code, W, 720, 350, {shelves: 1}); add(code, 'باب قلاب', W - GAP, 732, TF, 1, F(ufid), 2, 2); addHw('lift'); if (!gola) addHw('handle'); break;
         case 'uopen': carcass(code, W, 720, 350, {shelves: 1, mat: F(ufid)}); break;
-        case 'mcab': carcass(code, W, 700, 130, {shelves: 2}); add(code, 'باب مرآة', W / n2 - 3, 697, 4, n2, 'mirror'); addHw('hinge', 2 * n2); if (o.led) addHw('led', W / 1000); break;
+        case 'mcab': carcass(code, W, 700, 130, {shelves: 2}); add(code, 'باب مرآة', W / n2 - GAP, 697, 4, n2, 'mirror'); addHw('hinge', 2 * n2); if (o.led) addHw('led', W / 1000); break;
         case 'shelf': { const n = +o.n; add(code, 'رف عائم', W, 250, 38, n, 'accent', 2, 2); addHw('floatbr', n * Math.max(2, Math.ceil(W / 600))); if (o.led) addHw('led', n * W / 1000); break; }
         case 'mirror': add(code, 'مرآة', W, (+o.h) * 10, 4, 1, 'mirror'); break;
-        case 'hooks': add(code, 'لوح العلاقة', W, 100, 18, 1, 'accent', 2, 2); addHw('hook', Math.max(2, Math.floor(m.w / 15))); break;
+        case 'hooks': add(code, 'لوح العلاقة', W, 100, T, 1, 'accent', 2, 2); addHw('hook', Math.max(2, Math.floor(m.w / 15))); break;
         case 'clad': { const h = H - (o.full ? 0 : 500);
-          if (o.s === 'slats') { add(code, 'لوح خلفي', W, h, 12, 1, 'panel'); add(code, 'شريحة', h, 32, 18, Math.max(2, Math.floor(W / 55)), 'accent', 0, 2); }
-          else if (o.s === 'flat') add(code, 'لوح ديكور', W, h, 18, 1, F(fid), 2, 2);
+          if (o.s === 'slats') { add(code, 'لوح خلفي', W, h, 12, 1, 'panel'); add(code, 'شريحة', h, 32, T, Math.max(2, Math.floor(W / 55)), 'accent', 0, 2); }
+          else if (o.s === 'flat') add(code, 'لوح ديكور', W, h, T, 1, F(fid), 2, 2);
           else add(code, o.s === 'marble' ? 'لوح رخام' : 'لوح حجر', W, h, 20, 1, 'stone');
           if (o.led) addHw('led', W / 1000 + (+o.tv ? 2 * (+o.tv) * .0221 * (1 + 9 / 16) : 0));
           if (+o.tv) addAp('tv'); break; }
@@ -3228,12 +3256,12 @@ function cutList(c){
   for (const r of runsOf(c)) {
     const {pb, pu} = layoutRun(c, r);
     let bi = 0, ui = 0; plinth = 0;
-    if (K && r.id === 'A') { const corners = (hasB ? 1 : 0) + (hasC ? 1 : 0); for (let k = 0; k < corners; k++) { const code = 'AZ' + (k + 1); units++; carcass(code, 600, 760, 560, {rails: true, shelves: 1}); doors(code, 600, fh, 1, fid); addHw('leg', 4); plinth += 600; if (gola) golaM += 600; } }
+    if (K && r.id === 'A') { const corners = (hasB ? 1 : 0) + (hasC ? 1 : 0); for (let k = 0; k < corners; k++) { const code = 'AZ' + (k + 1); units++; carcass(code, 600, 760, 560, {rails: true, shelves: 1}); doors(code, 600, fh, 1, fid); addHw('leg', 4); plinth += 600; } }
     for (const m of pb) {
       if (!m.fit || UNIT[m.t].gap || UNIT[m.t].deco) { if (m.fit && m.t === 'rdoor') addAp('idoor'); continue; }
       cutBase(m, r.id + (++bi), fid);
     }
-    if (plinth) add(r.id, 'وزرة أمامية', plinth, 100, 18, 1, F(fid), 1, 0);
+    if (plinth) add(r.id, 'وزرة أمامية', plinth, PL, T, 1, F(fid), 1, 0); if (gola) golaM += plinth;
     for (const m of pu) {
       if (!m.fit || UNIT[m.t].gap) continue;
       if (m.t === 'hood') { addAp('hood'); continue; }
@@ -3245,14 +3273,14 @@ function cutList(c){
   if (K && c.island && c.wallA >= 280) {
     const w = clamp(c.wallA / 100 - 1.9, 1.2, 2.4);
     split(0, w).forEach(([a, b], i) => { const code = 'I' + (i + 1), W = Math.round((b - a) * 1000); units++; addHw('leg', 4); carcass(code, W, 760, 560, {rails: true, shelves: i % 2 ? 0 : 1}); if (i % 2) for (const k of [.32, .26, .2]) drawer(code, W, k / .78 * 760, fid); else doors(code, W, 760, W > 640 ? 2 : 1, fid); });
-    add('I', 'ظهر الجزيرة', w * 1000, 860, 18, 1, F(fid), 2, 2);
-    if (c.worktop === 'oakTop') add('I', 'جانب الجزيرة', 940, 860, 18, 2, F(fid), 2, 2);
+    add('I', 'ظهر الجزيرة', w * 1000, 860, T, 1, F(fid), 2, 2);
+    if (c.worktop === 'oakTop') add('I', 'جانب الجزيرة', 940, 860, T, 2, F(fid), 2, 2);
   }
   (c.items || []).forEach((it, i) => {
     const code = 'P' + (i + 1), W = it.w * 10, o = iopts(it), f = it.o?.col || fid;
     if (isUnitItem(it)) {
       const T = UNIT[it.t];
-      if (T.lvl === 'b') { if (T.deco || T.gap) return; plinth = 0; cutBase(it, code, f); if (plinth) add(code, 'وزرة أمامية', plinth, 100, 18, 1, F(f), 1, 0); }
+      if (T.lvl === 'b') { if (T.deco || T.gap) return; plinth = 0; cutBase(it, code, f); if (plinth) add(code, 'وزرة أمامية', plinth, 100, T, 1, F(f), 1, 0); }
       else if (it.t === 'hood') addAp('hood'); else if (it.t === 'tv') addAp('tv'); else if (T.cat) { units++; cutUpper(it, code, it.o?.col || ufid); }
       return;
     }
@@ -3260,20 +3288,20 @@ function cutList(c){
       const g = cabGrid(it), H = itemH(it) * 10, D = it.d * 10, eL = o.endL !== 'sq' ? Math.min(o.ew * 10, W * .45) : 0, eR = o.endR !== 'sq' ? Math.min(o.ew * 10, W * .45) : 0, bw = W - eL - eR;
       const p0 = o.base === 'plinth' ? 100 : o.base === 'legs' ? 120 : 0, topT = o.top === 'stone' || o.top === 'wood' ? 30 : o.top === 'glass' ? 12 : 0, ch = H - p0 - topT, cd = D - 18;
       units++;
-      add(code, 'جانب', ch, cd, 18, 2, F(f), 2, 1); add(code, 'قاعدة', bw - 36, cd, 18, 1, F(f), 1, 0); add(code, 'سقف', bw - 36, cd, 18, 1, F(f), 1, 0); add(code, 'ظهر', bw - 4, ch - 4, 3, 1, 'back');
-      if (g.cols > 1) add(code, 'فاصل عمودي', ch - 36, cd - 6, 18, g.cols - 1, F(f), 1, 0);
-      if (g.rows > 1) add(code, 'رف فاصل', bw - 36, cd - 6, 18, g.rows - 1, F(f), 1, 0);
+      add(code, 'جانب', ch, cd, T, 2, F(f), 2, 1); add(code, 'قاعدة', bw - 2 * T, cd, T, 1, F(f), 1, 0); add(code, 'سقف', bw - 2 * T, cd, T, 1, F(f), 1, 0); add(code, 'ظهر', ch - BI, bw - BI, TB, 1, 'back');
+      if (g.cols > 1) add(code, 'فاصل عمودي', ch - 2 * T, cd - 6, T, g.cols - 1, F(f), 1, 0);
+      if (g.rows > 1) add(code, 'رف فاصل', bw - 2 * T, cd - 6, T, g.rows - 1, F(f), 1, 0);
       g.cells.forEach((cell, n) => { const cf = cell.c || f, j = n % g.cols, r = Math.floor(n / g.cols), cw = bw * (g.cf[j + 1] - g.cf[j]), rh = ch * (g.rf[r + 1] - g.rf[r]);
         switch (cell.k) {
           case 'door': case 'doorL': case 'doorR': doors(code, cw, rh, 1, cf); break;
           case 'double': doors(code, cw, rh, 2, cf); break;
           case 'drawer': drawer(code, cw, rh, cf); break;
-          case 'flap': add(code, 'باب قلاب', cw - 3, rh - 3, 18, 1, F(cf), 2, 2); addHw('flap'); addHw('hinge', 2); if (!gola) addHw('handle'); break;
-          case 'glass': add(code, 'باب إطار للزجاج', cw - 3, rh - 3, 18, 1, F(cf), 2, 2); add(code, 'زجاج باب', cw - 93, rh - 93, 4, 1, 'glass'); addHw('hinge', hingesFor(rh)); if (!gola) addHw('handle'); break;
-          case 'panel': add(code, 'لوح ثابت', cw - 3, rh - 3, 18, 1, F(cf), 2, 2); break;
+          case 'flap': add(code, 'باب قلاب', cw - GAP, rh - GAP, TF, 1, F(cf), 2, 2); addHw('flap'); addHw('hinge', 2); if (!gola) addHw('handle'); break;
+          case 'glass': add(code, 'باب إطار للزجاج', cw - GAP, rh - GAP, TF, 1, F(cf), 2, 2); add(code, 'زجاج باب', cw - 93, rh - 93, 4, 1, 'glass'); addHw('hinge', hingesFor(rh)); if (!gola) addHw('handle'); break;
+          case 'panel': add(code, 'لوح ثابت', cw - GAP, rh - GAP, TF, 1, F(cf), 2, 2); break;
         } });
-      for (const [k, e] of [[o.endL, eL], [o.endR, eR]]) if (e) { add(code, k === 'rnd' ? 'رف طرف مدوّر (قص منحني)' : 'رف طرف مائل (قص مائل)', e, cd, 18, 1 + g.rows, F(f), 1, 0); add(code, 'ظهر الطرف', e, ch, 18, 1, F(f), 1, 0); if (k === 'ang' && cd - e > 50) add(code, 'جانب الطرف', ch, cd - e, 18, 1, F(f), 2, 1); }
-      if (o.base === 'plinth') { add(code, 'وزرة', W, 100, 18, 1, F(f), 1, 0); addHw('leg', 4 + (eL ? 1 : 0) + (eR ? 1 : 0)); }
+      for (const [k, e] of [[o.endL, eL], [o.endR, eR]]) if (e) { add(code, k === 'rnd' ? 'رف طرف مدوّر (قص منحني)' : 'رف طرف مائل (قص مائل)', e, cd, T, 1 + g.rows, F(f), 1, 0); add(code, 'ظهر الطرف', e, ch, T, 1, F(f), 1, 0); if (k === 'ang' && cd - e > 50) add(code, 'جانب الطرف', ch, cd - e, T, 1, F(f), 2, 1); }
+      if (o.base === 'plinth') { add(code, 'وزرة', W, 100, T, 1, F(f), 1, 0); addHw('leg', 4 + (eL ? 1 : 0) + (eR ? 1 : 0)); }
       else if (o.base === 'legs') addHw('legMetal', 4 + 2 * Math.floor(bw / 800) + (eL ? 2 : 0) + (eR ? 2 : 0)); else if (o.base === 'hang') addHw('bracket', 2 + Math.floor(W / 600));
       if (o.top === 'wood') add(code, 'سطح', W + 10, D + 10, 25, 1, 'accent', 2, 2); else if (o.top === 'glass') add(code, 'سطح زجاج', W, D + 10, 12, 1, 'glass');
       if (o.led) addHw('led', W / 1000);
@@ -3284,12 +3312,12 @@ function cutList(c){
       units++;
       if (o.base === 'cab' || o.base === 'open') {
         const cols = Math.max(1, Math.round(bw / 600)), ch = yT - 100, cw = bw / cols;
-        add(code, 'جانب', ch, cd - 18, 18, 2, F(f), 2, 1); add(code, 'قاعدة', bw - 36, cd - 18, 18, 1, F(f), 1, 0); add(code, 'سقف', bw - 36, cd - 18, 18, 1, F(f), 1, 0); add(code, 'ظهر', bw - 4, ch - 4, 3, 1, 'back');
-        if (cols > 1) add(code, 'فاصل عمودي', ch - 36, cd - 24, 18, cols - 1, F(f), 1, 0);
-        if (o.base === 'cab') for (let j = 0; j < cols; j++) { if (cols > 2 && j === Math.floor(cols / 2)) drawer(code, cw, ch, f); else doors(code, cw, ch, 1, f); } else add(code, 'رف', bw - 36, cd - 40, 18, cols, F(f), 1, 0);
-        add(code, 'لوح جهة الجلوس', bw, yT, 18, 1, F(f), 2, 2); add(code, 'وزرة', bw, 100, 18, 1, F(f), 1, 0); addHw('leg', 4 + 2 * (cols - 1));
-        for (const [k, e] of [[o.endL, eL], [o.endR, eR]]) if (e) { add(code, k === 'rnd' ? 'رف طرف مدوّر (قص منحني)' : 'رف طرف مائل (قص مائل)', e, D - 20, 18, yT > 700 ? 3 : 2, F(f), 1, 0); add(code, 'ظهر الطرف', e, yT, 18, 1, F(f), 1, 0); }
-      } else if (o.base === 'water') { add(code, 'جانب شلال من خامة السطح', D, yT, 30, 2, 'worktop'); add(code, 'لوح خلفي', bw - 60, yT, 18, 1, F(f), 2, 2); }
+        add(code, 'جانب', ch, cd - 18, T, 2, F(f), 2, 1); add(code, 'قاعدة', bw - 2 * T, cd - 18, T, 1, F(f), 1, 0); add(code, 'سقف', bw - 2 * T, cd - 18, T, 1, F(f), 1, 0); add(code, 'ظهر', ch - BI, bw - BI, TB, 1, 'back');
+        if (cols > 1) add(code, 'فاصل عمودي', ch - 2 * T, cd - 24, T, cols - 1, F(f), 1, 0);
+        if (o.base === 'cab') for (let j = 0; j < cols; j++) { if (cols > 2 && j === Math.floor(cols / 2)) drawer(code, cw, ch, f); else doors(code, cw, ch, 1, f); } else add(code, 'رف', bw - 2 * T, cd - 40, T, cols, F(f), 1, 0);
+        add(code, 'لوح جهة الجلوس', bw, yT, T, 1, F(f), 2, 2); add(code, 'وزرة', bw, 100, T, 1, F(f), 1, 0); addHw('leg', 4 + 2 * (cols - 1));
+        for (const [k, e] of [[o.endL, eL], [o.endR, eR]]) if (e) { add(code, k === 'rnd' ? 'رف طرف مدوّر (قص منحني)' : 'رف طرف مائل (قص مائل)', e, D - 20, T, yT > 700 ? 3 : 2, F(f), 1, 0); add(code, 'ظهر الطرف', e, yT, T, 1, F(f), 1, 0); }
+      } else if (o.base === 'water') { add(code, 'جانب شلال من خامة السطح', D, yT, 30, 2, 'worktop'); add(code, 'لوح خلفي', bw - 60, yT, T, 1, F(f), 2, 2); }
       else addHw('legMetal', 4);
       if (o.top === 'wood') add(code, 'سطح البار', W, D, 30, 1, 'accent', 2, 2);
       if (+o.stools) addAp('stools', +o.stools);
@@ -3300,29 +3328,30 @@ function cutList(c){
       add(code, o.or === 'h' ? 'رف أو سطح حر' : 'لوح حر', W, itemH(it) * 10, it.d * 10, 1, mat, 2, 2); return;
     }
     switch (it.t) {
-      case 'bed': units++; add(code, 'جانب السرير', 2060, 250, 18, 2, F(fid), 1, 0); add(code, 'رافدة القدم', W + 100, 250, 18, 1, F(fid), 1, 0); add(code, 'رافدة الرأس', W + 100, 250, 18, 1, 'carcass', 1, 0); addHw('slats'); addHw('leg', 6);
-        if (o.h === 'wood') add(code, 'لوح الرأس', W + 200, 1000, 25, 1, 'accent', 2, 2); else { const hb = o.h === 'tall' ? 1450 : 1180; add(code, 'لوح الرأس', W + 160, hb, 18, 1, 'carcass', 0, 0); addHw('upholstery', Math.round((W + 160) * hb / 1e5) / 10); }
+      case 'bed': units++; add(code, 'جانب السرير', 2060, 250, T, 2, F(fid), 1, 0); add(code, 'رافدة القدم', W + 100, 250, T, 1, F(fid), 1, 0); add(code, 'رافدة الرأس', W + 100, 250, T, 1, 'carcass', 1, 0); addHw('slats'); addHw('leg', 6);
+        if (o.h === 'wood') add(code, 'لوح الرأس', W + 200, 1000, 25, 1, 'accent', 2, 2); else { const hb = o.h === 'tall' ? 1450 : 1180; add(code, 'لوح الرأس', W + 160, hb, T, 1, 'carcass', 0, 0); addHw('upholstery', Math.round((W + 160) * hb / 1e5) / 10); }
         if (o.st) for (let k = 0; k < 4; k++) drawer(code, 700, 170, fid); break;
-      case 'night': units++; carcass(code, W, 450, 400, {}); drawer(code, W, 225, fid); drawer(code, W, 225, fid); add(code, 'سطح', W + 4, 420, 18, 1, F(fid), 2, 2); addHw('leg', 4); break;
-      case 'bunk': units++; add(code, 'قائم', 1750, 60, 60, 4, 'accent', 2, 2); add(code, 'رافدة', W + 80, 120, 25, 8, 'accent', 2, 0); add(code, 'جانب', 2080, 120, 25, 4, 'accent', 2, 0); add(code, 'درجة سلّم', 400, 60, 25, 5, 'accent', 2, 2); add(code, 'حاجز علوي', 2080, 320, 18, 1, 'accent', 2, 2); addHw('slats', 2); break;
+      case 'night': units++; carcass(code, W, 450, 400, {}); drawer(code, W, 225, fid); drawer(code, W, 225, fid); add(code, 'سطح', W + 4, 420, T, 1, F(fid), 2, 2); addHw('leg', 4); break;
+      case 'bunk': units++; add(code, 'قائم', 1750, 60, 60, 4, 'accent', 2, 2); add(code, 'رافدة', W + 80, 120, 25, 8, 'accent', 2, 0); add(code, 'جانب', 2080, 120, 25, 4, 'accent', 2, 0); add(code, 'درجة سلّم', 400, 60, 25, 5, 'accent', 2, 2); add(code, 'حاجز علوي', 2080, 320, T, 1, 'accent', 2, 2); addHw('slats', 2); break;
       case 'dresser': units++; carcass(code, W, 640, 430, {}); for (let k = 0; k < 4; k++) drawer(code, W / 2, 320, fid); add(code, 'سطح', W + 10, 460, 25, 1, 'accent', 2, 2); add(code, 'مرآة', Math.min(W * .7, 800), 880, 4, 1, 'mirror'); addHw('legMetal', 4); break;
       case 'commode': { units++; const cols = W > 900 ? 2 : 1; carcass(code, W, 740, 480, {}); for (let k = 0; k < cols * 4; k++) drawer(code, W / cols, 185, fid); add(code, 'سطح', W + 10, 510, 25, 1, 'accent', 2, 2); addHw('legMetal', 4); break; }
       case 'dtable': units++; add(code, 'سطح الطاولة', W, 1000, 36, 1, 'accent', 2, 2); if (o.s === 'oval') add(code, 'رجل', 720, 120, 36, 2, 'accent', 2, 2); else add(code, 'رجل', 724, 80, 80, 4, 'accent', 2, 2); if (o.ch) addAp('chairs', 2 * Math.max(1, Math.floor(W / 620)) + (W >= 1800 ? 2 : 0)); break;
-      case 'ctable': units++; add(code, 'سطح', W, 600, 30, 1, 'accent', 2, 2); add(code, 'رف سفلي', W - 60, 540, 18, 1, 'accent', 2, 2); addHw('legMetal', 4); break;
+      case 'ctable': units++; add(code, 'سطح', W, 600, 30, 1, 'accent', 2, 2); add(code, 'رف سفلي', W - 60, 540, T, 1, 'accent', 2, 2); addHw('legMetal', 4); break;
     }
   });
   if (gola && golaM) hw.gola = Math.round(golaM / 100) / 10;
   const mats = {}; let edgeM = 0;
   for (const p of parts) { const key = p.mat + '|' + p.th, m = mats[key] || (mats[key] = {mat: p.mat, th: p.th, area: 0}); m.area += p.L * p.W / 1e6 * p.qty; edgeM += p.qty * (p.ea * p.L + p.eb * p.W) / 1000; }
-  const matList = Object.values(mats).map(m => ({...m, kind: m.mat.startsWith('front:') ? 'front' : m.mat, name: matName(m.mat), sheets: NOSHEET.includes(m.mat) ? 0 : Math.ceil(m.area * 1.15 / SHEET_M2)}));
+  const matList = Object.values(mats).map(m => ({...m, kind: m.mat.startsWith('front:') ? 'front' : m.mat, name: matName(m.mat), sheets: 0}));
   const groups = {};
-  for (const p of parts) { const k = [p.mat, p.th, p.kind, p.L, p.W, p.ea, p.eb].join('|'), g = groups[k] || (groups[k] = {...p, qty: 0, codes: []}); g.qty += p.qty; if (!g.codes.includes(p.code)) g.codes.push(p.code); }
+  for (const p of parts) { const k = [p.mat, p.th, p.kind, p.L, p.W, p.ea, p.eb, p.grain].join('|'), g = groups[k] || (groups[k] = {...p, qty: 0, codes: []}); g.qty += p.qty; if (!g.codes.includes(p.code)) g.codes.push(p.code); }
   const order = m => m === 'carcass' ? 0 : m.startsWith('front:') ? 1 : m === 'accent' ? 2 : m === 'back' ? 3 : 4;
   const grouped = Object.values(groups).sort((a, b) => order(a.mat) - order(b.mat) || a.mat.localeCompare(b.mat) || b.L - a.L || b.W - a.W);
   const wt = stats.wt || [];
   const doorsN = parts.filter(p => p.kind.startsWith('باب') || p.kind === 'واجهة جلاية').reduce((s, p) => s + p.qty, 0), drawersN = parts.filter(p => p.kind === 'واجهة جارور').reduce((s, p) => s + p.qty, 0);
-  const nest = nestSheets({grouped}); for (const m of matList) { const n = nest.find(x => x.mat === m.mat && x.th === m.th); if (n) m.sheets = n.sheets.length; }
-  return {parts, grouped, hw, ap, mats: matList, edgeM, wt, topM2: wt.reduce((s, [l, w]) => s + l * w / 1e6, 0), unitCount: units, doorsN, drawersN};
+  const nest = nestSheets({grouped}); for (const m of matList) { const n = nest.find(x => x.mat === m.mat && x.th === m.th); if (n) m.sheets = n.count; }
+  const checks = WarshaFab.checkParts(grouped, fab, NOSHEET);
+  return {parts, grouped, nest, checks, hw, ap, mats: matList, edgeM, wt, topM2: wt.reduce((s, [l, w]) => s + l * w / 1e6, 0), unitCount: units, doorsN, drawersN};
 }
 function costOf(cl){
   const p = prices, n = k => +p[k] || 0;
@@ -3332,6 +3361,13 @@ function costOf(cl){
   let hwc = 0; for (const [k, q] of Object.entries(cl.hw)) if (hwKey[k]) hwc += q * n(hwKey[k]);
   const edge = cl.edgeM * n('edge'), top = cl.topM2 * n('topCost'), labor = cl.unitCount * n('labor');
   return {boards, edge, hw: hwc, top, labor, total: boards + edge + hwc + top + labor};
+}
+// logo: scaled down to 480 px so it stays light in storage and in the PDFs
+function loadLogo(file){
+  const r = new FileReader();
+  r.onload = () => { const im = new Image(); im.onload = () => { const k = Math.min(1, 480 / Math.max(im.width, im.height)), cv = document.createElement('canvas'); cv.width = Math.round(im.width * k); cv.height = Math.round(im.height * k); cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+    prices.shopLogo = cv.toDataURL('image/png'); if (!lsSafeSet('wr_prices', prices)) { delete prices.shopLogo; toast('الشعار كبير جداً على مساحة الجهاز'); } renderCost(); toast('حُفظ الشعار'); }; im.onerror = () => toast('تعذّرت قراءة الصورة'); im.src = r.result; };
+  r.readAsDataURL(file);
 }
 function renderCost(){
   const p = prices, q = saleLines(), cl = cutList(cfg);
@@ -3366,9 +3402,23 @@ function renderCost(){
           + pin('bracket', 'حامل تعليق', p.cur, .5) + pin('floatbr', 'حامل رف مخفي', p.cur, .5) + pin('led', 'متر شريط LED', p.cur, .5) + pin('hook', 'شمّاعة', p.cur, .5) + pin('cushion', 'وسادة منجّدة') + pin('upholstery', 'متر مربع تنجيد') + pin('slats', 'قاعدة سرير شرائح')
           + pin('glassM2', 'متر مربع زجاج') + pin('mirrorM2', 'متر مربع مرآة') + pin('labor', 'أجرة تصنيع الوحدة')}
       </div></details>
-    <div class="grp"><h3>بيانات الورشة <small>تظهر في المستندات</small></h3>
+    <details class="grp det" data-det="fab" ${openDetails.fab ? 'open' : ''}><summary>إعدادات التصنيع</summary>
+      <div class="prices">
+        ${[['t', 'سماكة الهيكل', 'مم'], ['tf', 'سماكة الواجهات', 'مم'], ['back', 'سماكة الظهر', 'مم'], ['gap', 'فراغ الأبواب والجوارير', 'مم', .5], ['edge', 'سماكة شريط الحواف', 'مم', .1], ['backInset', 'تصغير الظهر من كل جهة', 'مم'], ['plinthH', 'ارتفاع الوزرة', 'مم'], ['sheetL', 'طول اللوح (اتجاه العرق)', 'مم'], ['sheetW', 'عرض اللوح', 'مم'], ['kerf', 'سماكة المنشار', 'مم', .5], ['trim', 'تنظيف حافة اللوح', 'مم']].map(([k, l, u, st]) => `<label for="f-${k}">${l}</label><span class="num"><input id="f-${k}" data-fab="${k}" type="number" step="${st || 1}" min="${WarshaFab.LIMITS[k][0]}" max="${WarshaFab.LIMITS[k][1]}" value="${fab[k]}"><span>${u}</span></span>`).join('')}
+      </div>
+      <label class="sw-row"><input type="checkbox" data-fab="edgeDeduct" ${fab.edgeDeduct ? 'checked' : ''}> خصم سماكة الحافة من مقاس القص</label>
+      <div class="ued-row"><button type="button" class="btn sm" data-fabreset>الرجوع للقيم الافتراضية</button></div>
+      <p class="hint">تُطبّق على قائمة التقطيع ومخطط الألواح وملف CSV. المشهد ثلاثي الأبعاد يبقى تقريبياً ولا يتغير بها.</p></details>
+    ${cl.checks.length ? `<div class="grp issues"><h3>تنبيهات قائمة التقطيع</h3>${cl.checks.map(x => `<p>${esc(x.code)}: ${esc(x.msg)}</p>`).join('')}</div>` : ''}
+    <div class="grp"><h3>هوية الورشة <small>تظهر في المستندات ووضع العرض</small></h3>
+      <div class="logo-row">${p.shopLogo ? `<img src="${p.shopLogo}" alt="شعار الورشة">` : '<span class="ph">الشعار</span>'}<label class="btn sm">${p.shopLogo ? 'تغيير الشعار' : 'رفع الشعار'}<input type="file" id="logoIn" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden></label>${p.shopLogo ? '<button type="button" class="btn sm ghost" data-logodel>إزالة</button>' : ''}</div>
       <label class="field">اسم الورشة<input id="p-shop" data-price="shop" value="${esc(p.shop)}" placeholder="مثلاً: موبيليا أبو أحمد"></label>
       <label class="field">هاتف الورشة<input id="p-shopPhone" data-price="shopPhone" dir="ltr" value="${esc(p.shopPhone)}" placeholder="+961 ..."></label>
+      <label class="field">البريد الإلكتروني<input id="p-shopEmail" data-price="shopEmail" dir="ltr" type="email" value="${esc(p.shopEmail || '')}"></label>
+      <label class="field">العنوان<input id="p-shopAddr" data-price="shopAddr" value="${esc(p.shopAddr || '')}" placeholder="المدينة، الشارع"></label>
+      <div class="prices"><label for="p-brand">لون الهوية</label><span class="num"><input id="p-brand" data-price="brand" type="color" value="${/^#[0-9a-f]{6}$/i.test(p.brand || '') ? p.brand : '#F4B400'}"></span>
+        <label for="p-quoteDays">صلاحية عرض السعر</label><span class="num"><input id="p-quoteDays" data-price="quoteDays" type="number" min="1" value="${+p.quoteDays || 30}"><span>يوماً</span></span></div>
+      <label class="field">شروط عرض السعر <small>سطر لكل شرط</small><textarea id="p-terms" data-price="terms" rows="4" placeholder="تُعتمد المقاسات النهائية بعد الكشف في الموقع.">${esc(p.terms || '')}</textarea></label>
       <p class="hint">الأسعار المكتوبة أمثلة، اكتب أسعار ورشتك مرة واحدة وتبقى محفوظة على هذا الجهاز.</p></div>`;
   updateCostNumbers();
 }
@@ -3410,9 +3460,15 @@ function makePDF(pages){
 const canvasJpeg = cv => new Promise(res => cv.toBlob(b => b.arrayBuffer().then(a => res(new Uint8Array(a))), 'image/jpeg', .9));
 
 /* ================= A4 page drawing (canvas, 150 dpi) ================= */
-const PW = 1240, PH = 1754, PM = 84, INK = '#14191E', MUTED = '#5A646C', TAPE = '#F4B400', RULE = '#DCE1E4';
+const PW = 1240, PH = 1754, PM = 84, INK = '#14191E', MUTED = '#5A646C', RULE = '#DCE1E4';
+let TAPE = '#F4B400';
+// the workshop's own logo, decoded once for the documents
+let logoImg = null;
+function logoReady(){ if (!prices.shopLogo) { logoImg = null; return Promise.resolve(); } if (logoImg && logoImg.src === prices.shopLogo && logoImg.complete) return Promise.resolve();
+  return new Promise(res => { const im = new Image(); im.onload = () => { logoImg = im; res(); }; im.onerror = () => { logoImg = null; res(); }; im.src = prices.shopLogo; }); }
 const FF = {d: '"Reem Kufi","IBM Plex Sans Arabic",sans-serif', b: '"IBM Plex Sans Arabic",system-ui,sans-serif', m: '"IBM Plex Mono","IBM Plex Sans Arabic",ui-monospace,monospace'};
 function newDoc(title){
+  TAPE = /^#[0-9a-f]{6}$/i.test(prices.brand || '') ? prices.brand : '#F4B400';
   const d = {pages: [], title};
   d.page = () => { const cv = document.createElement('canvas'); cv.width = PW; cv.height = PH; const x = cv.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, PW, PH); d.pages.push(cv); d.x = x; d.y = PM;
     if (d.pages.length > 1) { d.set(16, 500, 'b', MUTED); x.textAlign = 'right'; x.fillText(`${prices.shop || 'ورشة العرض'}، ${title}`, PW - PM, PM - 30); x.fillStyle = RULE; x.fillRect(PM, PM - 16, PW - 2 * PM, 2); } };
@@ -3467,12 +3523,15 @@ const money = v => `${fmt(v)} ${prices.cur}`;
 const today = () => new Date().toLocaleDateString('en-GB');
 function projectLine(){ const c = cfg; return `${ROOMS[c.room]}${c.room === 'kitchen' ? ' ' + KLAYOUTS[c.layout] : ''}، ${dimsText(c)} سم، ارتفاع ${c.height} سم`; }
 function docHeader(d, kind, number){
-  const x = d.x;
-  d.set(46, 700, 'd'); x.textAlign = 'right'; x.fillText(prices.shop || 'ورشة العرض', PW - PM, d.y + 46);
-  if (prices.shopPhone) { x.font = `400 19px ${FF.m}`; x.fillStyle = MUTED; x.direction = 'ltr'; x.textAlign = 'right'; x.fillText(prices.shopPhone, PW - PM, d.y + 84); }
+  const x = d.x; let right = PW - PM;
+  if (logoImg) { const h = 96, w = Math.min(220, logoImg.width * h / logoImg.height); x.drawImage(logoImg, right - w, d.y - 4, w, h); right -= w + 22; }
+  d.set(44, 700, 'd'); x.textAlign = 'right'; x.fillText(prices.shop || 'ورشة العرض', right, d.y + 44);
+  const sub = [prices.shopPhone, prices.shopEmail].filter(Boolean).join('   ');
+  if (sub) { x.font = `400 18px ${FF.m}`; x.fillStyle = MUTED; x.direction = 'ltr'; x.textAlign = 'right'; x.fillText(sub, right, d.y + 76); }
+  if (prices.shopAddr) { d.set(17, 400, 'b', MUTED); x.textAlign = 'right'; x.fillText(prices.shopAddr, right, d.y + 100); }
   d.set(34, 600, 'b'); x.textAlign = 'left'; x.fillText(kind, PM, d.y + 40);
   x.font = `400 18px ${FF.m}`; x.fillStyle = MUTED; x.direction = 'ltr'; x.textAlign = 'left'; x.fillText(`${number ? number + '   ' : ''}${today()}`, PM, d.y + 78);
-  d.y += 108; x.fillStyle = TAPE; x.fillRect(PM, d.y, PW - 2 * PM, 8); d.y += 34;
+  d.y += 118; x.fillStyle = TAPE; x.fillRect(PM, d.y, PW - 2 * PM, 8); d.y += 34;
   d.text(`الزبون: ${current?.name || 'غير محدد'}${current?.phone ? '، الهاتف: ' + current.phone : ''}`, {sz: 22, w: 600});
   d.text(`المشروع: ${projectLine()}`, {sz: 20, color: MUTED, gap: 8});
 }
@@ -3528,33 +3587,10 @@ function planSvg(){
   return `<svg class="uv" viewBox="${-T - pad} ${-T - pad} ${A + 2 * T + 2 * pad} ${D + T + 2 * pad}" role="img" aria-label="المخطط من الأعلى">${out.join('')}</svg>`;
 }
 async function planImage(){ const im = await svgImage(planSvg(), PW - 2 * PM); const k = Math.min(1, 900 / im.h); return {...im, w: Math.round(im.w * k), h: Math.round(im.h * k)}; }
-/* cutting plan: parts nested on 280×207 sheets, row by row, with a 4 mm saw cut and 10 mm trim */
-const SHEET = {L: 2800, W: 2070, trim: 10, kerf: 4};
-function nestSheets(cl){
-  const {L: SL, W: SW, trim, kerf} = SHEET, groups = {};
-  cl.grouped.forEach((g, gi) => { if (NOSHEET.includes(g.mat)) return; const k = g.mat + '|' + g.th; const m = groups[k] || (groups[k] = {mat: g.mat, th: g.th, list: []}); for (let q = 0; q < g.qty; q++) m.list.push({L: g.L, W: g.W, n: gi + 1}); });
-  return Object.values(groups).map(m => {
-    const turn = ['carcass', 'back', 'panel'].includes(m.mat); // plain boards can turn; wood grain and fronts keep their direction
-    const ps = m.list.map(p => (p.W > SW - 2 * trim && p.L <= SW - 2 * trim) || (turn && p.W > p.L) ? {...p, L: p.W, W: p.L} : p).sort((a, b) => b.W - a.W || b.L - a.L);
-    const sheets = [];
-    for (const p of ps) {
-      let done = false;
-      for (const sh of sheets) {
-        for (const r of sh.rows) {
-          if (p.W <= r.h && r.x + p.L <= SL - trim) { sh.parts.push({...p, x: r.x, y: r.y}); r.x += p.L + kerf; done = true; break; }
-          if (turn && p.L <= r.h && r.x + p.W <= SL - trim) { sh.parts.push({...p, L: p.W, W: p.L, x: r.x, y: r.y}); r.x += p.W + kerf; done = true; break; }
-        }
-        if (done) break;
-        if (sh.y + p.W <= SW - trim && p.L <= SL - 2 * trim) { sh.rows.push({x: trim + p.L + kerf, y: sh.y, h: p.W}); sh.parts.push({...p, x: trim, y: sh.y}); sh.y += p.W + kerf; done = true; break; }
-      }
-      if (!done) { const sh = {rows: [{x: trim + p.L + kerf, y: trim, h: p.W}], parts: [{...p, x: trim, y: trim, over: p.L > SL - 2 * trim || p.W > SW - 2 * trim}], y: trim + p.W + kerf}; sheets.push(sh); }
-    }
-    const used = m.list.reduce((a, p) => a + p.L * p.W, 0);
-    return {...m, sheets, yield: used / (sheets.length * SL * SW)};
-  });
-}
+/* cutting plan: the fabrication engine nests the parts on the workshop's sheets */
+function nestSheets(cl){ return WarshaFab.nest(cl.grouped.map((g, i) => ({...g, n: i + 1})), fab, NOSHEET); }
 function drawNest(d, nest){
-  const {L: SL, W: SW} = SHEET, w = Math.round((PW - 2 * PM) * .8), k = w / SL, h = Math.round(SW * k), x0 = PW - PM - w;
+  const SL = fab.sheetL, SW = fab.sheetW, w = Math.round((PW - 2 * PM) * .8), k = w / SL, h = Math.round(SW * k), x0 = PW - PM - w;
   for (const m of nest) {
     d.need(h + 100);
     d.text(`${matName(m.mat)} ${m.th} مم: ${m.sheets.length} ${m.sheets.length > 2 ? 'ألواح' : 'لوح'}، الاستفادة ${Math.round(m.yield * 100)}%`, {sz: 21, w: 600});
@@ -3574,8 +3610,12 @@ function drawNest(d, nest){
   }
   d.text('الأرقام هي أرقام الأسطر في قائمة التقطيع. ألواح الهيكل والظهر تُدار لتوفير الخامة، والواجهات وخشب الديكور تبقى باتجاه العرق. القص بسماكة منشار 4 مم وتنظيف حافة 10 مم.', {sz: 16, color: MUTED});
 }
+function quoteTerms(){
+  const days = +prices.quoteDays || 30, own = String(prices.terms || '').split('\n').map(t => t.trim()).filter(Boolean);
+  return [`الأسعار صالحة لمدة ${days} يوماً من تاريخ العرض.`, ...(own.length ? own : ['تُعتمد المقاسات النهائية بعد الكشف في الموقع.', 'الصور توضيحية، وقد تختلف درجات الألوان قليلاً عن الخامات الحقيقية.'])];
+}
 async function buildQuote(){
-  await docFonts();
+  await docFonts(); await logoReady();
   const cl = cutList(cfg), q = saleLines(), num = 'Q' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '-' + (current?.id || 'x000').slice(-3).toUpperCase();
   const d = newDoc('عرض سعر'); docHeader(d, 'عرض سعر', num);
   const shot = snapshot(1700, 860, false, true); d.image(shot, PW - 2 * PM, Math.round((PW - 2 * PM) * 860 / 1700));
@@ -3591,17 +3631,21 @@ async function buildQuote(){
   { const ev = await elevationImages(false); d.h2('الواجهات', ev[0] ? Math.min(470, ev[0].h) + 50 : 80); for (const e of ev) placeElev(d, e); }
   { const pl = await planImage(); d.h2('المخطط من الأعلى', pl.h + 20); d.image(pl.img, pl.w, pl.h, {border: false}); }
   d.h2('ملاحظات');
-  for (const t of ['الأسعار صالحة لمدة 30 يوماً من تاريخ العرض.', 'تُعتمد المقاسات النهائية بعد الكشف في الموقع.', 'الصور توضيحية، وقد تختلف درجات الألوان قليلاً عن الخامات الحقيقية.']) d.text('• ' + t, {sz: 19});
+  for (const t of quoteTerms()) d.text('• ' + t, {sz: 19});
   d.need(150); d.y += 50; const x = d.x; x.fillStyle = RULE; x.fillRect(PW - PM - 380, d.y + 50, 380, 2); x.fillRect(PM, d.y + 50, 380, 2);
   d.set(18, 400, 'b', MUTED); x.textAlign = 'right'; x.fillText('توقيع الزبون', PW - PM, d.y + 80); x.fillText('توقيع الورشة', PM + 380, d.y + 80); d.y += 100;
   return {...(await d.finish()), name: `عرض سعر ${current?.name || 'تصميم'} ${num}.pdf`};
 }
+// the workshop sheet is a draft until a carpenter checks it against the way the workshop builds
+const DRAFT_NOTE = 'مسودة للمراجعة: قائمة التقطيع محسوبة آلياً من التصميم وتفترض طريقة تصنيع قياسية. راجعها مع طريقة ورشتك قبل القص.';
 async function buildWorkshop(){
+  await logoReady();
   await docFonts();
   const cl = cutList(cfg), cost = costOf(cl), q = saleLines();
   const d = newDoc('ورقة الورشة'); docHeader(d, 'ورقة الورشة', '');
+  d.need(90); { const x = d.x; x.fillStyle = '#FFF4D1'; x.fillRect(PM, d.y, PW - 2 * PM, 74); x.fillStyle = TAPE; x.fillRect(PW - PM - 8, d.y, 8, 74); } d.y += 12; d.text(DRAFT_NOTE, {sz: 17, maxW: PW - 2 * PM - 40, x: PW - PM - 22}); d.y += 8;
   d.h2('الألواح');
-  d.table([{label: 'الخامة', w: .42}, {label: 'السماكة', w: .14, align: 'center', f: 'm'}, {label: 'المساحة م²', w: .2, align: 'center', f: 'm'}, {label: 'ألواح 280×207', w: .24, align: 'center', f: 'm'}],
+  d.table([{label: 'الخامة', w: .42}, {label: 'السماكة', w: .14, align: 'center', f: 'm'}, {label: 'المساحة م²', w: .2, align: 'center', f: 'm'}, {label: `ألواح ${fab.sheetL / 10}×${fab.sheetW / 10}`, w: .24, align: 'center', f: 'm'}],
     cl.mats.map(m => [m.name, m.th + ' مم', m.area.toFixed(2), m.sheets ? String(m.sheets) : '-']));
   d.text(`شريط الحواف: ${cl.edgeM.toFixed(1)} م. عدد الألواح حسب مخطط التقطيع في آخر هذه الورقة.`, {sz: 18, color: MUTED});
   if (cl.wt.length) { d.h2('سطح العمل'); d.table([{label: 'القطعة', w: .4}, {label: 'الطول مم', w: .3, align: 'center', f: 'm'}, {label: 'العمق مم', w: .3, align: 'center', f: 'm'}], cl.wt.map((w, i) => [`قطعة ${i + 1}`, String(w[0]), String(w[1])])); }
@@ -3611,10 +3655,11 @@ async function buildWorkshop(){
   { const pl = await planImage(); d.h2('المخطط من الأعلى ورموز القطع الحرة', pl.h + 20); d.image(pl.img, pl.w, pl.h, {border: false}); d.text('المستطيلات المنقطة قطع معلّقة، والخط الأصفر جهة الأبواب.', {sz: 16, color: MUTED}); }
   { const ev = await elevationImages(true); d.h2('الواجهات ورموز الوحدات', ev[0] ? Math.min(470, ev[0].h) + 50 : 80); for (const e of ev) placeElev(d, e); }
   d.h2('قائمة التقطيع');
-  d.table([{label: '#', w: .05, align: 'center', f: 'm'}, {label: 'الوحدات', w: .16, f: 'm'}, {label: 'القطعة', w: .18}, {label: 'الطول', w: .09, align: 'center', f: 'm'}, {label: 'العرض', w: .09, align: 'center', f: 'm'}, {label: 'مم', w: .06, align: 'center', f: 'm'}, {label: 'العدد', w: .07, align: 'center', f: 'm'}, {label: 'الخامة', w: .2}, {label: 'الحواف', w: .1, align: 'center'}],
-    cl.grouped.map((g, i) => [String(i + 1), g.codes.join(' '), g.kind, String(g.L), String(g.W), String(g.th), String(g.qty), matName(g.mat), edgeTxt(g)]), {sz: 15, pad: 8});
-  d.text('الحواف: ط = حافة على الطول، ع = حافة على العرض.', {sz: 16, color: MUTED});
-  { const nest = nestSheets(cl); if (nest.length) { d.h2('مخطط التقطيع على الألواح', Math.round((PW - 2 * PM) * .8 * SHEET.W / SHEET.L) + 100); drawNest(d, nest); } }
+  d.table([{label: '#', w: .05, align: 'center', f: 'm'}, {label: 'الوحدات', w: .16, f: 'm'}, {label: 'القطعة', w: .18}, {label: 'الطول', w: .09, align: 'center', f: 'm'}, {label: 'العرض', w: .09, align: 'center', f: 'm'}, {label: 'مم', w: .06, align: 'center', f: 'm'}, {label: 'العدد', w: .07, align: 'center', f: 'm'}, {label: 'الخامة', w: .14}, {label: 'العرق', w: .06, align: 'center'}, {label: 'الحواف', w: .1, align: 'center'}],
+    cl.grouped.map((g, i) => [String(i + 1), g.codes.join(' '), g.kind, String(g.L), String(g.W), String(g.th), String(g.qty), matName(g.mat), g.grain === 'L' ? 'طول' : g.grain === 'W' ? 'عرض' : '-', edgeTxt(g)]), {sz: 15, pad: 8});
+  d.text(`الحواف: ط = حافة على الطول، ع = حافة على العرض. العرق: اتجاه عرق الخشب في القطعة. ${fab.edgeDeduct ? `المقاسات مقاسات قص، خُصمت منها سماكة الحافة ${fab.edge} مم.` : 'المقاسات نهائية، ولم تُخصم منها سماكة الحافة.'} هيكل ${fab.t} مم، واجهات ${fab.tf} مم، ظهر ${fab.back} مم، فراغ الأبواب ${fab.gap} مم.`, {sz: 16, color: MUTED});
+  if (cl.checks.length) { d.text('تنبيهات على القائمة:', {sz: 18, w: 600}); for (const x of cl.checks) d.text(`• ${x.code}: ${x.msg}`, {sz: 16}); }
+  { const nest = cl.nest; if (nest.length) { d.h2('مخطط التقطيع على الألواح', Math.round((PW - 2 * PM) * .8 * fab.sheetW / fab.sheetL) + 100); drawNest(d, nest); } }
   { const iss = checkIssues(); if (iss.length) { d.h2('ملاحظات الفحص'); for (const x of iss) d.text('• ' + x.msg, {sz: 18}); } }
   d.h2('التكلفة والربح');
   const profit = q.sub - cost.total;
@@ -3626,8 +3671,8 @@ async function buildWorkshop(){
 function edgeTxt(g){ return [g.ea ? 'ط' + g.ea : '', g.eb ? 'ع' + g.eb : ''].filter(Boolean).join(' ') || '-'; }
 function buildCSV(){
   const cl = cutList(cfg), esc2 = v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v);
-  const rows = [['Units', 'Part', 'Length_mm', 'Width_mm', 'Thickness_mm', 'Qty', 'Material', 'Edge_on_length', 'Edge_on_width']];
-  for (const g of cl.grouped) rows.push([g.codes.join(' '), g.kind, g.L, g.W, g.th, g.qty, matName(g.mat), g.ea, g.eb]);
+  const rows = [['No', 'Units', 'Part', 'Length_mm', 'Width_mm', 'Thickness_mm', 'Qty', 'Material', 'Grain', 'Edge_on_length', 'Edge_on_width', 'Can_rotate']];
+  cl.grouped.forEach((g, i) => rows.push([i + 1, g.codes.join(' '), g.kind, g.L, g.W, g.th, g.qty, matName(g.mat), g.grain === 'L' ? 'length' : g.grain === 'W' ? 'width' : 'none', g.ea, g.eb, g.grain ? 'no' : 'yes']));
   return {blob: new Blob(['﻿' + rows.map(r => r.map(esc2).join(',')).join('\r\n')], {type: 'text/csv'}), name: `قائمة التقطيع ${current?.name || 'تصميم'}.csv`};
 }
 let docFile = null;
@@ -3697,6 +3742,8 @@ document.addEventListener('click', e => {
   if (e.target.closest('[data-open]')) { setOpen(!openT); return; }
   const qy = e.target.closest('[data-qy]'); if (qy) { nudge('y', +qy.dataset.qy); return; }
   const pg = e.target.closest('[data-pg] [data-g]'); if (pg) { palGroup = pg.dataset.g; renderFree(); return; }
+  if (e.target.closest('[data-fabreset]')) { fab = WarshaFab.sanitizeFab({}); lsSet('wr_fab', fab); renderCost(); toast('رجعت إعدادات التصنيع للقيم الافتراضية'); return; }
+  if (e.target.closest('[data-logodel]')) { delete prices.shopLogo; lsSet('wr_prices', prices); renderCost(); return; }
   if (e.target.closest('[data-exadd]')) { record(); cfg = {...cfg, extras: [...(cfg.extras || []), {n: '', p: 0}]}; renderCost(); setTimeout(() => { const ins = $$('[data-ex$=":n"]'); ins[ins.length - 1]?.focus(); }); return; }
   const exd = e.target.closest('[data-exdel]'); if (exd) { record(); const L = [...(cfg.extras || [])]; L.splice(+exd.dataset.exdel, 1); cfg = {...cfg, extras: L}; renderCost(); return; }
   const pl = e.target.closest('[data-pal]'); if (pl) { if (pl.dataset.dragged) { delete pl.dataset.dragged; return; } placePiece(pl.dataset.pal); return; }
@@ -3707,8 +3754,10 @@ document.addEventListener('input', e => {
   const t = e.target;
   if (t.dataset.range) { const k = t.dataset.range, v = +t.value; const n = $('#n-' + k); if (n) n.value = v; set(k, v, {ui: false}); }
   if (t.dataset.ex) { const [i, f] = t.dataset.ex.split(':'); record('ex' + i + f); const L = (cfg.extras || []).map(x => ({...x})); if (L[+i]) { L[+i][f] = f === 'p' ? (+t.value || 0) : t.value.slice(0, 80); cfg = {...cfg, extras: L}; updateCostNumbers(); } }
+  if (t.dataset.fab) { const k = t.dataset.fab; fab = WarshaFab.sanitizeFab({...fab, [k]: k === 'edgeDeduct' ? t.checked : +t.value}); lsSet('wr_fab', fab); updateCostNumbers(); }
+  if (t.id === 'logoIn' && t.files[0]) loadLogo(t.files[0]);
   if (t.id === 'discIn') { record('disc'); cfg = {...cfg, disc: Math.round(clamp(+t.value || 0, 0, 50))}; updateCostNumbers(); }
-  if (t.dataset.price) { const k = t.dataset.price; prices[k] = ['cur', 'shop', 'shopPhone'].includes(k) ? t.value : (+t.value || 0); lsSet('wr_prices', prices); updateCostNumbers(); }
+  if (t.dataset.price) { const k = t.dataset.price; prices[k] = ['cur', 'shop', 'shopPhone', 'shopAddr', 'shopEmail', 'terms', 'brand'].includes(k) ? t.value : (+t.value || 0); lsSet('wr_prices', prices); updateCostNumbers(); }
 });
 document.addEventListener('change', e => {
   const t = e.target;
@@ -3793,7 +3842,8 @@ const store = {
   },
   async save(id, data){
     if (this.db) { await this.db.collection('designs').doc(id).set(data); return; }
-    const i = this.list.findIndex(x => x.id === id); const row = {id, ...data}; if (i >= 0) this.list[i] = row; else this.list.unshift(row); lsSet('wr_designs', this.list);
+    const prev = this.list.slice(), i = this.list.findIndex(x => x.id === id); const row = {id, ...data}; if (i >= 0) this.list[i] = row; else this.list.unshift(row);
+    if (!lsSafeSet('wr_designs', this.list)) { this.list = prev; const e = new Error('quota'); e.code = 'quota'; throw e; }
   },
   async remove(id){
     if (this.db) { await this.db.collection('designs').doc(id).delete(); return; }
@@ -3807,10 +3857,12 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&l
 function renderClients(){
   const L = [...store.list].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
   $('#clientList').innerHTML = (L.length ? L.map(d => `<div class="cl" data-id="${esc(d.id)}">${d.thumb ? `<img src="${esc(d.thumb)}" alt="">` : '<div class="ph"></div>'}
-    <div style="min-width:0"><h4>${esc(d.name)}</h4><p>${d.cfg?.room === 'bedroom' ? 'غرفة نوم' : 'مطبخ ' + (LAYOUTS[d.cfg?.layout] || '')}، ${new Date(d.updatedAt || Date.now()).toLocaleDateString('ar')}</p>
+    <div style="min-width:0"><h4>${esc(d.name)}${d.variant ? ` <span class="vtag">${esc(d.variant)}</span>` : ''}${d.demo ? ' <span class="vtag">تجريبي</span>' : ''}</h4><p>${ROOMS[d.cfg?.room] || ''}، ${LAYOUTS[d.cfg?.layout] || ''}، ${new Date(d.updatedAt || Date.now()).toLocaleDateString('ar')}</p>
     ${d.phone ? `<p class="tel">${esc(d.phone)}</p>` : ''}${d.note ? `<p>${esc(d.note)}</p>` : ''}
-    <div class="acts"><button class="btn" data-open="${esc(d.id)}">فتح التصميم</button><button class="btn ghost" data-del="${esc(d.id)}">حذف</button></div></div></div>`).join('')
-    : `<div class="empty">لا يوجد زبائن محفوظون بعد. صمّم لزبونك ثم اضغط «حفظ».</div>`)
+    <div class="acts"><button class="btn" data-open="${esc(d.id)}">فتح</button><button class="btn ghost" data-variant="${esc(d.id)}">نسخة بديلة</button><button class="btn ghost" data-exp="${esc(d.id)}">تصدير</button><button class="btn ghost" data-del="${esc(d.id)}">حذف</button></div></div></div>`).join('')
+    : `<div class="empty">لا يوجد زبائن محفوظون بعد. صمّم لزبونك ثم اضغط «حفظ»، أو افتح أحد المشاريع التجريبية.</div>`)
+    + `<div class="grp demos"><h3>مشاريع تجريبية للعرض</h3><div class="chips">${DEMOS.map((x, i) => `<button type="button" class="chip" data-demo="${i}">${x.name}</button>`).join('')}</div></div>`
+    + `<div class="grp"><h3>النسخ الاحتياطي</h3><div class="ued-row"><button type="button" class="btn sm" id="backupBtn">تنزيل نسخة احتياطية كاملة</button><label class="btn sm">استيراد ملف<input type="file" id="importIn" accept=".json,application/json" hidden></label></div><p class="hint">النسخة الاحتياطية ملف واحد فيه كل التصاميم وأسعار الورشة وإعدادات التصنيع وهويتها. احفظها خارج الجهاز بانتظام. الاستيراد يقبل نسخة احتياطية كاملة أو مشروعاً واحداً.</p></div>`
     + `<p class="hint">${store.db ? 'التصاميم محفوظة في هذه الصفحة، ويراها كل من تشاركه الرابط مع صلاحية التعديل.' : 'التصاميم محفوظة على هذا الجهاز فقط.'}</p>`;
 }
 $('#clientBtn').onclick = () => { renderClients(); $('#clientsSheet').hidden = false; };
@@ -3818,6 +3870,9 @@ $('#newClient').onclick = () => { setClient(null); sel = null; resetHistory(); c
 $('#clientList').addEventListener('click', async e => {
   const o = e.target.closest('[data-open]'); const del = e.target.closest('[data-del]');
   if (o) { const d = store.list.find(x => x.id === o.dataset.open); if (!d) return; sel = null; resetHistory(); cfg = sanitize(d.cfg, DEFAULT); setClient({id: d.id, name: d.name, phone: d.phone || '', note: d.note || ''}); renderAll(); build(); setCam('angle'); $('#clientsSheet').hidden = true; return; }
+  const vr = e.target.closest('[data-variant]'); if (vr) { const d = store.list.find(x => x.id === vr.dataset.variant); if (!d) return; await makeVariant(d); return; }
+  const ex = e.target.closest('[data-exp]'); if (ex) { const d = store.list.find(x => x.id === ex.dataset.exp); if (d) await exportFile([d], false); return; }
+  const dm = e.target.closest('[data-demo]'); if (dm) { openDemo(+dm.dataset.demo); return; }
   if (del) {
     if (del.dataset.armed) { try { await store.remove(del.dataset.del); if (current?.id === del.dataset.del) setClient(null); renderClients(); toast('حُذف التصميم'); } catch { toast('تعذّر الحذف، تحقق من صلاحياتك على الصفحة'); } }
     else { del.dataset.armed = '1'; del.textContent = 'اضغط للتأكيد'; del.style.color = 'var(--bad)'; setTimeout(() => { if (del.isConnected) { delete del.dataset.armed; del.textContent = 'حذف'; del.style.color = ''; } }, 3000); }
@@ -3835,11 +3890,89 @@ async function doSave(asNew){
   const data = {name, phone: $('#fPhone').value.trim(), note: $('#fNote').value.trim(), cfg: {...cfg}, thumb: snapshot(360, 225, false).toDataURL('image/jpeg', .72), updatedAt: Date.now()};
   $('#saveGo').disabled = true;
   try { await store.save(id, data); setClient({id, name: data.name, phone: data.phone, note: data.note}); $('#saveSheet').hidden = true; toast('حُفظ تصميم ' + name); }
-  catch (err) { $('#saveHint').textContent = err?.code === 'permission_denied' || err?.code === 'not_granted' ? 'لا تملك صلاحية الحفظ في هذه الصفحة.' : 'تعذّر الحفظ، حاول مرة أخرى.'; }
+  catch (err) { $('#saveHint').textContent = err?.code === 'quota' ? 'مساحة الحفظ على هذا الجهاز ممتلئة. صدّر نسخة احتياطية من قائمة الزبائن، ثم احذف تصاميم قديمة.' : err?.code === 'permission_denied' || err?.code === 'not_granted' ? 'لا تملك صلاحية الحفظ في هذه الصفحة.' : 'تعذّر الحفظ، حاول مرة أخرى.'; }
   $('#saveGo').disabled = false;
 }
 $('#saveForm').addEventListener('submit', e => { e.preventDefault(); doSave(false); });
 $('#saveAsNew').onclick = () => doSave(true);
+
+/* ================= projects: autosave, variants, export, backup, import ================= */
+// the design being worked on is kept on the device all the time, so closing the page loses nothing
+let draftTimer = 0;
+const flushDraft = () => { clearTimeout(draftTimer); lsSafeSet('wr_draft', {cfg, client: current, at: Date.now()}); };
+function queueDraft(){ clearTimeout(draftTimer); draftTimer = setTimeout(flushDraft, 800); }
+// leaving or hiding the page writes the draft at once
+addEventListener('pagehide', flushDraft); document.addEventListener('visibilitychange', () => { if (document.hidden) flushDraft(); });
+const newId = () => 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const PROJECT_FILE = {app: 'warsha-studio', v: 1};
+async function makeVariant(d){
+  const same = store.list.filter(x => x.name === d.name), used = same.map(x => x.variant || 'أ');
+  const letters = ['أ', 'ب', 'ج', 'د', 'هـ', 'و', 'ز', 'ح', 'ط', 'ي'], v = letters.find(l => !used.includes(l)) || String(same.length + 1);
+  if (!d.variant) { const base = {...d, variant: 'أ'}; delete base.id; try { await store.save(d.id, base); } catch {} }
+  const row = {...d, variant: v, updatedAt: Date.now()}; delete row.id;
+  try { const id = newId(); await store.save(id, row); renderClients(); toast(`أُنشئت النسخة البديلة ${v} لـ ${d.name}`); }
+  catch (err) { toast(err?.code === 'quota' ? 'مساحة الحفظ ممتلئة، نزّل نسخة احتياطية واحذف تصاميم قديمة' : 'تعذّر إنشاء النسخة'); }
+}
+async function exportFile(list, full){
+  const strip = d => { const o = {...d}; return o; };
+  const data = {...PROJECT_FILE, kind: full ? 'backup' : 'project', exportedAt: new Date().toISOString(), projects: list.map(strip), ...(full ? {prices, fab} : {})};
+  const name = full ? `ورشة العرض نسخة احتياطية ${new Date().toISOString().slice(0, 10)}.json` : `مشروع ${list[0]?.name || 'تصميم'}${list[0]?.variant ? ' ' + list[0].variant : ''}.json`;
+  await saveFile(name, new Blob([JSON.stringify(data)], {type: 'application/json'}));
+  if (full) { lsSafeSet('wr_lastBackup', Date.now()); toast('نُزّلت النسخة الاحتياطية'); }
+}
+async function importFile(file){
+  let data; try { data = JSON.parse(await file.text()); } catch { toast('الملف ليس مشروعاً من ورشة العرض'); return; }
+  if (data?.cfg && !data.projects) data = {...PROJECT_FILE, kind: 'project', projects: [data]};
+  if (data?.app !== 'warsha-studio' || !Array.isArray(data.projects)) { toast('الملف ليس مشروعاً من ورشة العرض'); return; }
+  let n = 0, fail = 0;
+  for (const d of data.projects.slice(0, 500)) {
+    if (!d || typeof d !== 'object' || !d.cfg) { fail++; continue; }
+    const row = {name: String(d.name || 'بلا اسم').slice(0, 80), phone: String(d.phone || '').slice(0, 40), note: String(d.note || '').slice(0, 1000), cfg: sanitize(d.cfg, DEFAULT), thumb: typeof d.thumb === 'string' && d.thumb.startsWith('data:image/') ? d.thumb : '', updatedAt: +d.updatedAt || Date.now(), ...(d.variant ? {variant: String(d.variant).slice(0, 8)} : {})};
+    const keep = data.kind === 'backup' && typeof d.id === 'string' && /^[\w-]{3,40}$/.test(d.id);
+    try { await store.save(keep ? d.id : newId(), row); n++; } catch { fail++; }
+  }
+  if (data.kind === 'backup') {
+    if (data.prices && typeof data.prices === 'object') { prices = {...PRICE_DEF, ...data.prices}; lsSet('wr_prices', prices); }
+    if (data.fab) { fab = WarshaFab.sanitizeFab(data.fab); lsSet('wr_fab', fab); }
+    renderCost();
+  }
+  renderClients(); toast(fail ? `استُورد ${n} مشروع، وتعذّر ${fail}` : `استُورد ${n} ${n === 1 ? 'مشروع' : 'مشاريع'}`);
+}
+document.addEventListener('click', e => { if (e.target.closest('#backupBtn')) exportFile(store.list, true); });
+document.addEventListener('change', e => { if (e.target.id === 'importIn' && e.target.files[0]) { importFile(e.target.files[0]); e.target.value = ''; } });
+
+/* demo projects for showing the tool to a workshop; client names are invented */
+const DEMOS = [
+  {name: 'مطبخ بزاوية وجزيرة', cfg: {room:'kitchen', layout:'L', wallA:420, wallB:320, height:270, island:true, front:'sage', upperFront:'white', finish:'matte', worktop:'quartz', handle:'black', splash:'zelW', floor:'oakF', wall:'white'}},
+  {name: 'مطبخ U أبيض بلا مقابض', cfg: {room:'kitchen', layout:'U', wallA:340, wallB:300, wallC:300, height:260, front:'white', finish:'gloss', upperFront:'same', worktop:'oakTop', handle:'gola', splash:'top', floor:'terrazzo'}},
+  {name: 'مطبخ أمريكي مع بار', cfg: {room:'kitchen', layout:'I', wallA:400, wallB:340, height:265, front:'navy', worktop:'marble', handle:'brass', splash:'zelB', floor:'oakF'},
+    after(){ editItems(L => { L.push({t:'bar', w:200, h:90, d:90, x:200, z:215, r:0, o:{base:'cab', stools:3, endL:'rnd', endR:'rnd'}}); }, false); }},
+  {name: 'غرفة ملابس خشب سنديان', cfg: {room:'dressing', layout:'U', wallA:300, wallB:260, wallC:260, height:260, front:'oak', handle:'black', floor:'oakF'}},
+  {name: 'غرفة نوم جوز', cfg: {room:'bedroom', layout:'L', wallA:400, wallB:360, height:265, front:'walnut', handle:'bar', fabric:'linen', floor:'oakF', wall:'mist'}},
+  {name: 'جدار تلفزيون بطاولة مائلة', cfg: {room:'living', layout:'L', wallA:440, wallB:400, height:270, front:'anthracite', accent:'walnut', floor:'oakF'},
+    after(){ const A = cfg.units?.A?.b || []; const k = A.findIndex(m => m.t === 'tvbase'); if (k >= 0) { editUnits(u => { u.A.b[k] = {t:'bgap', w: A[k].w}; }); } placePiece('tvAng', {x: cfg.wallA / 2, z: 25}); }},
+  {name: 'خزائن مخصصة بأطراف مدوّرة ومائلة', cfg: {room:'free', layout:'L', wallA:420, wallB:360, height:265, front:'clay', accent:'oak', floor:'oakF'},
+    after(){ for (const k of ['bookRnd', 'cabTall', 'cabDraw', 'tvCorner']) placePiece(k); }},
+];
+function openDemo(i){
+  const D0 = DEMOS[i]; if (!D0) return;
+  sel = null; resetHistory(); setClient(null); cfg = sanitize({...DEFAULT, ...D0.cfg, auto: true, itemsAuto: true, units: null, items: []}, DEFAULT);
+  renderAll(); build(); if (D0.after) { D0.after(); resetHistory(); } select(null);
+  $('#clientName').textContent = D0.name; setCam('angle'); $('#clientsSheet').hidden = true; toast('مشروع تجريبي: ' + D0.name);
+}
+
+/* ================= client presentation: the room only, no editing tools ================= */
+function setPresent(on){
+  document.body.classList.toggle('present', on);
+  if (on) { select(null); showDimsBefore = showDims; showDims = false; const b = $('#presBrand'); b.innerHTML = `${prices.shopLogo ? `<img src="${prices.shopLogo}" alt="">` : ''}<div><b>${esc(prices.shop || 'ورشة العرض')}</b><span>${esc(current?.name ? 'تصميم ' + current.name : projectLine())}</span></div>`; try { document.documentElement.requestFullscreen?.().catch(() => {}); } catch {} }
+  else { showDims = showDimsBefore; stopTour(); try { if (document.fullscreenElement) document.exitFullscreen(); } catch {} }
+  $('#dimBtn').setAttribute('aria-pressed', showDims); setTimeout(() => { resize(); dirty = true; }, 60);
+}
+let showDimsBefore = true;
+$('#presentBtn').onclick = () => setPresent(true);
+$('#presExit').onclick = () => setPresent(false);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('present')) setPresent(false); });
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.body.classList.contains('present')) setTimeout(() => { resize(); dirty = true; }, 60); });
 
 /* ================= snapshot / export ================= */
 function snapshot(w, h, withFooter, withDims = withFooter){
@@ -3959,6 +4092,8 @@ Reply with only JSON of this shape: {"cfg": {<full configuration with every fiel
 
 /* ================= boot ================= */
 if (!window.claude) $('#ask').hidden = true;
+// pick up the last design exactly where it was left
+{ const dr = lsGet('wr_draft', null); if (dr?.cfg) { try { cfg = sanitize(dr.cfg, DEFAULT); if (dr.client?.name) setClient(dr.client); } catch { cfg = {...DEFAULT}; } } }
 renderAll();
 resize();
 build();
@@ -3969,7 +4104,7 @@ store.init();
 // warm the remaining swatch textures in idle time so the material tab opens instantly
 const idle = window.requestIdleCallback || (f => setTimeout(f, 200));
 ['walnut','quartz','granite','concrete','oakTop','tile','terrazzo','cement'].forEach((id, i) => idle(() => texCanvas(id)));
-window.__wr = {setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
+window.__wr = {openDemo, DEMOS, exportFile, importFile, setPresent, get fab(){ return fab; }, set fab(v){ fab = WarshaFab.sanitizeFab(v); }, store, setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
 })();
 </script>
 
