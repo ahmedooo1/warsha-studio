@@ -95,7 +95,7 @@ button{cursor:pointer}
 .spin{width:15px;height:15px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 
-.tabs{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:2;margin-inline:-18px;padding-inline:18px}
+.tabs{display:grid;grid-template-columns:repeat(5,auto);justify-content:space-between;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:2;margin-inline:-18px;padding-inline:18px}
 .tabs button{border:0;background:none;padding:11px 4px;font-weight:500;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1px}
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--tape)}
 .pane{display:flex;flex-direction:column;gap:20px}
@@ -242,6 +242,42 @@ svg.uv .over .lb{fill:var(--bad)}
 .stepper input{width:64px;border:0;background:transparent;text-align:center;font-family:var(--f-num);font-size:14px;padding:6px 2px}
 .stepper input::-webkit-inner-spin-button{display:none}
 
+.qbar{position:absolute;top:54px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:2px;background:var(--ink);color:var(--bg);border-radius:12px;padding:4px;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:3;max-width:calc(100% - 24px);overflow-x:auto}
+.qbar button{border:0;background:transparent;color:inherit;width:38px;height:36px;border-radius:9px;display:grid;place-items:center;flex:none;font-family:var(--f-num);font-size:12.5px}
+.qbar button:hover{background:rgba(255,255,255,.12)}
+.qbar button[aria-pressed="true"]{background:var(--tape);color:var(--tape-ink)}
+.qbar button.del{color:#FF9C8C}
+.qbar svg{width:19px;height:19px}
+.qbar i{width:1px;height:22px;background:rgba(255,255,255,.2);margin-inline:3px;flex:none}
+.sect{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:10px}
+.sect h4{margin:0;font-size:14px;font-weight:600;display:flex;gap:8px;align-items:baseline}
+.sect h4 small{font-weight:400;color:var(--muted);font-size:12.5px}
+.ued-row .lab{min-width:58px;color:var(--muted)}
+.ued-row.pos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.ued-row.pos label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}
+.ued-row.pos .num input{width:100%;min-width:0}
+.seg2{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg2 button{border:0;background:var(--panel);padding:7px 10px;font-size:13px;display:inline-flex;align-items:center;gap:4px;font-family:var(--f-num)}
+.seg2 button + button{border-inline-start:1px solid var(--line)}
+.seg2 button:hover{background:var(--sunk)}
+.sw.sm{grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:8px}
+.sw.sm button{font-size:11.5px}
+.sw i.auto{background:conic-gradient(#E8E9E6 0 25%,#59663F 0 50%,#B88A57 0 75%,#22314A 0)}
+.sw .pick{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);text-align:center;position:relative;cursor:pointer}
+.sw .pick input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.sw .pick i{display:block;width:100%;aspect-ratio:1;border-radius:9px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);background-image:linear-gradient(135deg,transparent 60%,rgba(255,255,255,.55) 60% 68%,transparent 68%)}
+.sw .pick[aria-pressed="true"]{color:var(--ink);font-weight:600}
+.sw .pick[aria-pressed="true"] i{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--ink)}
+.choice.pg{gap:4px}
+.choice.pg button{padding:6px 10px;font-size:13px}
+.ugrid.pal button{touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:grab}
+.cellmap{max-height:260px}
+svg.uv [data-cell]{cursor:pointer}
+.acts{border-top:1px solid var(--line);padding-top:10px}
+.ghost{position:fixed;left:0;top:0;z-index:40;pointer-events:none;background:var(--panel);border:2px solid var(--tape);border-radius:10px;padding:6px 10px;display:flex;align-items:center;gap:8px;font-size:13px;box-shadow:0 12px 30px rgba(0,0,0,.25);transform:translate(-50%,-120%)}
+.ghost svg{height:34px;width:auto}
+.stage.dropping::after{content:"";position:absolute;inset:8px;border:2px dashed var(--tape);border-radius:12px;pointer-events:none}
+
 .sheet{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:rgba(10,12,14,.45);padding:16px}
 .sheet .box{background:var(--panel);border-radius:14px;width:min(560px,100%);max-height:calc(100% - 32px);overflow:auto;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,.35)}
 .sheet header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:1}
@@ -308,6 +344,23 @@ svg.uv .over .lb{fill:var(--bad)}
         <button id="lightBtn" aria-pressed="false" title="إضاءة المساء"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><span class="lbl">مساء</span></button>
         <button id="dimBtn" aria-pressed="true" title="المقاسات"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 8v8M21 8v8"/></svg><span class="lbl">المقاسات</span></button>
       </div>
+      <div class="seg" role="group" aria-label="التحريك والعرض">
+        <button id="snapBtn" aria-pressed="true" title="التصاق القطع بالجدران وببعضها"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v9a6 6 0 0 0 12 0V3"/><path d="M6 7h4M14 7h4"/></svg><span class="lbl">التصاق</span></button>
+        <button id="openBtn" aria-pressed="false" title="فتح أبواب وجوارير الخزائن المخصصة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h9v16H4z"/><path d="M13 4l7 3v14l-7-1"/></svg><span class="lbl">فتح</span></button>
+        <button id="tourBtn" aria-pressed="false" title="جولة حول التصميم"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 4 0 0 0 18 0"/><path d="M17 9l4 3-4 3"/><circle cx="12" cy="8" r="2.5"/></svg><span class="lbl">جولة</span></button>
+      </div>
+    </div>
+    <div class="qbar" id="qbar" hidden role="toolbar" aria-label="القطعة المحددة">
+      <button type="button" data-it="r-15" title="تدوير 15° (Q)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 1 0 2.3-5.6"/><path d="M4 4v4h4"/></svg></button>
+      <button type="button" data-it="r+15" title="تدوير 15° (E)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4h-4"/></svg></button>
+      <button type="button" data-it="r+90" title="تدوير 90°"><b>90°</b></button>
+      <i></i>
+      <button type="button" data-qy="5" title="رفع 5 سم (PageUp)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+      <button type="button" data-qy="-5" title="إنزال 5 سم (PageDown)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button>
+      <i></i>
+      <button type="button" data-open title="فتح الأبواب والجوارير"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h9v16H4z"/><path d="M13 4l7 3v14l-7-1"/></svg></button>
+      <button type="button" data-it="dup" title="نسخ (Ctrl+D)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg></button>
+      <button type="button" data-it="del" class="del" title="حذف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
     </div>
     <div class="veil" id="veil"><p>نجهّز الورشة…</p></div>
   </section>
@@ -327,13 +380,15 @@ svg.uv .over .lb{fill:var(--bad)}
 
       <div class="tabs" role="tablist">
         <button role="tab" aria-selected="true" data-tab="space">المساحة</button>
-        <button role="tab" aria-selected="false" data-tab="units">الوحدات</button>
+        <button role="tab" aria-selected="false" data-tab="units">الجدران</button>
+        <button role="tab" aria-selected="false" data-tab="free">تصميم حر</button>
         <button role="tab" aria-selected="false" data-tab="mat">الخامات</button>
         <button role="tab" aria-selected="false" data-tab="cost">السعر</button>
       </div>
 
       <div class="pane" id="pane-space"></div>
       <div class="pane" id="pane-units" hidden></div>
+      <div class="pane" id="pane-free" hidden></div>
       <div class="pane" id="pane-mat" hidden></div>
       <div class="pane" id="pane-cost" hidden></div>
     </div>
@@ -464,6 +519,9 @@ const ROOM_PRESET = {
   free:     {wallA:400, wallB:320, wallC:320, height:260, layout:'L', floor:'oakF', wall:'white'},
 };
 const byId = (arr, id) => arr.find(x => x.id === id) || arr[0];
+// a front colour is a catalogue id or a free colour '#rrggbb' picked by the carpenter
+const isHex = v => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v);
+const frontDef = id => isHex(id) ? {id, name: 'لون خاص ' + id.toUpperCase(), color: id} : byId(FRONTS, id);
 
 const DEFAULT = {
   room:'kitchen', layout:'L', wallA:360, wallB:260, wallC:240, height:260,
@@ -560,6 +618,17 @@ const ITEM = {
   toilet:  {n:'مرحاض', w:40, min:38, max:45, d:62, deco:true},
   shower:  {n:'كابينة دوش', w:90, min:80, max:160, d:90, deco:true},
   bathtub: {n:'بانيو', w:170, min:150, max:190, d:75, deco:true},
+  // pieces drawn from scratch by the carpenter
+  cab:     {n:'خزانة مخصصة', w:120, min:20, max:480, d:45, cat:'custom', custom:true, opts:[
+    opt.seg('base', 'تحت الخزانة', {plinth:'قاعدة', legs:'أرجل', hang:'معلّقة', none:'بلا'}, 'plinth'),
+    opt.seg('endL', 'الطرف الأيسر', {sq:'مستقيم', ang:'مائل', rnd:'مدوّر'}, 'sq'), opt.seg('endR', 'الطرف الأيمن', {sq:'مستقيم', ang:'مائل', rnd:'مدوّر'}, 'sq'),
+    opt.num('ew', 'عرض الطرف', 15, 90, 35, 5), opt.seg('top', 'السطح', {none:'من الخشب نفسه', stone:'حجر', wood:'خشب', glass:'زجاج'}, 'none'), opt.bool('led', 'إضاءة LED', false)]},
+  bar:     {n:'بار ومطبخ أمريكي', w:180, min:80, max:480, d:90, cat:'custom', custom:true, opts:[
+    opt.seg('base', 'تحت السطح', {cab:'خزائن', open:'رفوف مفتوحة', legs:'أرجل', water:'جانبا شلال'}, 'cab'),
+    opt.seg('endL', 'الطرف الأيسر', {sq:'مستقيم', ang:'مائل', rnd:'مدوّر'}, 'sq'), opt.seg('endR', 'الطرف الأيمن', {sq:'مستقيم', ang:'مائل', rnd:'مدوّر'}, 'rnd'),
+    opt.num('ew', 'عرض الطرف', 15, 90, 40, 5), opt.num('over', 'بروز السطح للجلوس', 0, 60, 30, 5), opt.num('stools', 'كراسي البار', 0, 8, 3, 1), opt.seg('top', 'السطح', {stone:'حجر', wood:'خشب'}, 'stone')]},
+  panel:   {n:'لوح حر', w:60, min:3, max:300, d:2, cat:'custom', custom:true, opts:[
+    opt.seg('or', 'الاتجاه', {v:'عمودي', h:'أفقي (رف أو سطح)'}, 'v'), opt.seg('mat', 'الخامة', {front:'لون الواجهات', accent:'خشب الديكور', stone:'رخام', mirror:'مرآة', glass:'زجاج', dark:'داكن'}, 'accent')]},
 };
 const ROOM_ITEMS = {
   kitchen:['dtable','rug','plant','lamp'], laundry:['plant'],
@@ -568,9 +637,26 @@ const ROOM_ITEMS = {
   dining:['dtable','commode','rug','plant','lamp'], office:['chair','armchair','commode','rug','plant','lamp'],
   bathroom:['toilet','shower','bathtub','plant'], entry:['commode','rug','plant'], free:Object.keys(ITEM),
 };
-const iopts = it => { const o = {}; for (const d of ITEM[it.t]?.opts || []) o[d.k] = it.o && it.o[d.k] !== undefined ? it.o[d.k] : d.def; return o; };
-const itemDepth = it => it.t === 'rug' ? +iopts(it).d : ITEM[it.t].d;
-const footprint = it => { const w = it.w, d = itemDepth(it) + (it.t === 'bed' ? 15 : 0); return it.r % 180 ? [d, w] : [w, d]; };
+// a free piece is any freestanding item, any wall unit taken off its wall, or a custom piece
+const FREE_UNITS = Object.keys(UNIT).filter(t => !UNIT[t].gap && t !== 'window' && t !== 'rdoor');
+const DEF = t => ITEM[t] || UNIT[t];
+const isUnitItem = it => !!UNIT[it.t] && !ITEM[it.t];
+// height and depth of custom pieces, cm: [min, max, default]
+const CUST = {cab: {h: [10, 300, 85], d: [10, 100, 45]}, bar: {h: [70, 120, 90], d: [30, 140, 90]}, panel: {h: [2, 300, 80], d: [1, 20, 2]}};
+const CELLS = {door:'باب', doorL:'باب مفصلة يسار', doorR:'باب مفصلة يمين', double:'بابان', drawer:'جارور', flap:'قلاب', glass:'زجاج', open:'مفتوح', panel:'لوح ثابت'};
+const CELL_S = {door:'باب', doorL:'مفصلة يسار', doorR:'مفصلة يمين', double:'بابان', drawer:'جارور', flap:'قلاب', glass:'زجاج', open:'مفتوح', panel:'ثابت'};
+const iopts = it => { const o = {}; for (const d of DEF(it.t)?.opts || []) o[d.k] = it.o && it.o[d.k] !== undefined ? it.o[d.k] : d.def; return o; };
+const itemH = it => CUST[it.t] ? (it.h ?? CUST[it.t].h[2]) : null;
+const itemDepth = it => it.t === 'rug' ? +iopts(it).d : CUST[it.t] ? (it.t === 'panel' && iopts(it).or === 'h' ? itemH(it) : (it.d ?? CUST[it.t].d[2])) : (DEF(it.t)?.d || 40);
+// grid of a custom cabinet: columns, rows and what fills every cell (row 0 is the top row)
+function cabGrid(it){
+  const o = it.o || {}, h = itemH(it), cols = clamp(Math.round(+o.cols || Math.max(1, Math.round(it.w / 60))), 1, 10), rows = clamp(Math.round(+o.rows || (h > 150 ? 3 : 1)), 1, 10);
+  const def = h > 150 ? 'door' : h <= 50 ? 'flap' : 'door', cells = [];
+  for (let i = 0; i < cols * rows; i++) { const c = Array.isArray(o.cells) ? o.cells[i] : null; cells.push({k: c && CELLS[c.k] ? c.k : def, ...(c && (isHex(c.c) || (c.c && FRONTS.some(f => f.id === c.c))) ? {c: c.c} : {})}); }
+  return {cols, rows, cells};
+}
+// axis-aligned box of a piece on the floor plan, cm, any rotation
+const footprint = it => { const w = it.w, d = itemDepth(it) + (it.t === 'bed' ? 15 : 0), a = (it.r || 0) * Math.PI / 180, c = Math.abs(Math.cos(a)), s = Math.abs(Math.sin(a)); return [w * c + d * s, w * s + d * c]; };
 
 /* ================= geometry of the walls ================= */
 function maxDepth(list){ return Math.max(0, ...(list || []).filter(m => UNIT[m.t] && !UNIT[m.t].gap && !UNIT[m.t].deco).map(m => UNIT[m.t].d)); }
@@ -780,10 +866,19 @@ function sanitizeUnits(u){
 }
 function sanitizeItems(arr, c){
   if (!Array.isArray(arr)) return [];
-  return arr.slice(0, 40).map(x => {
-    if (!x || typeof x !== 'object' || !ITEM[x.t]) return null;
-    const I = ITEM[x.t], it = {t: x.t, w: Math.round(clamp(Number(x.w) || I.w, I.min ?? I.w, I.max ?? I.w)), x: Math.round(clamp(Number(x.x) || 0, -100, c.wallA + 100)), z: Math.round(clamp(Number(x.z) || 0, -100, Math.max(c.wallB, c.wallC) + 100)), r: [0, 90, 180, 270].includes(+x.r) ? +x.r : 0};
+  const maxZ = Math.max(c.wallB, c.wallC) + 150;
+  return arr.slice(0, 80).map(x => {
+    if (!x || typeof x !== 'object' || !(ITEM[x.t] || FREE_UNITS.includes(x.t))) return null;
+    const I = DEF(x.t), num = (v, a, b, d) => { const n = Number(v); return Math.round(clamp(isFinite(n) ? n : d, a, b)); };
+    const it = {t: x.t, w: num(x.w, I.min ?? I.w, I.max ?? I.w, I.w), x: num(x.x, -150, c.wallA + 150, 0), z: num(x.z, -150, maxZ, 0), r: ((num(x.r, -720, 720, 0) % 360) + 360) % 360};
+    if (x.y) it.y = num(x.y, -100, 400, 0);
+    if (x.sy) it.sy = num(x.sy, 0, 400, 0);
+    if (CUST[x.t]) { const L = CUST[x.t]; it.h = num(x.h, L.h[0], L.h[1], L.h[2]); it.d = num(x.d, L.d[0], L.d[1], L.d[2]); }
     const o = {}; for (const d of I.opts || []) { const v = x.o?.[d.k]; if (v === undefined) continue; if (d.type === 'bool') o[d.k] = !!v; else if (d.type === 'num') { const n = Number(v); if (isFinite(n)) o[d.k] = Math.round(clamp(n, d.min, d.max)); } else if (String(v) in d.vals) o[d.k] = String(v); }
+    const xo = x.o || {};
+    if (isHex(xo.col) || FRONTS.some(f => f.id === xo.col)) o.col = xo.col;
+    if (['matte', 'gloss'].includes(xo.fin)) o.fin = xo.fin;
+    if (x.t === 'cab') { const g = cabGrid({...it, o: xo}); o.cols = g.cols; o.rows = g.rows; o.cells = g.cells; }
     if (Object.keys(o).length) it.o = o; return it;
   }).filter(Boolean);
 }
@@ -939,12 +1034,12 @@ let envI = .75;
 function std(key, opts, Ctor = THREE.MeshStandardMaterial){ if (MC[key]) return MC[key]; const m = new Ctor(opts); m.envMapIntensity = envI; return MC[key] = m; }
 function col(h){ return new THREE.Color(h); }
 function frontMat(id, finish){
-  const f = byId(FRONTS, id), gloss = finish === 'gloss';
+  const f = frontDef(id), gloss = finish === 'gloss';
   if (f.wood) return std('f-' + id + finish, {map: texture(f.wood), roughness: gloss ? .3 : .62}, gloss ? THREE.MeshPhysicalMaterial : THREE.MeshStandardMaterial);
   if (gloss) { const m = std('f-' + id + finish, {color: col(f.color), roughness: .2, clearcoat: 1, clearcoatRoughness: .06}, THREE.MeshPhysicalMaterial); return m; }
   return std('f-' + id + finish, {color: col(f.color), roughness: .52});
 }
-function carcassMat(id){ const f = byId(FRONTS, id); return std('c-' + id, {color: f.wood ? col(f.wood === 'oak' ? '#8C6A45' : '#3C2A1E') : col(f.color).multiplyScalar(.72), roughness: .7}); }
+function carcassMat(id){ const f = frontDef(id); return std('c-' + id, {color: f.wood ? col(f.wood === 'oak' ? '#8C6A45' : '#3C2A1E') : col(f.color).multiplyScalar(.72), roughness: .7}); }
 function topMat(id){
   if (id === 'marble') return std('t-marble', {map: texture('marble'), roughness: .16}, THREE.MeshPhysicalMaterial);
   if (id === 'quartz') return std('t-quartz', {map: texture('quartz'), roughness: .25});
@@ -1040,7 +1135,7 @@ const G = .003, FT = .019; // reveal gap, front thickness
 let runGroups = {};
 function modGroup(g, run, lvl, i){ const m = new THREE.Group(); m.userData.mod = {run, lvl, i}; g.add(m); return m; }
 function frontPanel(parent, c, x0, x1, y0, y1, z, opts = {}){
-  const mat = opts.mat || frontMat(opts.fid || c.front, c.finish), wood = byId(FRONTS, opts.fid || c.front).wood;
+  const mat = opts.mat || frontMat(opts.fid || c.front, c.finish), wood = frontDef(opts.fid || c.front).wood;
   return box(parent, mat, x0 + G, x1 - G, y0 + G, y1 - G, z, z + FT, {r: .0025, tile: wood ? 1.1 : 1});
 }
 // open carcass built from boards; returns the top surface height of the bottom board and of each shelf
@@ -1159,9 +1254,9 @@ function tallModule(parent, c, x0, x1, Ht, kind = 'fridge', idx = 0){
 function worktop(parent, c, s0, s1, holes = [], depth = .62){
   const mat = topMat(c.worktop), y0 = .86, y1 = .9, o = {r: .003, tile: 1.6};
   const hs = holes.filter(h => h[0] >= s0 - 1e-3 && h[1] <= s1 + 1e-3).sort((a, b) => a[0] - b[0]);
-  let p = s0;
-  for (const [h0, h1, d0, d1] of hs) { box(parent, mat, p, h0, y0, y1, 0, depth, o); box(parent, mat, h0, h1, y0, y1, 0, d0, o); box(parent, mat, h0, h1, y0, y1, d1, depth, o); p = h1; }
-  box(parent, mat, p, s1, y0, y1, 0, depth, o);
+  let p = s0; const B = (...a) => { const m = box(parent, mat, ...a, o); if (m) m.userData.top = true; };
+  for (const [h0, h1, d0, d1] of hs) { B(p, h0, y0, y1, 0, depth); B(h0, h1, y0, y1, 0, d0); B(h0, h1, y0, y1, d1, depth); p = h1; }
+  B(p, s1, y0, y1, 0, depth);
 }
 function sink(parent, c, cx, w = .8){
   const hw = Math.min(.36, w / 2 - .06), h0 = cx - hw, h1 = cx + hw, d0 = .12, d1 = .52, depth = .2, y = .86, st = std('sinksteel', {color: col('#BFC3C6'), metalness: 1, roughness: .38, side: THREE.DoubleSide});
@@ -1600,17 +1695,236 @@ function showerItem(g, c, it){ const w = it.w / 100, d = .9; box(g, XM.ceramic, 
   const p1 = new THREE.Mesh(new THREE.PlaneGeometry(w, H), gl); p1.position.set(0, .05 + H / 2, d / 2); p1.userData.skip = true; g.add(p1); const p2 = new THREE.Mesh(new THREE.PlaneGeometry(d, H), gl); p2.rotation.y = Math.PI / 2; p2.position.set(-w / 2, .05 + H / 2, 0); p2.userData.skip = true; g.add(p2);
   box(g, M.steel, -w / 2, w / 2, .05 + H - .02, .05 + H, d / 2 - .01, d / 2 + .01, {cast: false}); cyl(g, M.steel, .012, 1.0, w / 2 - .12, 1.55, -d / 2 + .03); cyl(g, M.steel, .1, .015, w / 2 - .12, 2.05, -d / 2 + .15, {seg: 32}); }
 function bathtubItem(g, c, it){ const w = it.w / 100, d = .75; box(g, XM.ceramic, -w / 2, w / 2, 0, .56, -d / 2, d / 2, {r: .04}); box(g, std('tubin', {color: col('#E3E6E6'), roughness: .2}), -w / 2 + .07, w / 2 - .07, .561, .563, -d / 2 + .07, d / 2 - .07, {cast: false}); cyl(g, M.steel, .015, .2, -w / 2 + .12, .66, -d / 2 + .06); }
-function buildItem(it, i){
-  const g = new THREE.Group(); g.position.set(it.x / 100, 0, it.z / 100); g.rotation.y = -it.r * Math.PI / 180; g.userData.item = i; world.add(g);
-  const c = cfg;
+/* ================= free pieces: anything, anywhere ================= */
+let freeCounters = [], freeSt = {top: 0, wt: []}, anims = [], itemBoxes = [];
+const CAB_T = .018;
+// the design's materials with this piece's own colour and finish
+function itemCfg(it){ const o = it.o || {}; return (o.col || o.fin) ? {...cfg, front: o.col || cfg.front, upperFront: o.col ? 'same' : cfg.upperFront, finish: o.fin || cfg.finish} : cfg; }
+// plan polygon (x along the piece, z from the back) extruded between two heights
+function slab(parent, mat, pts, y0, y1, tile = 1.2){
+  if (y1 - y0 < 1e-4 || pts.length < 3) return null;
+  const sh = new THREE.Shape(); pts.forEach(([x, z], i) => i ? sh.lineTo(x, z) : sh.moveTo(x, z));
+  const g = new THREE.ExtrudeGeometry(sh, {depth: y1 - y0, bevelEnabled: false, curveSegments: 1}); boxUV(g, tile, R(), R());
+  const m = new THREE.Mesh(g, mat); m.rotation.x = Math.PI / 2; m.position.y = y1; m.castShadow = m.receiveShadow = true; parent.add(m); return m;
+}
+// front edge of a shaped end, from the body's front corner (e, D) round to the back corner (0, 0)
+function endEdge(kind, e, D){
+  if (kind === 'ang') { const k = Math.max(.02, D - e); return [[e, D], [0, k], [0, 0]]; }
+  if (kind === 'rnd') { const out = []; for (let i = 0; i <= 18; i++) { const t = i / 18 * Math.PI / 2; out.push([e - e * Math.sin(t), D * Math.cos(t)]); } return out; }
+  return e > 1e-4 ? [[e, D], [0, D], [0, 0]] : [[0, D], [0, 0]];
+}
+// outline of a whole piece with its two ends, counter-clockwise in plan
+function outline(W, D, kL, eL, kR, eR){
+  const L = endEdge(kL, eL, D), Rr = endEdge(kR, eR, D).map(([x, z]) => [W - x, z]).reverse();
+  return [[0, 0], [W, 0], ...Rr.slice(1), ...L.slice(0, -1)];
+}
+// open shaped end with shelves, x from 0 (outside) to e (against the body); mirror puts it on the right
+function endPiece(p, c, kind, e, D, y0, y1, levels, mirror, W){
+  const pts = [[0, 0], [e, 0], ...endEdge(kind, e, D).slice(0, -1)].map(([x, z]) => [mirror ? W - x : x, z]);
+  const body = frontMat(c.front, c.finish), t = CAB_T;
+  slab(p, body, pts, y0, y0 + t); slab(p, body, pts, y1 - t, y1);
+  for (const y of levels) slab(p, body, pts.map(([x, z]) => [x, Math.min(z, D - .005)]), y - t / 2, y + t / 2);
+  const xa = mirror ? W - e : 0, xb = mirror ? W : e;
+  box(p, body, xa, xb, y0, y1, 0, t);
+  if (kind === 'ang' && D - e > .05) box(p, body, mirror ? W - t : 0, mirror ? W : t, y0, y1, 0, D - e);
+  const yy = [y0 + t, ...levels.map(y => y + t / 2)];
+  yy.forEach((y, i) => { if (y < y1 - .22) { const r = rng(Math.round(e * 997) + i * 13 + (mirror ? 7 : 0)); if (r() < .7) cyl(p, r() < .5 ? M.pot : XM.ceramic, .04, .14 + r() * .1, (xa + xb) / 2 + (mirror ? .02 : -.02), y + .09, Math.min(D * .4, .14), {seg: 18}); } });
+  return pts;
+}
+// one cell front of a custom cabinet; doors, flaps and drawers are hinged so they can open
+function cellFront(p, c, k, x0, x1, y0, y1, z, fid, ci, depth){
+  const w = x1 - x0, cf = {...c, front: fid}, hz = FT, gola = c.handle === 'gola';
+  const hy = y1 < 1.05 ? y1 - .1 : y0 > 1.25 ? y0 + .1 : clamp(1.05, y0 + .1, y1 - .1), hl = y1 - y0 > 1.2 ? .3 : .16;
+  const door = (a, b, hingeLeft, glassy) => {
+    const hx = hingeLeft ? a : b, pv = new THREE.Group(); pv.position.set(hx, 0, z); p.add(pv);
+    if (glassy) {
+      const fm = frontMat(fid, c.finish), fw = .045, A = a - hx + G, Bx = b - hx - G, ya = y0 + G, yb = y1 - G;
+      box(pv, fm, A, Bx, ya, ya + fw, 0, FT, {r: .002}); box(pv, fm, A, Bx, yb - fw, yb, 0, FT, {r: .002}); box(pv, fm, A, A + fw, ya + fw, yb - fw, 0, FT); box(pv, fm, Bx - fw, Bx, ya + fw, yb - fw, 0, FT);
+      const pane = new THREE.Mesh(new THREE.PlaneGeometry(Math.max(.01, Bx - A - 2 * fw), Math.max(.01, yb - ya - 2 * fw)), M.doorglass); pane.position.set((A + Bx) / 2, (ya + yb) / 2, FT / 2); pane.userData.skip = true; pv.add(pane);
+    } else frontPanel(pv, cf, a - hx, b - hx, y0, y1, 0);
+    handle(pv, c.handle, (hingeLeft ? b - .045 : a + .045) - hx, hy, hz, true, hl);
+    anims.push({o: pv, k: 'door', a: hingeLeft ? -1 : 1});
+  };
+  switch (k) {
+    case 'door': case 'doorL': case 'doorR': door(x0, x1, k === 'doorR' ? false : k === 'doorL' ? true : ci % 2 === 0); break;
+    case 'glass': door(x0, x1, ci % 2 === 0, true); break;
+    case 'double': { const m = (x0 + x1) / 2; door(x0, m, true); door(m, x1, false); break; }
+    case 'flap': { const pv = new THREE.Group(); pv.position.set(0, y1, z); p.add(pv); frontPanel(pv, cf, x0, x1, y0 - y1, 0, 0); if (!gola) handle(pv, c.handle, (x0 + x1) / 2, y0 - y1 + .05, hz, false, Math.min(.3, w * .5)); anims.push({o: pv, k: 'flap'}); break; }
+    case 'drawer': {
+      const pv = new THREE.Group(); p.add(pv); frontPanel(pv, cf, x0, x1, y0, y1, z);
+      if (!gola) handle(pv, c.handle, (x0 + x1) / 2, y1 - y0 > .3 ? y1 - .07 : (y0 + y1) / 2, z + FT, false, Math.min(.3, w * .5));
+      const dd = Math.max(.1, Math.min(.5, depth - .04)), bm = std('drawerbox', {color: col('#E4E1DA'), roughness: .7}), bh = Math.max(.04, Math.min(.2, (y1 - y0) * .7));
+      box(pv, bm, x0 + .03, x1 - .03, y0 + .02, y0 + .032, z - dd, z, {cast: false}); for (const xx of [x0 + .03, x1 - .042]) box(pv, bm, xx, xx + .012, y0 + .02, y0 + .02 + bh, z - dd, z, {cast: false}); box(pv, bm, x0 + .03, x1 - .03, y0 + .02, y0 + .02 + bh, z - dd, z - dd + .012, {cast: false});
+      anims.push({o: pv, k: 'drawer', dz: dd * .8}); break; }
+    case 'panel': frontPanel(p, cf, x0, x1, y0, y1, z); break;
+  }
+}
+// carcass made of real boards, so open cells and opened doors show the inside
+function cabBody(p, c, s){
+  const t = CAB_T, fid = c.front, body = frontMat(fid, c.finish), car = carcassMat(fid);
+  const inner = std('inner-' + fid, {color: col(frontColorCss(fid)).multiplyScalar(.6), roughness: .8});
+  const eL = s.endL && s.endL !== 'sq' ? Math.min(s.ew, s.W * .45) : 0, eR = s.endR && s.endR !== 'sq' ? Math.min(s.ew, s.W * .45) : 0;
+  const xa = eL, xb = s.W - eR, p0 = s.base === 'plinth' ? .1 : s.base === 'legs' ? .12 : 0;
+  const topT = s.top === 'stone' || s.top === 'wood' ? .03 : s.top === 'glass' ? .012 : 0, y1 = s.H - topT, fz = Math.max(.08, s.D - FT);
+  if (y1 - p0 < .06 || xb - xa < .08) return;
+  if (s.base === 'plinth') {
+    box(p, car, xa + .01, xb - .01, 0, p0, 0, fz - .05, {cast: false});
+    if (eL) slab(p, car, [[0, 0], [eL, 0], ...endEdge(s.endL, eL, fz - .05).slice(0, -1)].map(([x, z]) => [Math.min(eL, x + .01), z]), 0, p0);
+    if (eR) slab(p, car, [[0, 0], [eR, 0], ...endEdge(s.endR, eR, fz - .05).slice(0, -1)].map(([x, z]) => [s.W - Math.min(eR, x + .01), z]), 0, p0);
+  } else if (s.base === 'legs') {
+    const lm = XM.metalBlack, xs = [xa + .05, xb - .05]; for (let x = xa + .8; x < xb - .4; x += .8) xs.push(x);
+    if (eL) xs.push(.05); if (eR) xs.push(s.W - .05);
+    for (const x of xs) for (const zz of [.05, fz - .05]) cyl(p, lm, .014, p0, x, p0 / 2, zz, {seg: 12, r2: .01});
+  }
+  // boards
+  box(p, body, xa, xa + t, p0, y1, 0, fz, {tile: 1.1}); box(p, body, xb - t, xb, p0, y1, 0, fz, {tile: 1.1});
+  box(p, body, xa + t, xb - t, p0, p0 + t, 0, fz, {tile: 1.1}); box(p, body, xa + t, xb - t, y1 - t, y1, 0, fz, {tile: 1.1});
+  box(p, inner, xa + t, xb - t, p0 + t, y1 - t, 0, .006, {cast: false});
+  const ia = xa + t, ib = xb - t, ja = p0 + t, jb = y1 - t, cols = s.cols, rows = s.rows;
+  const colX = j => ia + (ib - ia) * j / cols, rowY = r => jb - (jb - ja) * r / rows;
+  for (let j = 1; j < cols; j++) box(p, body, colX(j) - t / 2, colX(j) + t / 2, ja, jb, .006, fz - .002, {tile: 1.1});
+  for (let r = 1; r < rows; r++) box(p, body, ia, ib, rowY(r) - t / 2, rowY(r) + t / 2, .006, fz - .002, {tile: 1.1});
+  // fronts cover the boards (overlay), cells split the whole front evenly
+  const fx = j => xa + (xb - xa) * j / cols, fy = r => y1 - (y1 - p0) * r / rows;
+  s.cells.forEach((cell, n) => {
+    const r = Math.floor(n / cols), j = n % cols, k = cell.k;
+    const cid = cell.c || fid, ix0 = colX(j) + (j ? t / 2 : 0), ix1 = colX(j + 1) - (j < cols - 1 ? t / 2 : 0), iy0 = rowY(r + 1) + (r < rows - 1 ? t / 2 : 0), iy1 = rowY(r) - (r ? t / 2 : 0);
+    if (k === 'open' || k === 'glass') {
+      if (cell.c) box(p, std('inner-' + cid, {color: col(frontColorCss(cid)).multiplyScalar(.75), roughness: .8}), ix0, ix1, iy0, iy1, .006, .009, {cast: false});
+      if (iy1 - iy0 > .2 && ix1 - ix0 > .2) shelfDecorBooks(p, ix0, ix1, iy0, fz - .03, (s.seed || 1) * 37 + n * 11);
+      if (k === 'glass') box(p, body, ix0, ix1, (iy0 + iy1) / 2 - t / 2, (iy0 + iy1) / 2 + t / 2, .01, fz - .03);
+      if (s.led) box(p, glow('cabled', '#FFE1B0', 2.5), ix0 + .02, ix1 - .02, iy1 - .008, iy1 - .002, .04, Math.min(.1, fz * .4), {cast: false, recv: false});
+    }
+    if (k !== 'open') cellFront(p, c, k, fx(j), fx(j + 1), fy(r + 1), fy(r), fz, cid, j, fz);
+  });
+  // shaped ends: open shelves that line up with the rows
+  const levels = []; for (let r = 1; r < rows; r++) levels.push(rowY(r));
+  if (eL) endPiece(p, c, s.endL, eL, fz, p0, y1, levels, false, s.W);
+  if (eR) endPiece(p, c, s.endR, eR, fz, p0, y1, levels, true, s.W);
+  if (topT) {
+    const tm = s.top === 'stone' ? topMat(c.worktop) : s.top === 'wood' ? accentMat() : std('topglass', {color: col('#CFE0E4'), roughness: .04, transparent: true, opacity: .45, depthWrite: false});
+    const m = slab(p, tm, outline(s.W, s.D + .01, s.endL, eL, s.endR, eR), y1, s.H, 1.6); if (m && s.top !== 'glass') m.userData.top = true;
+    if (s.top === 'stone') { freeSt.top += s.W * (s.D + .01); freeSt.wt.push([Math.round(s.W * 1000), Math.round((s.D + .01) * 1000)]); }
+  }
+  if (s.led && s.base === 'hang') ledStrip(p, xa + .03, xb - .03, 0, Math.min(fz * .6, .3), 4);
+}
+function cabItem(g, c, it, i){
+  const o = iopts(it), {cols, rows, cells} = cabGrid(it), W = it.w / 100, D = itemDepth(it) / 100;
+  const p = new THREE.Group(); p.position.set(-W / 2, 0, -D / 2); g.add(p);
+  cabBody(p, c, {W, H: itemH(it) / 100, D, cols, rows, cells, base: o.base, endL: o.endL, endR: o.endR, ew: o.ew / 100, top: o.top, led: o.led, seed: i + 1});
+}
+// a counter you can sit at: cabinets face the kitchen side (back), stools on the front
+function barItem(g, c, it, i){
+  const o = iopts(it), W = it.w / 100, Hh = itemH(it) / 100, D = itemDepth(it) / 100, over = Math.min(o.over / 100, D - .25), cd = D - over;
+  const p = new THREE.Group(); p.position.set(-W / 2, 0, -D / 2); g.add(p);
+  const eL = o.endL !== 'sq' ? Math.min(o.ew / 100, W * .4) : 0, eR = o.endR !== 'sq' ? Math.min(o.ew / 100, W * .4) : 0;
+  const topT = .03, yT = Hh - topT, tm = o.top === 'wood' ? accentMat() : topMat(c.worktop), fm = frontMat(c.front, c.finish);
+  if (o.base === 'cab' || o.base === 'open') {
+    const bw = W - eL - eR, cols = Math.max(1, Math.round(bw / .6)), cells = Array.from({length: cols}, (_, j) => ({k: o.base === 'open' ? 'open' : (cols > 2 && j === Math.floor(cols / 2)) ? 'drawer' : 'door'}));
+    const q = new THREE.Group(); q.position.set(W - eR, 0, cd); q.rotation.y = Math.PI; p.add(q);
+    cabBody(q, c, {W: bw, H: yT, D: cd, cols, rows: 1, cells, base: 'plinth', top: 'none', seed: i + 3});
+    box(p, fm, eL, W - eR, 0, yT, cd, cd + .018, {tile: 1.1});
+    const lv = yT > .7 ? [yT / 2] : [];
+    if (eL) endPiece(p, c, o.endL, eL, D - .02, .0, yT, lv, false, W);
+    if (eR) endPiece(p, c, o.endR, eR, D - .02, .0, yT, lv, true, W);
+  } else if (o.base === 'water') {
+    box(p, tm, eL, eL + .03, 0, yT, 0, D, {tile: 1.6}); box(p, tm, W - eR - .03, W - eR, 0, yT, 0, D, {tile: 1.6});
+    box(p, fm, eL + .03, W - eR - .03, 0, yT, Math.max(.05, cd - .02), Math.max(.07, cd), {tile: 1.1});
+  } else {
+    const lm = XM.metalBlack; for (const x of [Math.max(.06, eL * .6), W - Math.max(.06, eR * .6)]) for (const z of [.08, D - .1]) cyl(p, lm, .022, yT, x, yT / 2, z, {seg: 16});
+    box(p, lm, .06, W - .06, .18, .2, .08 - .01, .08 + .01, {cast: false});
+  }
+  const m = slab(p, tm, outline(W, D, o.endL, eL, o.endR, eR), yT, Hh, 1.6); if (m) m.userData.top = true;
+  freeSt.top += W * D; freeSt.wt.push([Math.round(W * 1000), Math.round(D * 1000)]);
+  const n = +o.stools, seat = std('stoolseat', {map: texture('walnut'), roughness: .5}), leg = handleMat('black'), sh = Math.max(.45, Hh - .3);
+  for (let k = 0; k < n; k++) { const x = eL + (k + .5) * (W - eL - eR) / n, z = D + .12;
+    cyl(p, seat, .17, .045, x, sh, z, {seg: 32}); cyl(p, leg, .012, sh - .02, x, (sh - .02) / 2, z); cyl(p, leg, .16, .008, x, .004, z, {r2: .14});
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(.13, .007, 8, 32), leg); ring.rotation.x = Math.PI / 2; ring.position.set(x, sh * .36, z); p.add(ring); }
+}
+function panelItem(g, c, it){
+  const o = iopts(it), W = it.w / 100, Hh = itemH(it) / 100, T = it.d / 100;
+  const mat = o.mat === 'front' ? frontMat(c.front, c.finish) : o.mat === 'accent' ? accentMat() : o.mat === 'stone' ? XM.marbleWall : o.mat === 'mirror' ? M.mirror : o.mat === 'glass' ? std('panelglass', {color: col('#DCE7EA'), roughness: .04, transparent: true, opacity: .35, depthWrite: false}) : XM.panelDark;
+  const m = o.or === 'h' ? box(g, mat, -W / 2, W / 2, 0, T, -Hh / 2, Hh / 2, {r: .002, tile: 1.4}) : box(g, mat, -W / 2, W / 2, 0, Hh, -T / 2, T / 2, {r: .002, tile: 1.4});
+  if (m && o.or === 'h') m.userData.top = true;
+}
+// a wall unit placed freely: the same builders as on a wall, in a frame whose back is at -d/2
+function unitItem(g, c, it, i){
+  const T = UNIT[it.t], w = it.w / 100, d = (T.d || 4) / 100, H = cfg.height / 100, Ht = Math.min(H - .04, 2.3), o = optsOf(it), a = 0, b = w;
+  const p = new THREE.Group(); p.position.set(-w / 2, 0, -d / 2); g.add(p);
+  if (T.counter) {
+    if (it.t === 'washer') washerUnit(p, c, a, b); else baseModule(p, c, a, b, it.t, i, o);
+    const holes = it.t === 'sink' ? [sink(p, c, w / 2, w)] : [];
+    if (it.t === 'cook') cooktop(p, w / 2, w);
+    freeCounters.push({it, i, c, holes}); return;
+  }
   switch (it.t) {
+    case 'fridge': if (o.s === 'free') freeFridge(p, c, a, b, H); else tallModule(p, c, a, b, Ht, 'fridge', i); break;
+    case 'pantry': case 'oventall': tallModule(p, c, a, b, Ht, it.t, i); break;
+    case 'wcol': laundryColumn(p, c, a, b, H); break;
+    case 'wdoor': case 'wmirror': case 'wdrawer': case 'wopen': box(p, carcassMat(c.front), a + .002, b - .002, 0, .08, 0, .53, {cast: false}); wardrobeSection(p, c, a, b, .08, H, .58, it.t, i); break;
+    case 'bookcase': bookcaseUnit(p, c, a, b, it, H); break;
+    case 'vitrine': vitrineUnit(p, c, a, b, it, H); break;
+    case 'coat': coatUnit(p, c, a, b, it, H); break;
+    case 'btall': bathTall(p, c, a, b, it, H); break;
+    case 'tvbase': tvUnit(p, c, a, b, it); break;
+    case 'sideboard': sideboardUnit(p, c, a, b, it); break;
+    case 'vanity': vanityUnit(p, c, a, b, it, freeSt); break;
+    case 'shoe': shoeUnit(p, c, a, b, it); break;
+    case 'bench': benchUnit(p, c, a, b, it); break;
+    case 'desk': deskUnit(p, c, a, b, it); break;
+    case 'hood': hood(p, c, w / 2, H, w, o.s); break;
+    case 'udoor': case 'glass': case 'lift': case 'uopen': upperModule(p, c, a, b, 1.45, i, it.t); break;
+    case 'shelf': shelfUnit(p, c, a, b, it); break;
+    case 'mcab': mirrorCabinet(p, c, a, b, it); break;
+    case 'mirror': wallMirror(p, c, a, b, it); break;
+    case 'clad': cladUnit(p, c, a, b, it, H); break;
+    case 'tv': tvScreen(p, w / 2, (+o.y) / 100, w, .005); break;
+    case 'frame': frameUnit(p, c, a, b, it); break;
+    case 'hooks': hooksUnit(p, c, a, b); break;
+  }
+}
+// counters standing side by side on the same line share one worktop
+function mergeFreeTops(c){
+  const groups = {}, A = c.wallA / 100, hasC = c.layout === 'U', sp = c.splash !== 'paint' ? splashMat(c.splash, c.worktop) : null, spT = c.splash === 'top' ? .02 : .012;
+  for (const f of freeCounters) {
+    const it = f.it, th = -it.r * Math.PI / 180, ux = [Math.cos(th), -Math.sin(th)], uz = [Math.sin(th), Math.cos(th)], w = it.w / 100, d = UNIT[it.t].d / 100;
+    const P = [it.x / 100, it.z / 100], back = P[0] * uz[0] + P[1] * uz[1] - d / 2, sc = P[0] * ux[0] + P[1] * ux[1], y = ((it.y || 0) + (it.sy || 0)) / 100;
+    const key = [Math.round(it.r), Math.round(y * 100), Math.round(back * 100)].join('|');
+    (groups[key] || (groups[key] = {th, ux, uz, back, y, c: f.c, list: []})).list.push({s0: sc - w / 2, s1: sc + w / 2, holes: f.holes, i: f.i});
+  }
+  for (const gr of Object.values(groups)) {
+    const L = gr.list.sort((p, q) => p.s0 - q.s0), segs = [];
+    for (const m of L) { const last = segs[segs.length - 1]; if (last && m.s0 <= last.s1 + .015) { last.s1 = Math.max(last.s1, m.s1); last.items.push(m); } else segs.push({s0: m.s0, s1: m.s1, items: [m]}); }
+    for (const sg of segs) {
+      const ox = gr.ux[0] * sg.s0 + gr.uz[0] * gr.back, oz = gr.ux[1] * sg.s0 + gr.uz[1] * gr.back, len = sg.s1 - sg.s0;
+      const g = new THREE.Group(); g.position.set(ox, gr.y, oz); g.rotation.y = gr.th; g.userData.freeTop = sg.items.map(m => m.i); world.add(g);
+      const holes = sg.items.flatMap(m => m.holes.map(([h0, h1, d0, d1]) => [h0 + m.s0 - sg.s0, h1 + m.s0 - sg.s0, d0, d1]));
+      worktop(g, gr.c, 0, len, holes); freeSt.top += len * .62; freeSt.wt.push([Math.round(len * 1000), 620]);
+      // backsplash when the counter stands against a wall
+      const r = Math.round(((-gr.th * 180 / Math.PI) % 360 + 360) % 360), onWall = gr.y < .02 && ((r === 0 && Math.abs(gr.back) < .03) || (r === 270 && Math.abs(gr.back) < .03) || (r === 90 && hasC && Math.abs(gr.back + A) < .03));
+      if (sp && onWall) box(g, sp, 0, len, .9, 1.45, 0, spT, {tile: 1, cast: false});
+    }
+  }
+}
+function objBox(o){
+  const b = new THREE.Box3(), t = new THREE.Box3(); o.updateMatrixWorld(true);
+  o.traverse(m => { if (!m.isMesh || m.userData.skip || m.material?.visible === false) return; if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); t.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); b.union(t); });
+  return b;
+}
+function buildItem(it, i){
+  const g = new THREE.Group(); g.position.set(it.x / 100, ((it.y || 0) + (it.sy || 0)) / 100, it.z / 100); g.rotation.y = -it.r * Math.PI / 180; g.userData.item = i; world.add(g);
+  const c = itemCfg(it);
+  if (isUnitItem(it)) unitItem(g, c, it, i);
+  else switch (it.t) {
     case 'bed': bedItem(g, c, it); break; case 'night': nightItem(g, c, it); break; case 'bunk': bunkItem(g, c, it); break;
     case 'dresser': chestItem(g, c, it, true); break; case 'commode': chestItem(g, c, it, false); break;
     case 'dtable': tableItem(g, c, it); break; case 'ctable': ctableItem(g, c, it); break; case 'sofa': sofaItem(g, c, it); break;
     case 'armchair': armchairItem(g, c, it); break; case 'chair': chairItem(g); break; case 'rug': rugItem(g, c, it); break;
     case 'plant': plantItem(g); break; case 'lamp': lampItem(g); break; case 'toilet': toiletItem(g); break; case 'shower': showerItem(g, c, it); break; case 'bathtub': bathtubItem(g, c, it); break;
+    case 'cab': cabItem(g, c, it, i); break; case 'bar': barItem(g, c, it, i); break; case 'panel': panelItem(g, c, it); break;
   }
-  if (it.t !== 'rug') { const [fw, fd] = footprint(it); ao(world, fw / 100 + .1, .2, .28, it.x / 100, .004, it.z / 100 + fd / 200 + .1, -Math.PI / 2, 0); }
+  const lifted = (it.y || 0) + (it.sy || 0) > 2, Hc = cfg.height, onFloor = !lifted && it.t !== 'rug' && it.t !== 'panel' && !(it.t === 'cab' && iopts(it).base === 'hang') && !(isUnitItem(it) && unitBox(it, Hc, Math.min(Hc - 4, 230))[0] > 3);
+  if (onFloor) { const w = it.w / 100, d = (itemDepth(it) + (it.t === 'bed' ? 15 : 0)) / 100; ao(g, w + .1, .2, .28, 0, .004, d / 2 + .1, -Math.PI / 2, 0); }
   return g;
 }
 
@@ -1755,7 +2069,9 @@ function buildRoom(c){
       const bulb = new THREE.Mesh(new THREE.SphereGeometry(.04, 16, 12), glow('bulb', '#FFC98A', 30)); bulb.position.set(x, 1.55, z); world.add(bulb);
       const pl = new THREE.PointLight(0xFFC98A, 0, 6, 2); pl.position.set(x, 1.5, z); pl.userData = {day: 0, eve: 18}; world.add(pl); dynLights.push(pl); }
   }
-  (c.items || []).forEach((it, i) => buildItem(it, i));
+  const itemGroups = (c.items || []).map((it, i) => buildItem(it, i));
+  mergeFreeTops(c); st.top += freeSt.top; st.wt.push(...freeSt.wt);
+  itemBoxes = itemGroups.map(g => { const b = objBox(g); return {x0: b.min.x * 100, x1: b.max.x * 100, y0: b.min.y * 100, y1: b.max.y * 100, z0: b.min.z * 100, z1: b.max.z * 100}; });
   // ceiling light for rooms without their own lamps, so evening is never pitch dark
   if (!K) { const pl = new THREE.PointLight(0xFFE2BC, 0, 9, 2); pl.position.set(A / 2, H - .3, D / 2); pl.userData = {day: 0, eve: 9}; world.add(pl); dynLights.push(pl); }
   const holesOf = (list, len) => mergeRanges(list.map(w => [w.a, w.b])).map(([a, b]) => { const w = list.find(x => x.a >= a - 1e-3 && x.b <= b + 1e-3) || list[0]; return {x0: Math.max(.05, a + .05), x1: Math.min(len - .05, b - .05), y0: w.y0, y1: w.y1}; }).filter(h => h.x1 - h.x0 > .2);
@@ -1782,8 +2098,9 @@ function build(){
   if (cfg.itemsAuto || !Array.isArray(cfg.items)) { cfg.items = autoItems(cfg); cfg.itemsAuto = true; }
   if (sel && (sel.item !== undefined ? !cfg.items[sel.item] : !cfg.units[sel.run]?.[sel.lvl]?.[sel.i])) sel = null;
   scene.remove(world); disposeGroup(world); world = new THREE.Group(); scene.add(world); selHelper = null;
-  dynLights = []; R = rng(1234);
+  dynLights = []; R = rng(1234); freeCounters = []; freeSt = {top: 0, wt: []}; anims = []; itemBoxes = [];
   buildRoom(cfg);
+  applyAnims();
   const f = frame, ext = Math.max(f.W, f.D) + 1.2;
   for (const l of [sun, key]) { const cam = l.shadow.camera; cam.left = -ext; cam.right = ext; cam.top = ext; cam.bottom = -ext; cam.near = .5; cam.far = 25; cam.updateProjectionMatrix(); }
   key.position.set(f.W * .25, f.H + 2.2, f.D + 3); key.target.position.set(f.W * .55, .5, f.D * .2);
@@ -1849,8 +2166,24 @@ function resize(){
 }
 new ResizeObserver(() => { const fresh = W === 1; resize(); if (fresh) setCam(camMode, true); }).observe(stageEl);
 controls.addEventListener('change', () => { dirty = true; });
+let openT = 0, openV = 0, tourOn = false, tourT = 0, tour0 = null;
+const ease = v => v < .5 ? 2 * v * v : 1 - Math.pow(-2 * v + 2, 2) / 2;
+function applyAnims(){
+  const n = anims.length;
+  anims.forEach((a, k) => { const v = ease(clamp(openV * 1.4 - (n > 1 ? k / n * .4 : 0), 0, 1));
+    if (a.k === 'door') a.o.rotation.y = a.a * 1.5 * v; else if (a.k === 'flap') a.o.rotation.x = -1.25 * v; else if (a.k === 'drawer') a.o.position.z = a.dz * v; });
+}
+function setOpen(on){
+  openT = on ? 1 : 0; $('#openBtn')?.setAttribute('aria-pressed', on);
+  if (on && !anims.length) toast('الفتح يعمل على الخزائن المخصصة والبار');
+  syncQbar(); const b = $('#itemEditor [data-open]'); if (b) b.textContent = on ? 'أغلق الأبواب' : 'افتح الأبواب';
+}
+function startTour(){ const off = camera.position.clone().sub(controls.target); tour0 = {s: new THREE.Spherical().setFromVector3(off)}; tourT = 0; tourOn = true; tween = null; $('#tourBtn').setAttribute('aria-pressed', true); }
+function stopTour(){ if (!tourOn) return; tourOn = false; $('#tourBtn').setAttribute('aria-pressed', false); }
 function loop(){
   requestAnimationFrame(loop);
+  if (openV !== openT) { openV = openT > openV ? Math.min(openT, openV + .022) : Math.max(openT, openV - .03); applyAnims(); dirty = true; renderer.shadowMap.needsUpdate = openV === openT; }
+  if (tourOn && tour0) { tourT += .0065; const sp = tour0.s.clone(); sp.theta = clamp(tour0.s.theta + Math.sin(tourT) * .62, controls.minAzimuthAngle, controls.maxAzimuthAngle); sp.phi = clamp(tour0.s.phi + Math.sin(tourT * .7) * .08, .2, controls.maxPolarAngle); camera.position.copy(new THREE.Vector3().setFromSpherical(sp).add(controls.target)); dirty = true; }
   if (tween) { tween.t = Math.min(1, tween.t + .045); const e = 1 - Math.pow(1 - tween.t, 3); camera.position.lerpVectors(tween.p0, tween.p1, e); controls.target.lerpVectors(tween.q0, tween.q1, e); if (tween.t >= 1) tween = null; dirty = true; }
   const moved = controls.update();
   if (!dirty && !moved) return;
@@ -2051,10 +2384,24 @@ function itemIcon(t){
   };
   return ICONS[k] = `<svg class="uv" viewBox="0 0 50 50" aria-hidden="true">${P[t] || ''}</svg>`;
 }
+// free pieces standing with their back on a wall, placed along that wall (cm)
+function wallFree(c, rid){
+  const out = [], A = c.wallA;
+  (c.items || []).forEach((it, i) => {
+    if (!(isUnitItem(it) || CUST[it.t])) return;
+    const r = Math.round(it.r), d = itemDepth(it), b = itemBoxes[i]; let s;
+    if (rid === 'A' && r === 0 && Math.abs(it.z - d / 2) <= 8) s = it.x;
+    else if (rid === 'B' && r === 270 && Math.abs(it.x - d / 2) <= 8) s = c.wallB - it.z;
+    else if (rid === 'C' && r === 90 && Math.abs(A - it.x - d / 2) <= 8) s = it.z;
+    else return;
+    out.push({i, it, s0: s - it.w / 2, s1: s + it.w / 2, off: (it.y || 0) + (it.sy || 0), y0: b ? b.y0 : 0, y1: b ? b.y1 : 90});
+  });
+  return out;
+}
 function elevation(ctx, opts = {}){
   const {c, r, pb, pu} = ctx, kitchen = c.room === 'kitchen', Hc = c.height, Ht = Math.min(Hc - 4, 230);
-  const wallLen = {A: c.wallA, B: c.wallB, C: c.wallC}[r.id];
-  const xStart = Math.min(0, ...pb.map(m => m.s0), ...pu.map(m => m.s0)), xEnd = Math.max(wallLen, ...pb.map(m => m.s1), ...pu.map(m => m.s1));
+  const wallLen = {A: c.wallA, B: c.wallB, C: c.wallC}[r.id], frees = wallFree(c, r.id);
+  const xStart = Math.min(0, ...pb.map(m => m.s0), ...pu.map(m => m.s0), ...frees.map(f => f.s0)), xEnd = Math.max(wallLen, ...pb.map(m => m.s1), ...pu.map(m => m.s1), ...frees.map(f => f.s1));
   const pad = 12, vbw = xEnd - xStart + pad * 2, fs = vbw * .031, Y = y => Hc - y, o = [];
   o.push(`<defs><pattern id="hz" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" class="hl"/></pattern></defs>`);
   o.push(`<rect x="0" y="0" width="${wallLen}" height="${Hc}" class="wall"/><line x1="${xStart - pad}" x2="${xEnd + pad}" y1="${Hc}" y2="${Hc}" class="flr"/>`);
@@ -2081,6 +2428,12 @@ function elevation(ctx, opts = {}){
     const x0 = m.s0, [b0, b1] = unitBox(m, Hc, Ht), on = isOn(m, l), f = Math.min(fs, m.w * .5);
     const ly = l === 'u' ? (m.t === 'window' || m.t === 'clad' ? Y(b1) + f + 3 : Y(b0) + f + 2) : Hc + f + 3;
     o.push(`<g class="u${on ? ' on' : ''}${m.fit ? '' : ' over'}" data-pick="${l}:${m.i}">${unitShape(m, x0, x0 + m.w, Y, Hc, Ht)}${on ? `<rect x="${x0 - 1.5}" y="${Y(b1) - 1.5}" width="${m.w + 3}" height="${b1 - b0 + 3}" class="selr"/>` : ''}<rect x="${x0}" y="${Y(b1)}" width="${m.w}" height="${b1 - b0}" class="hit"/><text x="${x0 + m.w / 2}" y="${ly}" class="lb" font-size="${f}">${m.w}</text>${codes[l + m.i] ? `<text x="${x0 + m.w / 2}" y="${Y(Math.min(b1, Hc - 2)) + Math.min(fs, m.w * .38) + 2}" class="cd" font-size="${Math.min(fs, m.w * .38)}">${codes[l + m.i]}</text>` : ''}</g>`);
+  }
+  for (const f of frees) {
+    const {it, i, s0, s1, off} = f, on = !opts.print && sel?.item === i, fw = Math.min(fs, it.w * .5);
+    const shape = isUnitItem(it) ? `<g transform="translate(0 ${-off})">${unitShape(it, s0, s1, Y, Hc, Ht)}</g>` : customShape(it, s0, Y, off);
+    const y0 = Math.max(0, f.y0), y1 = Math.max(y0 + 1, Math.min(Hc + 40, f.y1));
+    o.push(`<g class="u${on ? ' on' : ''}" data-pickitem="${i}">${shape}${on ? `<rect x="${s0 - 1.5}" y="${Y(y1) - 1.5}" width="${it.w + 3}" height="${y1 - y0 + 3}" class="selr"/>` : ''}<rect x="${s0}" y="${Y(y1)}" width="${it.w}" height="${Math.max(1, y1 - y0)}" class="hit"/><text x="${(s0 + s1) / 2}" y="${y0 < 30 ? Hc + fw + 3 : Y(y0) + fw + 2}" class="lb" font-size="${fw}">${it.w}</text>${opts.codes ? `<text x="${(s0 + s1) / 2}" y="${Y(Math.min(y1, Hc - 2)) + Math.min(fs, it.w * .38) + 2}" class="cd" font-size="${Math.min(fs, it.w * .38)}">P${i + 1}</text>` : ''}</g>`);
   }
   return `<svg class="uv" viewBox="${xStart - pad} -6 ${vbw} ${Hc + fs * 1.7 + 8}" role="img" aria-label="مخطط واجهة ${r.name}">${o.join('')}</svg>`;
 }
@@ -2109,33 +2462,125 @@ function renderUnits(){
     h += `<div class="ued" id="unitEditor"><div class="ued-h"><b>${T.n}</b><span>${sm.w} سم</span></div>
       <div class="ued-row"><span>العرض</span><span class="stepper"><button type="button" data-u="w-5" aria-label="أنقص 5 سم">−</button><input id="uw" type="number" min="${T.min}" max="${T.max}" value="${sm.w}" inputmode="numeric" aria-label="العرض بالسنتيمتر"><button type="button" data-u="w+5" aria-label="زد 5 سم">+</button></span><span class="hint">من ${T.min} إلى ${T.max} سم</span></div>
       ${T.opts ? `<div class="opts">${optControls(T.opts, optsOf(sm), 'uo')}</div>` : ''}
-      <div class="ued-row"><button type="button" class="btn sm" data-u="right" ${sel.i >= L.length - 1 ? 'disabled' : ''}>${arrowR} لليمين</button><button type="button" class="btn sm" data-u="left" ${sel.i === 0 ? 'disabled' : ''}>لليسار ${arrowL}</button><button type="button" class="btn sm" data-u="dup">تكرار</button><button type="button" class="btn sm danger" data-u="del">حذف</button></div>
+      <div class="ued-row"><button type="button" class="btn sm" data-u="right" ${sel.i >= L.length - 1 ? 'disabled' : ''}>${arrowR} لليمين</button><button type="button" class="btn sm" data-u="left" ${sel.i === 0 ? 'disabled' : ''}>لليسار ${arrowL}</button><button type="button" class="btn sm" data-u="dup">تكرار</button>${FREE_UNITS.includes(sm.t) ? '<button type="button" class="btn sm" data-u="free">تحريك حر</button>' : ''}<button type="button" class="btn sm danger" data-u="del">حذف</button></div>
       <div class="grp"><h3>تغيير النوع</h3><div class="ugrid sm">${palFor(r.id, sel.lvl).map(t => `<button type="button" data-type="${t}" aria-pressed="${t === sm.t}">${unitIcon(t)}<span>${UNIT[t].s}</span></button>`).join('')}</div></div></div>`;
   }
   const lvlSw = `<div class="choice" data-uv="lvl"><button type="button" data-v="b" aria-pressed="${view.lvl === 'b'}">على الأرض</button><button type="button" data-v="u" aria-pressed="${view.lvl === 'u'}">على الجدار</button></div>`;
   const after = isUnit && sel.run === r.id && sel.lvl === view.lvl;
   h += `<div class="grp"><h3>إضافة وحدة إلى ${r.name} <small>${after ? 'بعد الوحدة المحددة' : 'في آخر الجدار'}</small></h3>${lvlSw}<div class="ugrid">${palFor(r.id, view.lvl).map(t => `<button type="button" data-add="${t}">${unitIcon(t)}<span>${UNIT[t].n}</span></button>`).join('')}</div></div>`;
-  // freestanding pieces
-  const items = c.items || [], si = sel && sel.item !== undefined ? items[sel.item] : null;
-  h += `<div class="grp" id="itemsGrp"><h3>قطع مستقلة <small>اسحبها في المشهد لتحريكها</small></h3>
-    ${items.length ? `<div class="chips">${items.map((it, i) => `<button type="button" class="chip" data-pickitem="${i}" aria-pressed="${sel?.item === i}">${itemIcon(it.t)}<span>${ITEM[it.t].n}</span></button>`).join('')}</div>` : '<p class="hint">لا توجد قطع مستقلة في هذه الغرفة.</p>'}
-    ${c.itemsAuto ? '' : '<div class="ued-row"><p class="hint grow">ترتيب القطع يدوي.</p><button type="button" class="btn sm" data-act="itemsAuto">ترتيب تلقائي</button></div>'}</div>`;
-  if (si) {
-    const I = ITEM[si.t], fixedW = I.min === I.max;
-    h += `<div class="ued" id="itemEditor"><div class="ued-h"><b>${I.n}</b><span>${si.w} سم</span></div>
-      ${fixedW ? '' : `<div class="ued-row"><span>العرض</span><span class="stepper"><button type="button" data-it="w-5" aria-label="أنقص 5 سم">−</button><input id="iw" type="number" min="${I.min}" max="${I.max}" value="${si.w}" inputmode="numeric" aria-label="العرض بالسنتيمتر"><button type="button" data-it="w+5" aria-label="زد 5 سم">+</button></span></div>`}
-      <div class="ued-row"><span>المكان</span><span class="num"><input id="ix" type="number" step="5" value="${si.x}" aria-label="البعد عن الجدار الأيسر"><span>من اليسار</span></span><span class="num"><input id="iz" type="number" step="5" value="${si.z}" aria-label="البعد عن الجدار الرئيسي"><span>من الخلف</span></span></div>
-      ${I.opts ? `<div class="opts">${optControls(I.opts, iopts(si), 'io')}</div>` : ''}
-      <div class="ued-row"><button type="button" class="btn sm" data-it="rot">تدوير 90°</button><button type="button" class="btn sm" data-it="dup">تكرار</button><button type="button" class="btn sm danger" data-it="del">حذف</button></div></div>`;
-  }
-  h += `<div class="grp"><h3>إضافة قطعة مستقلة</h3><div class="ugrid">${(ROOM_ITEMS[c.room] || ROOM_ITEMS.free).map(t => `<button type="button" data-additem="${t}">${itemIcon(t)}<span>${ITEM[t].n}</span></button>`).join('')}</div></div>`;
+  h += `<div class="grp"><p class="hint">لتحريك وحدة بحرية: اضغطها ثم اسحبها في المشهد، أو اضغط «تحريك حر». وكل القطع المستقلة والخزائن المخصصة في تبويب «تصميم حر».</p></div>`;
   pane.innerHTML = h;
+  renderFree();
 }
-function openTab(name){ $$('[data-tab]').forEach(t => t.setAttribute('aria-selected', t.dataset.tab === name)); for (const p of ['space', 'units', 'mat', 'cost']) $('#pane-' + p).hidden = p !== name; }
+/* ================= free design tab: library of pieces + inspector ================= */
+let palGroup = 'custom';
+const NO_COLOR = ['rug', 'plant', 'lamp', 'toilet', 'shower', 'bathtub', 'chair', 'tv', 'mirror', 'frame', 'hood'];
+const fillOf = id => id ? ` style="fill:${frontColorCss(id)};fill-opacity:.45"` : '';
+// front view of a custom piece, cm; yb is the height of its bottom
+function customShape(it, x0, Y, yb = 0){
+  const out = [], W = it.w, o = iopts(it);
+  const rect = (a, y0, b, y1, cls, extra = '') => out.push(`<rect x="${a}" y="${Y(y1)}" width="${Math.max(0, b - a)}" height="${Math.max(0, y1 - y0)}" class="${cls}"${extra}/>`);
+  const hl = (a, b, y, cls = 'ln') => out.push(`<line x1="${a}" x2="${b}" y1="${Y(y)}" y2="${Y(y)}" class="${cls}"/>`);
+  const vl = (x, y0, y1, cls = 'ln') => out.push(`<line x1="${x}" x2="${x}" y1="${Y(y0)}" y2="${Y(y1)}" class="${cls}"/>`);
+  const col0 = o.col;
+  if (it.t === 'panel') { const H = itemH(it), T = it.d, cls = {front: 'f', accent: 'acc', stone: 'mar', mirror: 'mir', glass: 'gl', dark: 'dk'}[o.mat] || 'f'; if (o.or === 'h') rect(x0, yb, x0 + W, yb + T, cls); else rect(x0, yb, x0 + W, yb + H, cls, o.mat === 'front' ? fillOf(col0) : ''); return out.join(''); }
+  if (it.t === 'bar') { const H = itemH(it); if (o.base === 'legs') { vl(x0 + 6, yb, yb + H - 3, 'hd'); vl(x0 + W - 6, yb, yb + H - 3, 'hd'); } else rect(x0 + (o.endL !== 'sq' ? o.ew : 0), yb, x0 + W - (o.endR !== 'sq' ? o.ew : 0), yb + H - 3, 'f', fillOf(col0)); rect(x0, yb + H - 3, x0 + W, yb + H, o.top === 'wood' ? 'acc' : 'wt'); return out.join(''); }
+  if (it.t !== 'cab') return '';
+  const H = itemH(it), {cols, rows, cells} = cabGrid(it), p0 = o.base === 'plinth' ? 10 : o.base === 'legs' ? 12 : 0, topT = o.top === 'stone' || o.top === 'wood' ? 3 : o.top === 'glass' ? 1.2 : 0;
+  const eL = o.endL !== 'sq' ? Math.min(o.ew, W * .45) : 0, eR = o.endR !== 'sq' ? Math.min(o.ew, W * .45) : 0, bx0 = x0 + eL, bx1 = x0 + W - eR, by0 = yb + p0, by1 = yb + H - topT;
+  if (o.base === 'plinth') rect(bx0 + 1, yb, bx1 - 1, by0, 'pl'); else if (o.base === 'legs') { vl(bx0 + 5, yb, by0, 'hd'); vl(bx1 - 5, yb, by0, 'hd'); }
+  const fx = j => bx0 + (bx1 - bx0) * j / cols, fy = r => by1 - (by1 - by0) * r / rows;
+  for (const [a, b, k] of [[x0, bx0, o.endL], [bx1, x0 + W, o.endR]]) if (b - a > .5) { rect(a, by0, b, by1, 'op'); for (let r = 1; r < rows; r++) hl(a, b, fy(r)); if (k === 'ang') out.push(`<line x1="${a === x0 ? a : b}" x2="${a === x0 ? b : a}" y1="${Y(by0)}" y2="${Y(by1)}" class="hl"/>`); }
+  cells.forEach((c, n) => {
+    const r = Math.floor(n / cols), j = n % cols, a = fx(j), b = fx(j + 1), y0 = fy(r + 1), y1 = fy(r), w = b - a, cx = (a + b) / 2, hd = Math.min(20, w * .4);
+    const hy = y1 < 105 ? y1 - 10 : y0 > 125 ? y0 + 10 : clamp(105, y0 + 10, y1 - 10), tint = fillOf(c.c || col0);
+    if (c.k === 'open') { rect(a, y0, b, y1, 'op'); return; }
+    rect(a, y0, b, y1, 'f', tint);
+    if (c.k === 'glass') rect(a + 4, y0 + 4, b - 4, y1 - 4, 'gl');
+    if (c.k === 'drawer') hl(cx - hd / 2, cx + hd / 2, y1 - Math.min(7, (y1 - y0) / 3), 'hd');
+    else if (c.k === 'flap') hl(cx - hd / 2, cx + hd / 2, y0 + Math.min(6, (y1 - y0) / 3), 'hd');
+    else if (c.k === 'double') { vl(cx, y0, y1); vl(cx - 3, hy - 6, hy + 6, 'hd'); vl(cx + 3, hy - 6, hy + 6, 'hd'); }
+    else if (c.k !== 'panel') { const left = c.k === 'doorR' ? true : c.k === 'doorL' ? false : j % 2 !== 0; vl(left ? a + 4 : b - 4, hy - 6, hy + 6, 'hd'); }
+  });
+  if (topT) rect(x0 - .5, by1, x0 + W + .5, yb + H, o.top === 'stone' ? 'wt' : o.top === 'wood' ? 'acc' : 'gl');
+  return out.join('');
+}
+function pieceIcon(key){
+  const k = 'p-' + key; if (ICONS[k]) return ICONS[k];
+  if (!PIECES[key]) return UNIT[key] && !ITEM[key] ? unitIcon(key) : itemIcon(key);
+  const it = PIECES[key].it, H = it.t === 'panel' ? (it.o?.or === 'h' ? it.d : it.h) : it.h, Y = y => H - y;
+  return ICONS[k] = `<svg class="uv" viewBox="-4 -4 ${it.w + 8} ${H + 8}" aria-hidden="true">${customShape({...it, y: 0}, 0, Y, 0)}</svg>`;
+}
+// interactive map of the cells of a custom cabinet
+function cellMap(it){
+  const {cols, rows, cells} = cabGrid(it), o = iopts(it), W = it.w, H = itemH(it), p0 = o.base === 'plinth' ? 10 : o.base === 'legs' ? 12 : 0, topT = o.top !== 'none' ? 3 : 0;
+  const eL = o.endL !== 'sq' ? Math.min(o.ew, W * .45) : 0, eR = o.endR !== 'sq' ? Math.min(o.ew, W * .45) : 0, bx0 = eL, bx1 = W - eR, by0 = p0, by1 = H - topT, Y = y => H - y;
+  const fs = Math.max(7, Math.min(W / cols, (by1 - by0) / rows) * .2);
+  let out = customShape(it, 0, Y, 0);
+  cells.forEach((c, n) => { const r = Math.floor(n / cols), j = n % cols, a = bx0 + (bx1 - bx0) * j / cols, b = bx0 + (bx1 - bx0) * (j + 1) / cols, y1 = by1 - (by1 - by0) * r / rows, y0 = by1 - (by1 - by0) * (r + 1) / rows;
+    out += `<g data-cell="${n}"><rect x="${a}" y="${Y(y1)}" width="${b - a}" height="${y1 - y0}" class="${n === cellSel ? 'selr' : 'hit'}"/><text x="${(a + b) / 2}" y="${Y((y0 + y1) / 2) + fs * .35}" class="lb" font-size="${fs}">${CELL_S[c.k]}</text></g>`; });
+  return `<svg class="uv cellmap" viewBox="-4 -4 ${W + 8} ${H + 8}" role="img" aria-label="واجهة الخزانة">${out}</svg>`;
+}
+function colorRow(attr, cur, inputId, auto = 'حسب التصميم'){
+  const hex = isHex(cur) ? cur : frontColorCss(cur || cfg.front);
+  return `<div class="sw sm" data-${attr}><button type="button" data-c="" aria-pressed="${!cur}"><i class="auto"></i>${auto}</button>${FRONTS.map(f => `<button type="button" data-c="${f.id}" aria-pressed="${cur === f.id}"><i style="${f.wood ? `background-image:url(${sURL[f.wood] || ''});background-color:${frontColorCss(f.id)}` : `background:${f.color}`}"></i>${f.name}</button>`).join('')}<label class="pick" aria-pressed="${isHex(cur)}"><input type="color" id="${inputId}" value="${hex}"><i style="background:${hex}"></i>لون آخر</label></div>`;
+}
+function stepRow(label, key, val, min, max, step = 5){
+  return `<div class="ued-row"><span class="lab">${label}</span><span class="stepper"><button type="button" data-it="${key}-${step}" aria-label="أنقص">−</button><input id="i${key}" type="number" min="${min}" max="${max}" value="${val}" inputmode="numeric" aria-label="${label}"><button type="button" data-it="${key}+${step}" aria-label="زد">+</button></span><span class="hint">سم</span></div>`;
+}
+function renderFree(){
+  const pane = $('#pane-free'); if (!pane) return;
+  const c = cfg, items = c.items || [], i = sel?.item, si = i !== undefined ? items[i] : null;
+  let h = '';
+  if (si) {
+    const T = DEF(si.t), [w0, w1] = limW(si), cu = CUST[si.t], b = itemBoxes[i], bottom = b ? Math.max(0, Math.round(b.y0)) : 0, o = si.o || {};
+    const name = si.t === 'cab' || si.t === 'bar' || si.t === 'panel' ? T.n : (T.n || ''), isPanelH = si.t === 'panel' && iopts(si).or === 'h';
+    h += `<div class="ued" id="itemEditor"><div class="ued-h"><b>${name}</b><span>P${i + 1}</span></div>
+      <div class="sect"><h4>المقاسات</h4>
+      ${w0 === w1 ? `<p class="hint">العرض ${si.w} سم</p>` : stepRow('العرض', 'w', si.w, w0, w1)}
+      ${cu ? stepRow(isPanelH ? 'العمق' : 'الارتفاع', 'h', itemH(si), cu.h[0], cu.h[1]) + stepRow(si.t === 'panel' ? 'السماكة' : 'العمق', 'd', si.d, cu.d[0], cu.d[1], si.t === 'panel' ? 1 : 5) : `<p class="hint">العمق ${itemDepth(si)} سم${b ? `، الارتفاع ${Math.round(b.y1 - b.y0)} سم` : ''}</p>`}</div>
+      <div class="sect"><h4>المكان</h4>
+      <div class="ued-row pos"><label><span>من اليسار</span><span class="num"><input id="ix" type="number" value="${si.x}"><span>سم</span></span></label><label><span>من الخلف</span><span class="num"><input id="iz" type="number" value="${si.z}"><span>سم</span></span></label><label><span>عن الأرض</span><span class="num"><input id="ibottom" type="number" value="${bottom}"><span>سم</span></span></label></div>
+      <div class="ued-row"><div class="seg2"><button type="button" data-al="right">${arrowR} لليمين</button><button type="button" data-al="mid">في الوسط</button><button type="button" data-al="left">لليسار ${arrowL}</button></div></div>
+      <div class="ued-row"><button type="button" class="btn sm" data-it="wall">ألصق بالجدار</button><button type="button" class="btn sm" data-it="floor">أنزل إلى الأرض</button><span class="hint">${si.sy ? `مركّبة فوق قطعة أخرى (${si.sy} سم)` : ''}</span></div></div>
+      <div class="sect"><h4>الدوران</h4><div class="ued-row"><div class="seg2"><button type="button" data-it="r-15">−15°</button><button type="button" data-it="r-45">−45°</button></div><span class="num"><input id="ir" type="number" step="1" value="${Math.round(si.r)}"><span>درجة</span></span><div class="seg2"><button type="button" data-it="r+45">+45°</button><button type="button" data-it="r+15">+15°</button><button type="button" data-it="r+90">90°</button></div></div></div>
+      ${NO_COLOR.includes(si.t) ? '' : `<div class="sect"><h4>اللون</h4>${colorRow('icol', o.col, 'icolor')}
+        <div class="choice" data-ifin><button type="button" data-f="" aria-pressed="${!o.fin}">حسب التصميم</button><button type="button" data-f="matte" aria-pressed="${o.fin === 'matte'}">مطفي</button><button type="button" data-f="gloss" aria-pressed="${o.fin === 'gloss'}">لامع</button></div></div>`}
+      ${T.opts ? `<div class="sect"><h4>الشكل والخيارات</h4><div class="opts">${optControls(T.opts, iopts(si), 'io')}</div></div>` : ''}`;
+    if (si.t === 'cab') {
+      const g = cabGrid(si), cs = g.cells[Math.min(cellSel, g.cells.length - 1)];
+      h += `<div class="sect"><h4>الواجهة خانة خانة <small>اضغط خانة لتغييرها</small></h4>
+        <div class="ued-row"><span class="lab">الأعمدة</span><span class="stepper"><button type="button" data-grid="cols-1" aria-label="أقل">−</button><input id="icols" type="number" min="1" max="10" value="${g.cols}"><button type="button" data-grid="cols+1" aria-label="أكثر">+</button></span><span class="lab">الصفوف</span><span class="stepper"><button type="button" data-grid="rows-1" aria-label="أقل">−</button><input id="irows" type="number" min="1" max="10" value="${g.rows}"><button type="button" data-grid="rows+1" aria-label="أكثر">+</button></span></div>
+        <div class="elev">${cellMap(si)}</div>
+        <div class="choice" data-cellk>${Object.entries(CELLS).map(([k, n]) => `<button type="button" data-k="${k}" aria-pressed="${cs.k === k}">${n}</button>`).join('')}</div>
+        ${colorRow('cellc', cs.c, 'ccolor', 'لون الخزانة')}
+        <div class="ued-row"><button type="button" class="btn sm" data-cellall>طبّق هذه الخانة على كل الخانات</button></div></div>`;
+    }
+    h += `<div class="ued-row acts"><button type="button" class="btn sm" data-it="dup">نسخ</button>${si.t === 'cab' || si.t === 'bar' ? `<button type="button" class="btn sm" data-open>${openT ? 'أغلق الأبواب' : 'افتح الأبواب'}</button>` : ''}<button type="button" class="btn sm danger" data-it="del">حذف</button></div>
+      <p class="hint">من لوحة المفاتيح: الأسهم للتحريك سنتيمتراً (مع Shift عشرة)، Q و E للتدوير، PageUp و PageDown للرفع والإنزال، Ctrl+D للنسخ. اضغط Alt أثناء السحب لإلغاء الالتصاق.</p></div>`;
+  }
+  const grp = PAL_GROUPS.find(g => g[0] === palGroup) || PAL_GROUPS[0], keys = grp[0] === 'custom' ? Object.keys(PIECES) : grp[2];
+  h += `<div class="grp"><h3>مكتبة القطع <small>اسحب القطعة إلى المشهد، أو اضغطها</small></h3>
+    <div class="choice pg" data-pg>${PAL_GROUPS.map(g => `<button type="button" data-g="${g[0]}" aria-pressed="${g[0] === grp[0]}">${g[1]}</button>`).join('')}</div>
+    <div class="ugrid pal">${keys.map(k => `<button type="button" data-pal="${k}">${pieceIcon(k)}<span>${PIECES[k]?.n || DEF(k).n}</span></button>`).join('')}</div></div>`;
+  h += `<div class="grp"><h3>القطع في الغرفة <small>${items.length}</small></h3>
+    ${items.length ? `<div class="chips">${items.map((it, k) => `<button type="button" class="chip" data-pickitem="${k}" aria-pressed="${i === k}">${pieceIcon(it.t)}<span>${DEF(it.t).n}</span></button>`).join('')}</div>` : '<p class="hint">لا توجد قطع حرة بعد. اسحب قطعة من المكتبة إلى المشهد.</p>'}
+    </div>`;
+  pane.innerHTML = h;
+  syncQbar();
+}
+function syncQbar(){
+  const q = $('#qbar'); if (!q) return; const it = curItem();
+  q.hidden = !it; if (!it) return;
+  q.querySelector('[data-open]').hidden = !(it.t === 'cab' || it.t === 'bar');
+  q.querySelector('[data-open]').setAttribute('aria-pressed', !!openT);
+}
+function openTab(name){ $$('[data-tab]').forEach(t => t.setAttribute('aria-selected', t.dataset.tab === name)); for (const p of ['space', 'units', 'free', 'mat', 'cost']) $('#pane-' + p).hidden = p !== name; }
 function select(m, from3D = false){
   sel = m ? (m.item !== undefined ? {item: m.item} : {run: m.run, lvl: m.lvl, i: m.i}) : null;
   if (sel && sel.item === undefined) { view.run = sel.run; view.lvl = sel.lvl; }
-  if (sel && from3D) openTab('units');
+  if (sel && from3D) openTab(sel.item !== undefined ? 'free' : 'units');
+  if (sel && sel.item === undefined && from3D) { const r = runsOf(cfg).find(x => x.id === sel.run), L = r && layoutRun(cfg, r), m = L && (sel.lvl === 'b' ? L.pb : L.pu)[sel.i]; if (m && FREE_UNITS.includes(m.t) && !select.hinted) { select.hinted = true; toast('اسحب الوحدة الآن لتحريكها بحرية'); } }
   drawSel(); renderUnits();
   if (sel && from3D) requestAnimationFrame(() => $(sel.item !== undefined ? '#itemEditor' : '#unitEditor')?.scrollIntoView({block: 'nearest', behavior: 'smooth'}));
 }
@@ -2145,8 +2590,8 @@ function editUnits(fn){
   cfg = {...cfg, auto: false, units: sanitizeUnits(u)};
   build(); renderSpace();
 }
-function editItems(fn){
-  record();
+function editItems(fn, rec = true){
+  if (rec) record();
   const L = JSON.parse(JSON.stringify(cfg.items || [])); fn(L);
   cfg = {...cfg, itemsAuto: false, items: sanitizeItems(L, cfg)};
   build();
@@ -2164,6 +2609,7 @@ function setWidth(v){ editUnits(u => { const m = curUnit(u); if (m) m.w = Math.r
 function setUnitOpt(k, v){ editUnits(u => { const m = curUnit(u); if (!m) return; m.o = {...optsOf(m), [k]: v}; }); }
 function unitAction(act){
   if (!sel || sel.item !== undefined) return; const {run, lvl, i} = sel;
+  if (act === 'free') { const k = detachUnit(sel); if (k >= 0) { select({item: k}, true); toast('صارت الوحدة قطعة حرة، اسحبها أينما شئت'); } return; }
   editUnits(u => {
     const L = u[run][lvl], m = L[i]; if (!m) return;
     if (act === 'del') {
@@ -2179,38 +2625,146 @@ function unitAction(act){
   });
   if (act === 'del') toast('حُذفت الوحدة، ويمكنك التراجع');
 }
-function addItem(t){
-  const I = ITEM[t], A = cfg.wallA, D = cfg.wallB;
-  editItems(L => { L.push({t, w: I.w, x: Math.round(A / 2 / 5) * 5, z: Math.round(clamp(D / 2, 60, D - 60) / 5) * 5, r: 0}); sel = {item: L.length - 1}; });
-  toast('أُضيفت القطعة في وسط الغرفة، اسحبها إلى مكانها');
+// ready-made starting points in the pieces library; every one can then be changed freely
+const ROW = (k, n) => Array.from({length: n}, () => ({k}));
+const PIECES = {
+  cab:      {n:'خزانة مخصصة', g:'custom', it:{t:'cab', w:80, h:85, d:58, o:{cols:1, rows:1, top:'stone'}}},
+  cabTall:  {n:'خزانة طويلة مخصصة', g:'custom', it:{t:'cab', w:100, h:220, d:58, o:{cols:2, rows:2, cells:[...ROW('door', 2), ...ROW('door', 2)]}}},
+  cabHang:  {n:'خزانة معلّقة', g:'custom', it:{t:'cab', w:100, h:72, d:35, y:145, o:{base:'hang', cols:2, rows:1, cells:[{k:'doorL'}, {k:'doorR'}]}}},
+  cabTop:   {n:'خزانة فوق العلوية', g:'custom', it:{t:'cab', w:100, h:38, d:35, y:217, o:{base:'hang', cols:2, rows:1, cells:ROW('flap', 2)}}},
+  cabDraw:  {n:'كومودا جوارير مخصصة', g:'custom', it:{t:'cab', w:90, h:80, d:45, o:{base:'legs', cols:1, rows:4, cells:ROW('drawer', 4), top:'wood'}}},
+  tvAng:    {n:'طاولة تلفزيون بطرفين مائلين', g:'custom', it:{t:'cab', w:220, h:45, d:42, y:22, o:{base:'hang', cols:3, rows:1, cells:[{k:'flap'}, {k:'open'}, {k:'flap'}], endL:'ang', endR:'ang', ew:40, top:'wood', led:true}}},
+  tvOne:    {n:'طاولة تلفزيون بطرف مائل', g:'custom', it:{t:'cab', w:180, h:50, d:42, o:{base:'legs', cols:3, rows:1, cells:ROW('drawer', 3), endR:'ang', ew:40, top:'wood'}}},
+  tvCorner: {n:'طاولة تلفزيون للزاوية', g:'custom', corner:true, it:{t:'cab', w:150, h:50, d:45, r:315, o:{base:'plinth', cols:2, rows:1, cells:ROW('flap', 2), endL:'ang', endR:'ang', ew:35, top:'wood'}}},
+  bookRnd:  {n:'مكتبة بطرف مدوّر', g:'custom', it:{t:'cab', w:140, h:200, d:35, o:{base:'plinth', cols:2, rows:5, cells:[...ROW('open', 8), ...ROW('door', 2)], endR:'rnd', ew:35}}},
+  bar:      {n:'بار ومطبخ أمريكي', g:'custom', it:{t:'bar', w:180, h:90, d:90, o:{base:'cab', stools:3}}},
+  pen:      {n:'طاولة موصولة بالمطبخ', g:'custom', pen:true, it:{t:'bar', w:160, h:90, d:90, o:{base:'cab', stools:2, endR:'rnd'}}},
+  barHigh:  {n:'بار مرتفع بأرجل', g:'custom', it:{t:'bar', w:150, h:105, d:55, o:{base:'legs', stools:2, over:25, endL:'sq', endR:'sq', top:'wood'}}},
+  panel:    {n:'لوح حر', g:'custom', it:{t:'panel', w:60, h:80, d:2, o:{or:'v', mat:'accent'}}},
+  shelfP:   {n:'رف حر', g:'custom', it:{t:'panel', w:80, h:25, d:4, y:140, o:{or:'h', mat:'accent'}}},
+};
+const PAL_GROUPS = [
+  ['custom', 'مخصّص وأشكال خاصة'],
+  ['kitchen', 'المطبخ', ['door', 'drawers', 'sink', 'cook', 'dw', 'bopen', 'washer', 'fridge', 'pantry', 'oventall', 'udoor', 'glass', 'lift', 'uopen', 'hood']],
+  ['tall', 'خزائن طويلة ومكتبات', ['wdoor', 'wmirror', 'wdrawer', 'wopen', 'bookcase', 'vitrine', 'coat', 'btall', 'wcol']],
+  ['low', 'وحدات منخفضة', ['tvbase', 'sideboard', 'vanity', 'shoe', 'bench', 'desk']],
+  ['wall', 'على الجدار', ['clad', 'tv', 'shelf', 'mcab', 'mirror', 'frame', 'hooks']],
+  ['furn', 'أثاث', Object.keys(ITEM).filter(t => !ITEM[t].custom)],
+];
+function pieceOf(key){
+  if (PIECES[key]) return JSON.parse(JSON.stringify(PIECES[key].it));
+  const T = DEF(key); return T ? {t: key, w: T.w, x: 0, z: 0, r: 0} : null;
+}
+// a free spot for a new piece: along the walls first (main, left, right), else anywhere on the floor
+function smartSpot(it, lb, obs, floorOnly = false){
+  const A = cfg.wallA, D = Math.round(frame.D * 100), d = itemDepth(it), w = it.w, hasB = cfg.layout !== 'I', hasC = cfg.layout === 'U';
+  const ok = (q, x, z) => !q.sy && Math.abs(q.x - x) < 9 && Math.abs(q.z - z) < 9;
+  if (!NO_WALL.includes(it.t) && !floorOnly) {
+    for (let x = Math.ceil(w / 2); x <= A - w / 2; x += 5) { const q = poseAt(it, x, d / 2, 0, lb, obs); if (ok(q, x, d / 2) && q.r === 0) return q; }
+    if (hasB) for (let z = Math.ceil(w / 2); z <= cfg.wallB - w / 2; z += 5) { const q = poseAt(it, d / 2, z, 270, lb, obs); if (ok(q, d / 2, z) && q.r === 270) return q; }
+    if (hasC) for (let z = Math.ceil(w / 2); z <= cfg.wallC - w / 2; z += 5) { const q = poseAt(it, A - d / 2, z, 90, lb, obs); if (ok(q, A - d / 2, z) && q.r === 90) return q; }
+  }
+  const [fw, fd] = footprint(it), cx = A / 2, cz = D / 2, spots = [];
+  for (let x = fw / 2 + 5; x <= A - fw / 2 - 5; x += 10) for (let z = fd / 2 + 5; z <= D + 60 - fd / 2; z += 10) spots.push([x, z]);
+  spots.sort((p, q) => Math.hypot(p[0] - cx, p[1] - cz) - Math.hypot(q[0] - cx, q[1] - cz));
+  for (const [x, z] of spots) { const q = poseAt(it, Math.round(x), Math.round(z), it.r || 0, lb, obs, true); if (!q.sy) return q; }
+  return poseAt(it, Math.round(cx), Math.round(D + 60), it.r || 0, lb, obs, true);
+}
+// put a new piece in the room, at the drop point or at a good free spot
+function placePiece(key, at){
+  const it = pieceOf(key); if (!it) return;
+  const P = PIECES[key] || {};
+  record();
+  const L = JSON.parse(JSON.stringify(cfg.items || [])); it.x = 0; it.z = 0; it.r = it.r || 0; L.push(it);
+  cfg = {...cfg, itemsAuto: false, items: sanitizeItems(L, cfg)}; build();
+  const i = cfg.items.length - 1, g = itemGroup(i); if (!g) return;
+  const lb = localBox(g), obs = obstacles(i), d = itemDepth(it); let q;
+  if (at) q = poseAt(cfg.items[i], at.x, at.z, it.r || 0, lb, obs);
+  else if (P.corner) { const s0 = Math.round(.354 * (it.w + d)) + 2; q = poseAt(cfg.items[i], s0, s0, it.r, lb, obs, true); if (q.sy) q = smartSpot(cfg.items[i], lb, obs, true); }
+  else if (P.pen) {
+    let X0 = 0; for (const o of obs) if (o.mod && o.z0 < 40 && o.y0 < 40 && o.y1 > 60) X0 = Math.max(X0, o.x1);
+    if (!X0) X0 = Math.round(cfg.wallA * .6);
+    const cd = d - (+iopts(it).over || 30); q = poseAt(cfg.items[i], Math.round(X0 - cd + d / 2), Math.round(62 + it.w / 2), 270, lb, obs, true);
+  } else q = smartSpot(cfg.items[i], lb, obs);
+  const L2 = JSON.parse(JSON.stringify(cfg.items)); Object.assign(L2[i], {x: q.x, z: q.z, r: q.r, sy: q.sy});
+  cfg = {...cfg, items: sanitizeItems(L2, cfg)}; build();
+  select({item: i}, true);
+  toast(at ? 'وُضعت القطعة، اسحبها لتعديل مكانها' : 'أُضيفت القطعة، اسحبها في المشهد إلى أي مكان');
+}
+function addItem(t){ placePiece(t); }
+function curItem(){ return sel && sel.item !== undefined ? cfg.items[sel.item] : null; }
+function limW(it){ const T = DEF(it.t); return [T.min ?? T.w, T.max ?? T.w]; }
+// along the wall a piece stands on: to the left end, the middle or the right end, as seen facing it
+function alignItem(where){
+  const it = curItem(); if (!it) return;
+  const r = Math.round(it.r / 90) * 90 % 360, [fw, fd] = footprint(it), D = Math.round(frame.D * 100);
+  let k, lo, hi, rightIsHi;
+  if (r === 0 || r === 180) { k = 'x'; lo = fw / 2; hi = cfg.wallA - fw / 2; rightIsHi = r === 0; }
+  else { k = 'z'; const len = r === 270 ? cfg.wallB : cfg.layout === 'U' ? cfg.wallC : D; lo = fd / 2; hi = len - fd / 2; rightIsHi = r === 90; }
+  const v = where === 'mid' ? (lo + hi) / 2 : (where === 'right') === rightIsHi ? hi : lo;
+  restack(L => { L[sel.item][k] = Math.round(v); }); renderUnits();
+}
+// apply a change, then re-run stacking so the piece never floats in mid-air or sinks into another
+function restack(fn, free = true, rec = true){
+  if (rec) record();
+  const L = JSON.parse(JSON.stringify(cfg.items || [])); fn(L);
+  cfg = {...cfg, itemsAuto: false, items: sanitizeItems(L, cfg)}; build();
+  const i = sel?.item; if (i === undefined || !cfg.items[i]) return;
+  const it = cfg.items[i], g = itemGroup(i); if (!g) return;
+  // a change in the panel never lifts a piece onto another by surprise; it only lets it come down when what held it is gone
+  const lb = localBox(g), q = poseAt({...it, y: 0}, it.x, it.z, it.r, {...lb, y0: lb.y0 + (it.y || 0)}, obstacles(i), true);
+  if (q.sy < (it.sy || 0)) { const L2 = JSON.parse(JSON.stringify(cfg.items)); L2[i].sy = q.sy; cfg = {...cfg, items: sanitizeItems(L2, cfg)}; build(); }
+  drawSel();
+}
+function nudge(k, v){
+  const it = curItem(); if (!it) return;
+  record('nudge');
+  if (k === 'y') editItems(L => { const t = L[sel.item]; t.y = (t.y || 0) + v; if (v < 0 && t.sy) { const take = Math.min(t.sy, -v); t.sy -= take; t.y += take; } }, false);
+  else restack(L => { L[sel.item][k] += v; }, true, false);
+  drawSel(); renderUnits();
 }
 function itemAction(act){
-  if (!sel || sel.item === undefined) return; const i = sel.item;
-  editItems(L => {
-    const it = L[i]; if (!it) return;
-    if (act === 'del') {
-      // removing a window or a room door must not slide the cabinets that follow it: leave the space empty
-      if ((m.t === 'window' || m.t === 'rdoor') && i < L.length - 1) L[i] = {t: lvl === 'u' ? 'ugap' : 'bgap', w: m.w};
-      else L.splice(i, 1);
-      sel = null;
-    }
-    else if (act === 'dup') { L.push({...JSON.parse(JSON.stringify(it)), x: it.x + 30, z: it.z + 30}); sel = {item: L.length - 1}; }
-    else if (act === 'rot') it.r = (it.r + 90) % 360;
-    else if (act[0] === 'w') { const I = ITEM[it.t]; it.w = clamp(it.w + Number(act.slice(1)), I.min, I.max); }
-  });
+  if (!sel || sel.item === undefined) return; const i = sel.item, it0 = cfg.items[i]; if (!it0) return;
+  if (act === 'del') { editItems(L => { L.splice(i, 1); }); sel = null; drawSel(); renderUnits(); toast('حُذفت القطعة، ويمكنك التراجع'); return; }
+  if (act === 'dup') { editItems(L => { const c0 = JSON.parse(JSON.stringify(L[i])), [fw] = footprint(c0), th = -c0.r * Math.PI / 180; c0.x += Math.round(Math.cos(th) * fw); c0.z += Math.round(-Math.sin(th) * fw); L.push(c0); }); select({item: cfg.items.length - 1}, true); restack(() => {}, false); return; }
+  if (act === 'floor') { restack(L => { L[i].y = 0; L[i].sy = 0; }); renderUnits(); return; }
+  if (act === 'wall') { record(); const g = itemGroup(i), q = poseAt(it0, it0.x, it0.z, Math.round(it0.r / 90) * 90 % 360, localBox(g), obstacles(i), false); editItems(L => Object.assign(L[i], {x: q.x, z: q.z, r: q.r, sy: q.sy}), false); drawSel(); renderUnits(); return; }
+  if (act[0] === 'r') { const v = act === 'rot' ? 90 : +act.slice(1); restack(L => { L[i].r = ((L[i].r + v) % 360 + 360) % 360; }); hist.key = 'rot'; renderUnits(); return; }
+  if (act[0] === 'w' || act[0] === 'h' || act[0] === 'd') { setItemField(act[0], (act[0] === 'w' ? it0.w : act[0] === 'h' ? itemH(it0) : it0.d) + Number(act.slice(1))); return; }
 }
-function setItemField(k, v){ editItems(L => { const it = L[sel.item]; if (!it) return; if (k === 'w') { const I = ITEM[it.t]; it.w = Math.round(clamp(v || it.w, I.min, I.max)); } else it[k] = Math.round(v || 0); }); }
-function setItemOpt(k, v){ editItems(L => { const it = L[sel.item]; if (!it) return; it.o = {...iopts(it), [k]: v}; }); }
+function setItemField(k, v){
+  const it = curItem(); if (!it || !isFinite(v)) return;
+  if (k === 'bottom') { const nat = (itemBoxes[sel.item]?.y0 ?? 0) - (it.y || 0) - (it.sy || 0); restack(L => { L[sel.item].y = Math.round(v - nat); L[sel.item].sy = 0; }); renderUnits(); return; }
+  restack(L => { const t = L[sel.item]; if (k === 'w') { const [a, b] = limW(t); t.w = Math.round(clamp(v, a, b)); } else if (k === 'h' || k === 'd') { const lim = CUST[t.t]?.[k]; if (lim) t[k] = Math.round(clamp(v, lim[0], lim[1])); } else if (k === 'r') t.r = ((Math.round(v) % 360) + 360) % 360; else t[k] = Math.round(v); });
+  renderUnits();
+}
+function setItemOpt(k, v){ restack(L => { const it = L[sel.item]; if (!it) return; it.o = {...(it.o || {}), ...iopts(it), [k]: v}; }); renderUnits(); }
+function setItemColor(v){ editItems(L => { const it = L[sel.item]; if (!it) return; const o = {...(it.o || {})}; if (v) o.col = v; else delete o.col; it.o = o; }); hist.key = 'col'; drawSel(); renderUnits(); }
+function setItemFinish(v){ editItems(L => { const it = L[sel.item]; if (!it) return; const o = {...(it.o || {})}; if (v) o.fin = v; else delete o.fin; it.o = o; }); drawSel(); renderUnits(); }
+// the cell grid of a custom cabinet
+let cellSel = 0;
+function setGrid(k, v){
+  restack(L => { const it = L[sel.item]; if (!it || it.t !== 'cab') return; const g = cabGrid(it), cols = k === 'cols' ? clamp(v, 1, 10) : g.cols, rows = k === 'rows' ? clamp(v, 1, 10) : g.rows;
+    const cells = []; for (let r = 0; r < rows; r++) for (let j = 0; j < cols; j++) cells.push(g.cells[Math.min(r, g.rows - 1) * g.cols + Math.min(j, g.cols - 1)]);
+    it.o = {...(it.o || {}), cols, rows, cells}; });
+  cellSel = Math.min(cellSel, cabGrid(curItem()).cells.length - 1); renderUnits();
+}
+function setCell(field, v, all = false){
+  editItems(L => { const it = L[sel.item]; if (!it || it.t !== 'cab') return; const g = cabGrid(it);
+    g.cells.forEach((c0, n) => { if (all || n === cellSel) { if (field === 'k') c0.k = v; else if (v) c0.c = v; else delete c0.c; } });
+    it.o = {...(it.o || {}), cols: g.cols, rows: g.rows, cells: g.cells}; });
+  drawSel(); renderUnits();
+}
 function autoReset(){ record(); cfg = {...cfg, auto: true}; sel = null; build(); renderSpace(); toast('أُعيد توزيع الوحدات تلقائياً'); }
 function itemsAutoReset(){ record(); cfg = {...cfg, itemsAuto: true}; sel = null; build(); toast('أُعيد ترتيب القطع تلقائياً'); }
 function undoUnits(){ undoStep(); }
 
-/* tap a piece in the 3D view to edit it; drag freestanding pieces on the floor */
+/* tap a piece in the 3D view to edit it; drag any piece anywhere: it snaps to walls and neighbours and lands on top of what is under it */
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-let downAt = null, drag = null;
+let downAt = null, drag = null, snapOn = lsGet('wr_snap', true) !== false;
+function setRay(e){ const rc = canvas.getBoundingClientRect(); ndc.set((e.clientX - rc.left) / rc.width * 2 - 1, -((e.clientY - rc.top) / rc.height) * 2 + 1); ray.setFromCamera(ndc, camera); }
 function pickAt(e){
-  const rc = canvas.getBoundingClientRect(); ndc.set((e.clientX - rc.left) / rc.width * 2 - 1, -((e.clientY - rc.top) / rc.height) * 2 + 1);
-  ray.setFromCamera(ndc, camera);
+  setRay(e);
   for (const h of ray.intersectObject(world, true)) {
     if (h.object.userData.skip || h.object.isLine) continue;
     let p = h.object; while (p && !p.userData.mod && p.userData.item === undefined) p = p.parent;
@@ -2218,29 +2772,116 @@ function pickAt(e){
   }
   return null;
 }
-function floorAt(e){ const rc = canvas.getBoundingClientRect(); ndc.set((e.clientX - rc.left) / rc.width * 2 - 1, -((e.clientY - rc.top) / rc.height) * 2 + 1); ray.setFromCamera(ndc, camera); const v = new THREE.Vector3(); return ray.ray.intersectPlane(floorPlane, v) ? v : null; }
+function floorAt(e){ setRay(e); const v = new THREE.Vector3(); return ray.ray.intersectPlane(floorPlane, v) ? v : null; }
+const cmBox = b => ({x0: b.min.x * 100, x1: b.max.x * 100, y0: b.min.y * 100, y1: b.max.y * 100, z0: b.min.z * 100, z1: b.max.z * 100});
+// everything a moving piece can touch, in cm
+function obstacles(skip){
+  const out = [];
+  (cfg.items || []).forEach((it, i) => { if (i !== skip && it.t !== 'rug' && itemBoxes[i]) out.push({...itemBoxes[i], item: i}); });
+  world.traverse(o => {
+    if (o.userData.mod) { const b = objBox(o); if (!b.isEmpty()) out.push({...cmBox(b), mod: true}); }
+    else if (o.userData.freeTop) { if (!o.userData.freeTop.includes(skip)) { const b = objBox(o); if (!b.isEmpty()) out.push(cmBox(b)); } }
+    else if (o.isMesh && o.userData.top) { let p = o.parent, inItem = false; while (p) { if (p.userData.item !== undefined || p.userData.freeTop) { inItem = true; break; } p = p.parent; } if (!inItem) out.push(cmBox(objBox(o))); }
+  });
+  return out;
+}
+// the piece's own box with no move and no turn
+function localBox(g){
+  const p = g.position.clone(), r = g.rotation.y; g.position.set(0, 0, 0); g.rotation.y = 0;
+  const b = objBox(g); g.position.copy(p); g.rotation.y = r; g.updateMatrixWorld(true); return cmBox(b);
+}
+const NO_WALL = ['rug', 'plant', 'lamp', 'dtable', 'ctable', 'bar', 'chair', 'armchair'];
+const ortho = r => Math.abs(((r % 90) + 90) % 90) < .5 || Math.abs(((r % 90) + 90) % 90 - 90) < .5;
+function aabbAt(it, x, z, r){ const [fw, fd] = footprint({...it, r}); return {x0: x - fw / 2, x1: x + fw / 2, z0: z - fd / 2, z1: z + fd / 2}; }
+// where a piece ends up when dropped at x, z (cm): pulled to a wall, flush with neighbours, stacked on what is under it
+function poseAt(it, x, z, r, lb, obs, free = !snapOn){
+  const A = cfg.wallA, D = Math.round((frame.D || cfg.wallB / 100) * 100), hasC = cfg.layout === 'U', w = it.w, d = itemDepth(it), near = 30;
+  let lockX = false, lockZ = false;
+  if (!free && ortho(r)) {
+    if (!NO_WALL.includes(it.t)) {
+      const cand = [{r: 0, gap: z - d / 2}, {r: 270, gap: x - d / 2}];
+      if (hasC) cand.push({r: 90, gap: A - x - d / 2});
+      const best = cand.filter(c0 => c0.gap < near && c0.gap > -d).sort((p, q) => p.gap - q.gap)[0];
+      if (best) { r = best.r; if (r === 0) { z = d / 2; lockZ = true; } else if (r === 270) { x = d / 2; lockX = true; } else { x = A - d / 2; lockX = true; } }
+    }
+    // flush with the room's corners and with the sides of the pieces around
+    let bb = aabbAt(it, x, z, r);
+    if (Math.abs(bb.x0) < 12) x -= bb.x0; else if (Math.abs(A - bb.x1) < 12 && (hasC || r === 0)) x += A - bb.x1;
+    bb = aabbAt(it, x, z, r); if (Math.abs(bb.z0) < 12) z -= bb.z0;
+    bb = aabbAt(it, x, z, r);
+    let dx = 8, dz = 8;
+    for (const o of obs) {
+      const zo = bb.z0 < o.z1 - 2 && bb.z1 > o.z0 + 2, xo = bb.x0 < o.x1 - 2 && bb.x1 > o.x0 + 2;
+      if (zo || Math.abs(bb.z0 - o.z0) < 20) for (const v of [o.x1 - bb.x0, o.x0 - bb.x1, o.x0 - bb.x0, o.x1 - bb.x1]) if (Math.abs(v) < Math.abs(dx)) dx = v;
+      if (xo || Math.abs(bb.x0 - o.x0) < 20) for (const v of [o.z1 - bb.z0, o.z0 - bb.z1, o.z0 - bb.z0, o.z1 - bb.z1]) if (Math.abs(v) < Math.abs(dz)) dz = v;
+    }
+    if (Math.abs(dx) < 8 && !lockX) x += dx; if (Math.abs(dz) < 8 && !lockZ) z += dz;
+  }
+  x = Math.round(clamp(x, -60, A + 60)); z = Math.round(clamp(z, -60, D + 150));
+  // stacking
+  const base = it.y || 0, th = -r * Math.PI / 180, cs = Math.cos(th), sn = Math.sin(th);
+  const pts = [[lb.x0, lb.z0], [lb.x1, lb.z0], [lb.x0, lb.z1], [lb.x1, lb.z1]].map(([px, pz]) => [x + px * cs + pz * sn, z - px * sn + pz * cs]);
+  const mb = {x0: Math.min(...pts.map(q => q[0])), x1: Math.max(...pts.map(q => q[0])), z0: Math.min(...pts.map(q => q[1])), z1: Math.max(...pts.map(q => q[1]))};
+  let sy = 0;
+  if (it.t !== 'rug') for (let k = 0; k < 8; k++) {
+    const y0 = lb.y0 + base + sy, y1 = lb.y1 + base + sy; let lift = 0;
+    for (const o of obs) {
+      if (o.y1 - o.y0 < 1.5 || Math.min(o.x1 - o.x0, o.z1 - o.z0) < 6) continue;
+      if (!(mb.x0 < o.x1 - 3 && mb.x1 > o.x0 + 3 && mb.z0 < o.z1 - 3 && mb.z1 > o.z0 + 3)) continue;
+      if (o.y0 < y1 - 1 && o.y1 > y0 + 1) lift = Math.max(lift, o.y1 - y0);
+    }
+    if (lift <= 0) break; sy += lift;
+  }
+  return {x, z, r, sy: Math.round(sy)};
+}
+// a unit on a wall becomes a free piece at the very same spot; the space it leaves stays empty
+function detachUnit(mod){
+  const r = runsOf(cfg).find(x => x.id === mod.run); if (!r || !runGroups[mod.run]) return -1;
+  const {pb, pu} = layoutRun(cfg, r), m = (mod.lvl === 'b' ? pb : pu)[mod.i];
+  if (!m || !m.fit || !FREE_UNITS.includes(m.t)) return -1;
+  const g = runGroups[mod.run]; g.updateMatrixWorld(true);
+  const v = new THREE.Vector3((m.s0 + m.s1) / 200, 0, (UNIT[m.t].d || 4) / 200).applyMatrix4(g.matrixWorld);
+  const rr = Math.round(((-g.rotation.y * 180 / Math.PI) % 360 + 360) % 360);
+  record();
+  const u = JSON.parse(JSON.stringify(cfg.units)); u[mod.run][mod.lvl][mod.i] = {t: mod.lvl === 'u' ? 'ugap' : 'bgap', w: m.w};
+  const L = JSON.parse(JSON.stringify(cfg.items || [])); L.push({t: m.t, w: m.w, x: Math.round(v.x * 100), z: Math.round(v.z * 100), r: rr, ...(m.o ? {o: m.o} : {})});
+  cfg = {...cfg, auto: false, itemsAuto: false, units: sanitizeUnits(u), items: sanitizeItems(L, cfg)};
+  sel = null; build(); renderSpace();
+  return cfg.items.length - 1;
+}
+function startItemDrag(i, f){
+  const it = cfg.items[i], g = itemGroup(i); if (!it || !g || !f) return null;
+  world.traverse(o => { if (o.userData.freeTop?.includes(i)) o.visible = false; });
+  return {i, group: g, f0: f, x0: it.x, z0: it.z, x: it.x, z: it.z, r: it.r, sy: it.sy || 0, lb: localBox(g), obs: obstacles(i), moved: true};
+}
 stageEl.addEventListener('pointerdown', e => {
   if (e.target !== canvas || e.button > 0) return;
+  stopTour();
   downAt = {x: e.clientX, y: e.clientY, t: performance.now()};
-  const hit = pickAt(e);
-  if (hit && hit.item !== undefined) { const f = floorAt(e), it = cfg.items[hit.item]; if (f && it) { controls.enabled = false; drag = {i: hit.item, group: hit.group, f0: f, x0: it.x, z0: it.z, x: it.x, z: it.z, moved: false}; } }
+  const hit = pickAt(e), f = floorAt(e);
+  if (hit && hit.item !== undefined && f && cfg.items[hit.item]) { controls.enabled = false; drag = {pending: true, item: hit.item, f}; }
+  else if (hit && hit.mod && f && sel && sel.item === undefined && sel.run === hit.mod.run && sel.lvl === hit.mod.lvl && sel.i === hit.mod.i) { const r = runsOf(cfg).find(x => x.id === hit.mod.run), L = r && layoutRun(cfg, r), m = L && (hit.mod.lvl === 'b' ? L.pb : L.pu)[hit.mod.i]; if (m && FREE_UNITS.includes(m.t)) { controls.enabled = false; drag = {pending: true, mod: hit.mod, f}; } }
 }, true);
 window.addEventListener('pointermove', e => {
   if (!drag || !downAt) return;
-  if (!drag.moved && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) < 5) return;
+  if (drag.pending) {
+    if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) < 6) return;
+    let i = drag.item;
+    if (drag.mod) { i = detachUnit(drag.mod); if (i < 0) { drag = null; controls.enabled = true; return; } toast('صارت الوحدة قطعة حرة، حرّكها أينما شئت'); }
+    drag = startItemDrag(i, drag.f); if (!drag) { controls.enabled = true; return; }
+  }
   const f = floorAt(e); if (!f) return;
-  const it = cfg.items[drag.i], [fw, fd] = footprint(it), maxZ = Math.max(cfg.wallB, cfg.layout === 'U' ? cfg.wallC : 0);
-  drag.moved = true;
-  drag.x = Math.round(clamp(drag.x0 + (f.x - drag.f0.x) * 100, fw / 2, cfg.wallA - fw / 2) / 5) * 5;
-  drag.z = Math.round(clamp(drag.z0 + (f.z - drag.f0.z) * 100, fd / 2, maxZ + 60) / 5) * 5;
-  drag.group.position.set(drag.x / 100, 0, drag.z / 100);
-  if (selHelper && sel?.item === drag.i) { const bx = new THREE.Box3().setFromObject(drag.group); selHelper.position.copy(bx.getCenter(new THREE.Vector3())); selDim = null; }
+  const it = cfg.items[drag.i];
+  const q = poseAt(it, drag.x0 + (f.x - drag.f0.x) * 100, drag.z0 + (f.z - drag.f0.z) * 100, drag.r, drag.lb, drag.obs, e.altKey || !snapOn);
+  drag.x = q.x; drag.z = q.z; drag.rr = q.r; drag.sy = q.sy;
+  drag.group.position.set(q.x / 100, ((it.y || 0) + q.sy) / 100, q.z / 100); drag.group.rotation.y = -q.r * Math.PI / 180;
+  if (selHelper && sel?.item === drag.i) { const bx = objBox(drag.group); selHelper.position.copy(bx.getCenter(new THREE.Vector3())); selDim = null; }
   renderer.shadowMap.needsUpdate = true; dirty = true;
 });
 window.addEventListener('pointerup', e => {
   if (drag) {
     const d = drag; drag = null; controls.enabled = true;
-    if (d.moved) { downAt = null; editItems(L => { if (L[d.i]) { L[d.i].x = d.x; L[d.i].z = d.z; } }); sel = {item: d.i}; drawSel(); renderUnits(); return; }
+    if (!d.pending) { downAt = null; editItems(L => { const it = L[d.i]; if (it) { it.x = d.x; it.z = d.z; it.r = d.rr ?? it.r; it.sy = d.sy; } }, false); select({item: d.i}, true); return; }
   }
   if (!downAt || e.target !== canvas) { downAt = null; return; }
   const moved = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y), dt = performance.now() - downAt.t; downAt = null;
@@ -2248,6 +2889,16 @@ window.addEventListener('pointerup', e => {
   const hit = pickAt(e);
   if (!hit) return select(null);
   select(hit.item !== undefined ? {item: hit.item} : hit.mod, true);
+});
+// keyboard: arrows move 1 cm (Shift 10), Q E turn 15°, PageUp PageDown lift, Ctrl+D copy
+document.addEventListener('keydown', e => {
+  if (!sel || sel.item === undefined || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || $$('.sheet').some(s => !s.hidden)) return;
+  const st = e.shiftKey ? 10 : 1, k = e.key;
+  const mv = {ArrowLeft: ['x', -st], ArrowRight: ['x', st], ArrowUp: ['z', -st], ArrowDown: ['z', st], PageUp: ['y', st], PageDown: ['y', -st]}[k];
+  if (mv) { e.preventDefault(); nudge(mv[0], mv[1]); return; }
+  if (k === 'q' || k === 'Q') { e.preventDefault(); itemAction('r-15'); return; }
+  if (k === 'e' || k === 'E') { e.preventDefault(); itemAction('r+15'); return; }
+  if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'd') { e.preventDefault(); itemAction('dup'); }
 });
 
 /* ================= UI: panes ================= */
@@ -2303,7 +2954,7 @@ function renderMat(){
     <div class="grp"><h3>الأرضية</h3>${swatches('floor', FLOORS, c.floor, f => swBg(f.id))}</div>
     <div class="grp"><h3>لون الجدران</h3>${swatches('wall', WALLS, c.wall, w => `background:${w.color}`)}</div>`;
 }
-function frontColorCss(id){ const f = byId(FRONTS, id); return f.wood ? (f.wood === 'oak' ? '#B88A57' : '#5E3D28') : f.color; }
+function frontColorCss(id){ const f = frontDef(id); return f.wood ? (f.wood === 'oak' ? '#B88A57' : '#5E3D28') : f.color; }
 
 /* prices: per viewer */
 const PRICE_CAT = {
@@ -2345,7 +2996,13 @@ function saleLines(){
     }
   }
   if (c.room === 'kitchen') { const hasB = c.layout !== 'I', hasC = c.layout === 'U'; const k = (hasB ? 1 : 0) + (hasC ? 1 : 0); if (k) { const a = acc.base || (acc.base = {qty: 0, count: 0}); a.qty += .6 * k; a.count += k; } }
-  for (const it of c.items || []) { const cat = ITEM[it.t].cat; if (cat) addTo(cat, 1); }
+  for (const it of c.items || []) {
+    if (isUnitItem(it)) { const T = UNIT[it.t]; if (!T.cat) continue; const pc = PRICE_CAT[T.cat]; addTo(T.cat, pc.u === 'm' ? it.w / 100 * (it.t === 'shelf' ? +optsOf(it).n : 1) : pc.u === 'm2' ? it.w / 100 * frontHeight(it, c) : 1); continue; }
+    if (it.t === 'cab') { const h = itemH(it), o = iopts(it), cat = h >= 150 ? 'ward' : o.base === 'hang' && h <= 100 ? 'upper' : h >= 70 ? 'base' : 'low'; addTo(cat, PRICE_CAT[cat].u === 'm2' ? it.w * h / 1e4 : it.w / 100); continue; }
+    if (it.t === 'bar') { addTo(iopts(it).base === 'cab' || iopts(it).base === 'open' ? 'base' : 'low', it.w / 100); continue; }
+    if (it.t === 'panel') { const o = iopts(it), cat = o.mat === 'mirror' ? 'mirror' : o.or === 'h' ? 'shelf' : 'panel'; addTo(cat, cat === 'shelf' ? it.w / 100 : it.w * itemH(it) / 1e4); continue; }
+    const cat = ITEM[it.t]?.cat; if (cat && PRICE_CAT[cat]) addTo(cat, 1);
+  }
   if (stats.island) addTo('island', 1);
   if (stats.top) acc.top = {qty: stats.top, count: (stats.wt || []).length};
   const L = [];
@@ -2363,7 +3020,7 @@ function estimate(){ return saleLines().sub - (+prices.install || 0); }
 /* ================= cut list (mm) ================= */
 const HW = {hinge:'مفصلة', runner:'سكة جارور (زوج)', dbox:'جسم جارور', handle:'مقبض', leg:'رجل قابلة للتعديل', lift:'آلية باب قلاب', rod:'قضيب تعليق', pin:'حامل رف', gola:'بروفيل Gola (متر)',
   bracket:'حامل تعليق للجدار', flap:'مسند باب قلاب', tilt:'مفصلة جزامة قلابة', led:'شريط LED (متر)', legMetal:'رجل معدنية', cushion:'وسادة منجّدة', floatbr:'حامل رف مخفي', hook:'شمّاعة', upholstery:'تنجيد (م²)', slats:'قاعدة سرير شرائح'};
-const APPL = {sink:'مجلى', hob:'هوب', oven:'فرن مدمج', dw:'جلاية مدمجة', fridge:'ثلاجة مدمجة', micro:'مايكرويف مدمج', hood:'شفاط', washer:'غسالة', dryer:'نشافة', fridgeFree:'ثلاجة مستقلة', basin:'حوض مغسلة', tv:'شاشة', idoor:'باب داخلي', chairs:'كراسي سفرة'};
+const APPL = {sink:'مجلى', hob:'هوب', oven:'فرن مدمج', dw:'جلاية مدمجة', fridge:'ثلاجة مدمجة', micro:'مايكرويف مدمج', hood:'شفاط', washer:'غسالة', dryer:'نشافة', fridgeFree:'ثلاجة مستقلة', basin:'حوض مغسلة', tv:'شاشة', idoor:'باب داخلي', chairs:'كراسي سفرة', stools:'كراسي بار'};
 const SHEET_M2 = 2.8 * 2.07, MAX_PIECE = 2750, NOSHEET = ['glass', 'mirror', 'stone', 'worktop'];
 const hingesFor = h => h <= 900 ? 2 : h <= 1600 ? 3 : 4;
 function matName(mat){
@@ -2375,7 +3032,7 @@ function matName(mat){
   if (mat === 'accent') return 'خشب الديكور: ' + byId(ACCENTS, cfg.accent).name;
   if (mat === 'panel') return 'لوح خلفي داكن';
   if (mat === 'stone') return 'رخام أو حجر للجدار';
-  const id = mat.slice(6); return 'واجهة ' + byId(FRONTS, id).name + (cfg.finish === 'gloss' ? ' لامع' : ' مطفي');
+  const id = mat.slice(6); return 'واجهة ' + frontDef(id).name + (cfg.finish === 'gloss' ? ' لامع' : ' مطفي');
 }
 function cutList(c){
   const parts = [], hw = {}, ap = {}, gola = c.handle === 'gola', fid = c.front, ufid = c.upperFront === 'same' ? c.front : c.upperFront, F = id => 'front:' + id;
@@ -2400,13 +3057,9 @@ function cutList(c){
   let units = 0, golaM = 0;
   const H = c.height * 10, Ht = Math.min(H - 40, 2300), fh = gola ? 725 : 760, top = Math.min(Ht, 2060), t2 = Ht - top > 120 ? top : Ht;
   const K = c.room === 'kitchen', hasB = c.layout !== 'I', hasC = c.layout === 'U';
-  for (const r of runsOf(c)) {
-    const {pb, pu} = layoutRun(c, r);
-    let plinth = 0, bi = 0, ui = 0;
-    if (K && r.id === 'A') { const corners = (hasB ? 1 : 0) + (hasC ? 1 : 0); for (let k = 0; k < corners; k++) { const code = 'AZ' + (k + 1); units++; carcass(code, 600, 760, 560, {rails: true, shelves: 1}); doors(code, 600, fh, 1, fid); addHw('leg', 4); plinth += 600; if (gola) golaM += 600; } }
-    for (const m of pb) {
-      if (!m.fit || UNIT[m.t].gap || UNIT[m.t].deco) { if (m.fit && m.t === 'rdoor') addAp('idoor'); continue; }
-      const code = r.id + (++bi), W = m.w * 10, o = optsOf(m), n2 = W > 640 ? 2 : 1;
+  let plinth = 0;
+  // one unit's parts, the same whether it hangs on a wall run or stands freely
+  const cutBase = (m, code, fid) => { const W = m.w * 10, o = optsOf(m), n2 = W > 640 ? 2 : 1;
       switch (m.t) {
         case 'door': units++; addHw('leg', 4); plinth += W; carcass(code, W, 760, 560, {rails: true, shelves: 1}); doors(code, W, fh, n2, fid); break;
         case 'sink': units++; addHw('leg', 4); plinth += W; carcass(code, W, 760, 560, {rails: true}); doors(code, W, fh, n2, fid); addAp('sink'); break;
@@ -2446,15 +3099,8 @@ function cutList(c){
         case 'desk': { units++; add(code, 'سطح المكتب', W, 600, 25, 1, 'accent', 2, 2); add(code, 'جانب', 725, 580, 18, o.s === 'drawers' && W >= 900 ? 1 : 2, F(fid), 2, 1); add(code, 'لوح خلفي', W - 50, 300, 18, 1, F(fid), 1, 0);
           if (o.s === 'drawers' && W >= 900) { carcass(code, 440, 700, 560, {}); for (const h of [200, 200, 290]) drawer(code, 440, h, fid); } break; }
       }
-    }
-    if (plinth) add(r.id, 'وزرة أمامية', plinth, 100, 18, 1, F(fid), 1, 0);
-    for (const m of pu) {
-      if (!m.fit || UNIT[m.t].gap) continue;
-      const o = optsOf(m), W = m.w * 10, n2 = W > 640 ? 2 : 1;
-      if (m.t === 'hood') { addAp('hood'); continue; }
-      if (m.t === 'tv') { addAp('tv'); continue; }
-      if (!UNIT[m.t].cat) continue;
-      const code = r.id + '^' + (++ui); units++;
+  };
+  const cutUpper = (m, code, ufid) => { const o = optsOf(m), W = m.w * 10, n2 = W > 640 ? 2 : 1;
       switch (m.t) {
         case 'udoor': carcass(code, W, 720, 350, {shelves: 1}); doors(code, W, 735, n2, ufid); break;
         case 'glass': carcass(code, W, 720, 350, {shelves: 1, mat: F(ufid)}); add(code, 'باب إطار للزجاج', W / n2 - 3, 732, 18, n2, F(ufid), 2, 2); add(code, 'زجاج باب', W / n2 - 93, 642, 4, n2, 'glass'); addHw('hinge', 2 * n2); if (!gola) addHw('handle', n2); break;
@@ -2471,6 +3117,22 @@ function cutList(c){
           if (o.led) addHw('led', W / 1000 + (+o.tv ? 2 * (+o.tv) * .0221 * (1 + 9 / 16) : 0));
           if (+o.tv) addAp('tv'); break; }
       }
+  };
+  for (const r of runsOf(c)) {
+    const {pb, pu} = layoutRun(c, r);
+    let bi = 0, ui = 0; plinth = 0;
+    if (K && r.id === 'A') { const corners = (hasB ? 1 : 0) + (hasC ? 1 : 0); for (let k = 0; k < corners; k++) { const code = 'AZ' + (k + 1); units++; carcass(code, 600, 760, 560, {rails: true, shelves: 1}); doors(code, 600, fh, 1, fid); addHw('leg', 4); plinth += 600; if (gola) golaM += 600; } }
+    for (const m of pb) {
+      if (!m.fit || UNIT[m.t].gap || UNIT[m.t].deco) { if (m.fit && m.t === 'rdoor') addAp('idoor'); continue; }
+      cutBase(m, r.id + (++bi), fid);
+    }
+    if (plinth) add(r.id, 'وزرة أمامية', plinth, 100, 18, 1, F(fid), 1, 0);
+    for (const m of pu) {
+      if (!m.fit || UNIT[m.t].gap) continue;
+      if (m.t === 'hood') { addAp('hood'); continue; }
+      if (m.t === 'tv') { addAp('tv'); continue; }
+      if (!UNIT[m.t].cat) continue;
+      units++; cutUpper(m, r.id + '^' + (++ui), ufid);
     }
   }
   if (K && c.island && c.wallA >= 280) {
@@ -2480,7 +3142,57 @@ function cutList(c){
     if (c.worktop === 'oakTop') add('I', 'جانب الجزيرة', 940, 860, 18, 2, F(fid), 2, 2);
   }
   (c.items || []).forEach((it, i) => {
-    const code = 'P' + (i + 1), W = it.w * 10, o = iopts(it);
+    const code = 'P' + (i + 1), W = it.w * 10, o = iopts(it), f = it.o?.col || fid;
+    if (isUnitItem(it)) {
+      const T = UNIT[it.t];
+      if (T.lvl === 'b') { if (T.deco || T.gap) return; plinth = 0; cutBase(it, code, f); if (plinth) add(code, 'وزرة أمامية', plinth, 100, 18, 1, F(f), 1, 0); }
+      else if (it.t === 'hood') addAp('hood'); else if (it.t === 'tv') addAp('tv'); else if (T.cat) { units++; cutUpper(it, code, it.o?.col || ufid); }
+      return;
+    }
+    if (it.t === 'cab') {
+      const g = cabGrid(it), H = itemH(it) * 10, D = it.d * 10, eL = o.endL !== 'sq' ? Math.min(o.ew * 10, W * .45) : 0, eR = o.endR !== 'sq' ? Math.min(o.ew * 10, W * .45) : 0, bw = W - eL - eR;
+      const p0 = o.base === 'plinth' ? 100 : o.base === 'legs' ? 120 : 0, topT = o.top === 'stone' || o.top === 'wood' ? 30 : o.top === 'glass' ? 12 : 0, ch = H - p0 - topT, cd = D - 18;
+      units++;
+      add(code, 'جانب', ch, cd, 18, 2, F(f), 2, 1); add(code, 'قاعدة', bw - 36, cd, 18, 1, F(f), 1, 0); add(code, 'سقف', bw - 36, cd, 18, 1, F(f), 1, 0); add(code, 'ظهر', bw - 4, ch - 4, 3, 1, 'back');
+      if (g.cols > 1) add(code, 'فاصل عمودي', ch - 36, cd - 6, 18, g.cols - 1, F(f), 1, 0);
+      if (g.rows > 1) add(code, 'رف فاصل', bw - 36, cd - 6, 18, g.rows - 1, F(f), 1, 0);
+      const cw = bw / g.cols, rh = ch / g.rows;
+      for (const cell of g.cells) { const cf = cell.c || f;
+        switch (cell.k) {
+          case 'door': case 'doorL': case 'doorR': doors(code, cw, rh, 1, cf); break;
+          case 'double': doors(code, cw, rh, 2, cf); break;
+          case 'drawer': drawer(code, cw, rh, cf); break;
+          case 'flap': add(code, 'باب قلاب', cw - 3, rh - 3, 18, 1, F(cf), 2, 2); addHw('flap'); addHw('hinge', 2); if (!gola) addHw('handle'); break;
+          case 'glass': add(code, 'باب إطار للزجاج', cw - 3, rh - 3, 18, 1, F(cf), 2, 2); add(code, 'زجاج باب', cw - 93, rh - 93, 4, 1, 'glass'); addHw('hinge', hingesFor(rh)); if (!gola) addHw('handle'); break;
+          case 'panel': add(code, 'لوح ثابت', cw - 3, rh - 3, 18, 1, F(cf), 2, 2); break;
+        } }
+      for (const [k, e] of [[o.endL, eL], [o.endR, eR]]) if (e) { add(code, k === 'rnd' ? 'رف طرف مدوّر (قص منحني)' : 'رف طرف مائل (قص مائل)', e, cd, 18, 1 + g.rows, F(f), 1, 0); add(code, 'ظهر الطرف', e, ch, 18, 1, F(f), 1, 0); if (k === 'ang' && cd - e > 50) add(code, 'جانب الطرف', ch, cd - e, 18, 1, F(f), 2, 1); }
+      if (o.base === 'plinth') { add(code, 'وزرة', W, 100, 18, 1, F(f), 1, 0); addHw('leg', 4 + (eL ? 1 : 0) + (eR ? 1 : 0)); }
+      else if (o.base === 'legs') addHw('legMetal', 4 + 2 * Math.floor(bw / 800) + (eL ? 2 : 0) + (eR ? 2 : 0)); else if (o.base === 'hang') addHw('bracket', 2 + Math.floor(W / 600));
+      if (o.top === 'wood') add(code, 'سطح', W + 10, D + 10, 25, 1, 'accent', 2, 2); else if (o.top === 'glass') add(code, 'سطح زجاج', W, D + 10, 12, 1, 'glass');
+      if (o.led) addHw('led', W / 1000);
+      return;
+    }
+    if (it.t === 'bar') {
+      const H = itemH(it) * 10, D = it.d * 10, over = Math.min(o.over * 10, D - 250), cd = D - over, eL = o.endL !== 'sq' ? Math.min(o.ew * 10, W * .4) : 0, eR = o.endR !== 'sq' ? Math.min(o.ew * 10, W * .4) : 0, bw = W - eL - eR, yT = H - 30;
+      units++;
+      if (o.base === 'cab' || o.base === 'open') {
+        const cols = Math.max(1, Math.round(bw / 600)), ch = yT - 100, cw = bw / cols;
+        add(code, 'جانب', ch, cd - 18, 18, 2, F(f), 2, 1); add(code, 'قاعدة', bw - 36, cd - 18, 18, 1, F(f), 1, 0); add(code, 'سقف', bw - 36, cd - 18, 18, 1, F(f), 1, 0); add(code, 'ظهر', bw - 4, ch - 4, 3, 1, 'back');
+        if (cols > 1) add(code, 'فاصل عمودي', ch - 36, cd - 24, 18, cols - 1, F(f), 1, 0);
+        if (o.base === 'cab') for (let j = 0; j < cols; j++) { if (cols > 2 && j === Math.floor(cols / 2)) drawer(code, cw, ch, f); else doors(code, cw, ch, 1, f); } else add(code, 'رف', bw - 36, cd - 40, 18, cols, F(f), 1, 0);
+        add(code, 'لوح جهة الجلوس', bw, yT, 18, 1, F(f), 2, 2); add(code, 'وزرة', bw, 100, 18, 1, F(f), 1, 0); addHw('leg', 4 + 2 * (cols - 1));
+        for (const [k, e] of [[o.endL, eL], [o.endR, eR]]) if (e) { add(code, k === 'rnd' ? 'رف طرف مدوّر (قص منحني)' : 'رف طرف مائل (قص مائل)', e, D - 20, 18, yT > 700 ? 3 : 2, F(f), 1, 0); add(code, 'ظهر الطرف', e, yT, 18, 1, F(f), 1, 0); }
+      } else if (o.base === 'water') { add(code, 'جانب شلال من خامة السطح', D, yT, 30, 2, 'worktop'); add(code, 'لوح خلفي', bw - 60, yT, 18, 1, F(f), 2, 2); }
+      else addHw('legMetal', 4);
+      if (o.top === 'wood') add(code, 'سطح البار', W, D, 30, 1, 'accent', 2, 2);
+      if (+o.stools) addAp('stools', +o.stools);
+      return;
+    }
+    if (it.t === 'panel') {
+      const mat = {front: F(f), accent: 'accent', stone: 'stone', mirror: 'mirror', glass: 'glass', dark: 'panel'}[o.mat] || 'accent';
+      add(code, o.or === 'h' ? 'رف أو سطح حر' : 'لوح حر', W, itemH(it) * 10, it.d * 10, 1, mat, 2, 2); return;
+    }
     switch (it.t) {
       case 'bed': units++; add(code, 'جانب السرير', 2060, 250, 18, 2, F(fid), 1, 0); add(code, 'رافدة القدم', W + 100, 250, 18, 1, F(fid), 1, 0); add(code, 'رافدة الرأس', W + 100, 250, 18, 1, 'carcass', 1, 0); addHw('slats'); addHw('leg', 6);
         if (o.h === 'wood') add(code, 'لوح الرأس', W + 200, 1000, 25, 1, 'accent', 2, 2); else { const hb = o.h === 'tall' ? 1450 : 1180; add(code, 'لوح الرأس', W + 160, hb, 18, 1, 'carcass', 0, 0); addHw('upholstery', Math.round((W + 160) * hb / 1e5) / 10); }
@@ -2654,8 +3366,8 @@ function docHeader(d, kind, number){
   d.text(`المشروع: ${projectLine()}`, {sz: 20, color: MUTED, gap: 8});
 }
 function specRows(cl){
-  const c = cfg, rows = [['الواجهات', byId(FRONTS, c.front).name + (c.finish === 'gloss' ? '، لامع' : '، مطفي')]];
-  if (c.upperFront !== 'same' && c.upperFront !== c.front && ['kitchen', 'laundry', 'office', 'kids', 'free'].includes(c.room)) rows.push(['الخزائن العلوية', byId(FRONTS, c.upperFront).name]);
+  const c = cfg, rows = [['الواجهات', frontDef(c.front).name + (c.finish === 'gloss' ? '، لامع' : '، مطفي')]];
+  if (c.upperFront !== 'same' && c.upperFront !== c.front && ['kitchen', 'laundry', 'office', 'kids', 'free'].includes(c.room)) rows.push(['الخزائن العلوية', frontDef(c.upperFront).name]);
   if (cl.mats.some(m => m.mat === 'accent')) rows.push(['خشب الديكور', byId(ACCENTS, c.accent).name]);
   if (stats.top) rows.push([c.room === 'bathroom' ? 'سطح المغسلة' : 'سطح العمل', byId(TOPS, c.worktop).name]);
   if (['kitchen', 'laundry'].includes(c.room)) rows.push(['خلفية الجدار', byId(SPLASH, c.splash).name]);
@@ -2664,7 +3376,7 @@ function specRows(cl){
   const units = [];
   for (const r of runsOf(c)) { const {pb, pu} = layoutRun(c, r); const L = [...pb, ...pu].filter(m => m.fit && !UNIT[m.t].gap && m.t !== 'window'); if (L.length) units.push(`${r.name}: ` + L.map(m => `${UNIT[m.t].n} ${m.w}`).join('، ')); }
   units.forEach(u => rows.push(['الوحدات', u]));
-  const its = (c.items || []).filter(it => ITEM[it.t].cat).map(it => `${ITEM[it.t].n} ${it.w}`); if (its.length) rows.push(['القطع المستقلة', its.join('، ')]);
+  const its = (c.items || []).filter(it => DEF(it.t)?.cat).map(it => `${DEF(it.t).n} ${it.w}${CUST[it.t] ? '×' + itemH(it) + '×' + it.d : ''}`); if (its.length) rows.push(['القطع المستقلة', its.join('، ')]);
   const ap = Object.entries(cl.ap).map(([k, q]) => APPL[k] + (q > 1 ? ' ×' + q : '')).join('، '); if (ap) rows.push(['الأجهزة', ap]);
   return rows;
 }
@@ -2782,6 +3494,18 @@ document.addEventListener('click', e => {
   const ia = e.target.closest('[data-it]'); if (ia) { itemAction(ia.dataset.it); return; }
   const ai = e.target.closest('[data-additem]'); if (ai) { addItem(ai.dataset.additem); return; }
   const pi = e.target.closest('[data-pickitem]'); if (pi) { select({item: +pi.dataset.pickitem}); return; }
+  const al = e.target.closest('[data-al]'); if (al) { alignItem(al.dataset.al); return; }
+  const gr = e.target.closest('[data-grid]'); if (gr) { const [k, v] = [gr.dataset.grid.slice(0, 4), +gr.dataset.grid.slice(4)], g = cabGrid(curItem()); setGrid(k, g[k] + v); return; }
+  const ce = e.target.closest('[data-cell]'); if (ce) { cellSel = +ce.dataset.cell; renderFree(); return; }
+  const ck = e.target.closest('[data-cellk] [data-k]'); if (ck) { setCell('k', ck.dataset.k); return; }
+  if (e.target.closest('[data-cellall]')) { const it = curItem(), cs = it && cabGrid(it).cells[cellSel]; if (cs) { setCell('k', cs.k, true); setCell('c', cs.c || '', true); } return; }
+  const cc = e.target.closest('[data-cellc] [data-c]'); if (cc) { setCell('c', cc.dataset.c); return; }
+  const ic = e.target.closest('[data-icol] [data-c]'); if (ic) { setItemColor(ic.dataset.c); return; }
+  const fi = e.target.closest('[data-ifin] [data-f]'); if (fi) { setItemFinish(fi.dataset.f); return; }
+  if (e.target.closest('[data-open]')) { setOpen(!openT); return; }
+  const qy = e.target.closest('[data-qy]'); if (qy) { nudge('y', +qy.dataset.qy); return; }
+  const pg = e.target.closest('[data-pg] [data-g]'); if (pg) { palGroup = pg.dataset.g; renderFree(); return; }
+  const pl = e.target.closest('[data-pal]'); if (pl) { if (pl.dataset.dragged) { delete pl.dataset.dragged; return; } placePiece(pl.dataset.pal); return; }
   if (e.target.closest('.elev svg')) { select(null); return; }
   if (e.target.closest('[data-close]') || e.target.classList.contains('sheet')) { const s = e.target.closest('.sheet'); if (s) s.hidden = true; }
 });
@@ -2797,13 +3521,42 @@ document.addEventListener('change', e => {
   if (t.dataset.price === 'cur') renderCost();
   if (t.id === 'uw') setWidth(+t.value);
   if (t.dataset.uo) { const d = UNIT[curUnit(cfg.units)?.t]?.opts?.find(x => x.k === t.dataset.uo); if (d) setUnitOpt(d.k, d.type === 'bool' ? t.checked : Math.round(clamp(+t.value || d.def, d.min, d.max))); }
-  if (t.dataset.io) { const it = cfg.items[sel?.item], d = it && ITEM[it.t].opts?.find(x => x.k === t.dataset.io); if (d) setItemOpt(d.k, d.type === 'bool' ? t.checked : Math.round(clamp(+t.value || d.def, d.min, d.max))); }
+  if (t.dataset.io) { const it = cfg.items[sel?.item], d = it && DEF(it.t).opts?.find(x => x.k === t.dataset.io); if (d) setItemOpt(d.k, d.type === 'bool' ? t.checked : Math.round(clamp(+t.value || d.def, d.min, d.max))); }
   if (t.id === 'iw') setItemField('w', +t.value);
   if (t.id === 'ix') setItemField('x', +t.value);
   if (t.id === 'iz') setItemField('z', +t.value);
+  if (t.id === 'ih') setItemField('h', +t.value);
+  if (t.id === 'id') setItemField('d', +t.value);
+  if (t.id === 'ir') setItemField('r', +t.value);
+  if (t.id === 'ibottom') setItemField('bottom', +t.value);
+  if (t.id === 'icols') setGrid('cols', Math.round(+t.value) || 1);
+  if (t.id === 'irows') setGrid('rows', Math.round(+t.value) || 1);
+  if (t.id === 'icolor') setItemColor(t.value);
+  if (t.id === 'ccolor') setCell('c', t.value);
 });
 $('#lightBtn').onclick = () => set('light', cfg.light === 'day' ? 'evening' : 'day');
 $('#dimBtn').onclick = () => { showDims = !showDims; $('#dimBtn').setAttribute('aria-pressed', showDims); dirty = true; };
+$('#snapBtn').setAttribute('aria-pressed', snapOn);
+$('#snapBtn').onclick = () => { snapOn = !snapOn; lsSet('wr_snap', snapOn); $('#snapBtn').setAttribute('aria-pressed', snapOn); toast(snapOn ? 'القطع تلتصق بالجدران وببعضها' : 'تحريك حر بلا التصاق'); };
+$('#openBtn').onclick = () => setOpen(!openT);
+$('#tourBtn').onclick = () => tourOn ? stopTour() : startTour();
+// drag a piece from the library straight into the room: it is made where the pointer enters and follows it
+let palDrag = null;
+document.addEventListener('pointerdown', e => { const b = e.target.closest('[data-pal]'); if (!b || e.pointerType === 'touch' || e.button > 0) return; palDrag = {key: b.dataset.pal, x: e.clientX, y: e.clientY, btn: b, ghost: null}; });
+window.addEventListener('pointermove', e => {
+  const d = palDrag; if (!d || d.made) return;
+  if (!d.ghost) { if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 6) return; d.ghost = document.createElement('div'); d.ghost.className = 'ghost'; d.ghost.innerHTML = d.btn.innerHTML; document.body.append(d.ghost); stageEl.classList.add('dropping'); d.btn.dataset.dragged = '1'; }
+  d.ghost.style.left = e.clientX + 'px'; d.ghost.style.top = e.clientY + 'px';
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  if (el === canvas) {
+    const f = floorAt(e); if (!f) return;
+    d.made = true; d.ghost.remove(); stageEl.classList.remove('dropping');
+    placePiece(d.key, {x: f.x * 100, z: f.z * 100});
+    const i = cfg.items.length - 1; downAt = {x: e.clientX, y: e.clientY, t: performance.now()}; controls.enabled = false;
+    drag = startItemDrag(i, floorAt(e)); if (!drag) controls.enabled = true;
+  }
+});
+window.addEventListener('pointerup', () => { const d = palDrag; palDrag = null; if (d && d.ghost && !d.made) { d.ghost.remove(); stageEl.classList.remove('dropping'); } });
 
 /* ================= storage: designs per client ================= */
 let current = null; // {id, name, phone, note}
@@ -2882,7 +3635,7 @@ function snapshot(w, h, withFooter, withDims = withFooter){
     const s = foot / 100; x.direction = 'rtl'; x.textAlign = 'right'; x.fillStyle = '#FFFFFF';
     x.font = `600 ${34 * s}px "Reem Kufi","IBM Plex Sans Arabic",sans-serif`; x.fillText(current ? current.name : (cfg.room === 'kitchen' ? 'مطبخ' : 'غرفة نوم'), w - 40 * s, h + 46 * s);
     x.font = `400 ${21 * s}px "IBM Plex Sans Arabic",sans-serif`; x.fillStyle = '#B9C1C7';
-    const c = cfg, mats = cfg.room === 'kitchen' ? `${byId(FRONTS, c.front).name}، ${byId(TOPS, c.worktop).name}، ${byId(HANDLES, c.handle).name}` : `${byId(FRONTS, c.front).name}، ${byId(FABRICS, c.fabric).name}`;
+    const c = cfg, mats = cfg.room === 'kitchen' ? `${frontDef(c.front).name}، ${byId(TOPS, c.worktop).name}، ${byId(HANDLES, c.handle).name}` : `${frontDef(c.front).name}، ${byId(FABRICS, c.fabric).name}`;
     x.fillText(`${$('#tag').textContent.trim()} سم، ${mats}`, w - 40 * s, h + 82 * s);
     x.textAlign = 'left'; x.direction = 'ltr'; x.fillStyle = '#FFFFFF'; x.font = `600 ${24 * s}px "Reem Kufi","IBM Plex Sans Arabic",sans-serif`;
     x.fillText(prices.shop || '', 40 * s, h + 46 * s); x.fillStyle = '#B9C1C7'; x.font = `400 ${18 * s}px "IBM Plex Mono",monospace`; x.fillText(new Date().toLocaleDateString('en-GB'), 40 * s, h + 80 * s);
@@ -2992,7 +3745,7 @@ store.init();
 // warm the remaining swatch textures in idle time so the material tab opens instantly
 const idle = window.requestIdleCallback || (f => setTimeout(f, 200));
 ['walnut','quartz','granite','concrete','oakTop','tile','terrazzo','cement'].forEach((id, i) => idle(() => texCanvas(id)));
-window.__wr = {snap: (w, h) => snapshot(w, h, false, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
+window.__wr = {placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
 })();
 </script>
 
