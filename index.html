@@ -278,6 +278,15 @@ svg.uv [data-cell]{cursor:pointer}
 .ghost svg{height:34px;width:auto}
 .stage.dropping::after{content:"";position:absolute;inset:8px;border:2px dashed var(--tape);border-radius:12px;pointer-events:none}
 
+.badge{display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:9px;background:var(--bad);color:#fff;font-style:normal;font-size:11px;font-family:var(--f-num);margin-inline-start:5px;padding-inline:4px;vertical-align:1px}
+.issues{border:1px solid var(--bad);border-radius:10px;padding:10px 12px;background:color-mix(in srgb,var(--bad) 7%,var(--panel))}
+.issues h3{color:var(--bad)}
+.issues button{border:0;background:none;text-align:start;padding:4px 0;font-size:13.5px;color:var(--ink);display:flex;gap:8px;align-items:baseline}
+.issues button::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--bad);transform:translateY(-1px)}
+.issues button:hover{text-decoration:underline}
+.exrow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center}
+.exrow > input{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:7px 10px;min-width:0}
+.exrow .x{width:30px;height:30px}
 .sheet{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:rgba(10,12,14,.45);padding:16px}
 .sheet .box{background:var(--panel);border-radius:14px;width:min(560px,100%);max-height:calc(100% - 32px);overflow:auto;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,.35)}
 .sheet header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:1}
@@ -653,8 +662,14 @@ function cabGrid(it){
   const o = it.o || {}, h = itemH(it), cols = clamp(Math.round(+o.cols || Math.max(1, Math.round(it.w / 60))), 1, 10), rows = clamp(Math.round(+o.rows || (h > 150 ? 3 : 1)), 1, 10);
   const def = h > 150 ? 'door' : h <= 50 ? 'flap' : 'door', cells = [];
   for (let i = 0; i < cols * rows; i++) { const c = Array.isArray(o.cells) ? o.cells[i] : null; cells.push({k: c && CELLS[c.k] ? c.k : def, ...(c && (isHex(c.c) || (c.c && FRONTS.some(f => f.id === c.c))) ? {c: c.c} : {})}); }
-  return {cols, rows, cells};
+  // column widths and row heights (cm, any scale); equal when not set
+  const okArr = (a, n) => Array.isArray(a) && a.length === n && a.every(v => +v > 0) ? a.map(v => +v) : null;
+  const cw = okArr(o.cw, cols), rh = okArr(o.rh, rows);
+  const edges = (w, n) => { const ws = w || Array(n).fill(1), t = ws.reduce((a, b) => a + b, 0); let acc = 0; return [0, ...ws.map(v => (acc += v) / t)]; };
+  return {cols, rows, cells, cw, rh, cf: edges(cw, cols), rf: edges(rh, rows)};
 }
+// front width of the cabinet body and front height of its cells area, cm
+function cabSpans(it){ const o = iopts(it), W = it.w, eL = o.endL !== 'sq' ? Math.min(o.ew, W * .45) : 0, eR = o.endR !== 'sq' ? Math.min(o.ew, W * .45) : 0, p0 = o.base === 'plinth' ? 10 : o.base === 'legs' ? 12 : 0, topT = o.top === 'stone' || o.top === 'wood' ? 3 : o.top === 'glass' ? 1.2 : 0; return {bw: W - eL - eR, bh: itemH(it) - p0 - topT}; }
 // axis-aligned box of a piece on the floor plan, cm, any rotation
 const footprint = it => { const w = it.w, d = itemDepth(it) + (it.t === 'bed' ? 15 : 0), a = (it.r || 0) * Math.PI / 180, c = Math.abs(Math.cos(a)), s = Math.abs(Math.sin(a)); return [w * c + d * s, w * s + d * c]; };
 
@@ -878,7 +893,9 @@ function sanitizeItems(arr, c){
     const xo = x.o || {};
     if (isHex(xo.col) || FRONTS.some(f => f.id === xo.col)) o.col = xo.col;
     if (['matte', 'gloss'].includes(xo.fin)) o.fin = xo.fin;
-    if (x.t === 'cab') { const g = cabGrid({...it, o: xo}); o.cols = g.cols; o.rows = g.rows; o.cells = g.cells; }
+    if (x.t === 'cab') { const g = cabGrid({...it, o: xo}); o.cols = g.cols; o.rows = g.rows; o.cells = g.cells; if (g.cw) o.cw = g.cw.map(v => Math.round(v * 10) / 10); if (g.rh) o.rh = g.rh.map(v => Math.round(v * 10) / 10); }
+    if (['bar', 'black', 'brass', 'knob', 'gola'].includes(xo.hd)) o.hd = xo.hd;
+    if (TOPS.some(t => t.id === xo.wt)) o.wt = xo.wt;
     if (Object.keys(o).length) it.o = o; return it;
   }).filter(Boolean);
 }
@@ -896,6 +913,8 @@ function sanitize(raw, base){
   c.wardrobeW = Math.min(c.wardrobeW, c.wallB - 20);
   if (raw.units !== undefined) { const u = sanitizeUnits(raw.units); if (u) c.units = u; }
   if (raw.items !== undefined) c.items = sanitizeItems(raw.items, c);
+  if (Array.isArray(raw.extras)) c.extras = raw.extras.slice(0, 20).filter(x => x && typeof x === 'object').map(x => ({n: String(x.n || '').slice(0, 80), p: Math.round(clamp(Number(x.p) || 0, -1e7, 1e7))}));
+  if (raw.disc !== undefined) c.disc = Math.round(clamp(Number(raw.disc) || 0, 0, 50));
   if (!c.units) c.auto = true;
   if (raw.room && !raw.items && raw.itemsAuto === undefined && raw.room !== base.room) c.itemsAuto = true;
   // a design saved before rooms had items: the bedroom furniture becomes items
@@ -1699,7 +1718,7 @@ function bathtubItem(g, c, it){ const w = it.w / 100, d = .75; box(g, XM.ceramic
 let freeCounters = [], freeSt = {top: 0, wt: []}, anims = [], itemBoxes = [];
 const CAB_T = .018;
 // the design's materials with this piece's own colour and finish
-function itemCfg(it){ const o = it.o || {}; return (o.col || o.fin) ? {...cfg, front: o.col || cfg.front, upperFront: o.col ? 'same' : cfg.upperFront, finish: o.fin || cfg.finish} : cfg; }
+function itemCfg(it){ const o = it.o || {}; return (o.col || o.fin || o.hd || o.wt) ? {...cfg, front: o.col || cfg.front, upperFront: o.col ? 'same' : cfg.upperFront, finish: o.fin || cfg.finish, handle: o.hd || cfg.handle, worktop: o.wt || cfg.worktop} : cfg; }
 // plan polygon (x along the piece, z from the back) extruded between two heights
 function slab(parent, mat, pts, y0, y1, tile = 1.2){
   if (y1 - y0 < 1e-4 || pts.length < 3) return null;
@@ -1780,12 +1799,12 @@ function cabBody(p, c, s){
   box(p, body, xa, xa + t, p0, y1, 0, fz, {tile: 1.1}); box(p, body, xb - t, xb, p0, y1, 0, fz, {tile: 1.1});
   box(p, body, xa + t, xb - t, p0, p0 + t, 0, fz, {tile: 1.1}); box(p, body, xa + t, xb - t, y1 - t, y1, 0, fz, {tile: 1.1});
   box(p, inner, xa + t, xb - t, p0 + t, y1 - t, 0, .006, {cast: false});
-  const ia = xa + t, ib = xb - t, ja = p0 + t, jb = y1 - t, cols = s.cols, rows = s.rows;
-  const colX = j => ia + (ib - ia) * j / cols, rowY = r => jb - (jb - ja) * r / rows;
+  const ia = xa + t, ib = xb - t, ja = p0 + t, jb = y1 - t, cols = s.cols, rows = s.rows, cf = s.cf || Array.from({length: cols + 1}, (_, j) => j / cols), rf = s.rf || Array.from({length: rows + 1}, (_, r) => r / rows);
+  const colX = j => ia + (ib - ia) * cf[j], rowY = r => jb - (jb - ja) * rf[r];
   for (let j = 1; j < cols; j++) box(p, body, colX(j) - t / 2, colX(j) + t / 2, ja, jb, .006, fz - .002, {tile: 1.1});
   for (let r = 1; r < rows; r++) box(p, body, ia, ib, rowY(r) - t / 2, rowY(r) + t / 2, .006, fz - .002, {tile: 1.1});
   // fronts cover the boards (overlay), cells split the whole front evenly
-  const fx = j => xa + (xb - xa) * j / cols, fy = r => y1 - (y1 - p0) * r / rows;
+  const fx = j => xa + (xb - xa) * cf[j], fy = r => y1 - (y1 - p0) * rf[r];
   s.cells.forEach((cell, n) => {
     const r = Math.floor(n / cols), j = n % cols, k = cell.k;
     const cid = cell.c || fid, ix0 = colX(j) + (j ? t / 2 : 0), ix1 = colX(j + 1) - (j < cols - 1 ? t / 2 : 0), iy0 = rowY(r + 1) + (r < rows - 1 ? t / 2 : 0), iy1 = rowY(r) - (r ? t / 2 : 0);
@@ -1809,9 +1828,9 @@ function cabBody(p, c, s){
   if (s.led && s.base === 'hang') ledStrip(p, xa + .03, xb - .03, 0, Math.min(fz * .6, .3), 4);
 }
 function cabItem(g, c, it, i){
-  const o = iopts(it), {cols, rows, cells} = cabGrid(it), W = it.w / 100, D = itemDepth(it) / 100;
+  const o = iopts(it), {cols, rows, cells, cf, rf} = cabGrid(it), W = it.w / 100, D = itemDepth(it) / 100;
   const p = new THREE.Group(); p.position.set(-W / 2, 0, -D / 2); g.add(p);
-  cabBody(p, c, {W, H: itemH(it) / 100, D, cols, rows, cells, base: o.base, endL: o.endL, endR: o.endR, ew: o.ew / 100, top: o.top, led: o.led, seed: i + 1});
+  cabBody(p, c, {W, H: itemH(it) / 100, D, cols, rows, cells, cf, rf, base: o.base, endL: o.endL, endR: o.endR, ew: o.ew / 100, top: o.top, led: o.led, seed: i + 1});
 }
 // a counter you can sit at: cabinets face the kitchen side (back), stools on the front
 function barItem(g, c, it, i){
@@ -2138,10 +2157,10 @@ let tween = null;
 
 /* ================= dimension overlay ================= */
 const dimCv = $('#dims'), dctx = dimCv.getContext('2d');
-let showDims = true;
+let showDims = true, liveDims = [];
 function drawDims(ctx, w, h, scale = 1, clear = true, withSel = true){
   if (clear) ctx.clearRect(0, 0, w, h);
-  const list = (showDims ? dims : []).concat(withSel && selDim ? [selDim] : []); if (!list.length) return;
+  const list = (showDims ? dims : []).concat(withSel && selDim ? [selDim] : [], withSel ? liveDims : []); if (!list.length && !(cfg.items || []).length) return;
   const P = v => { const p = new THREE.Vector3(...v).project(camera); return {x: (p.x + 1) / 2 * w, y: (1 - p.y) / 2 * h, ok: p.z < 1}; };
   ctx.lineWidth = 1.5 * scale; ctx.font = `500 ${12.5 * scale}px "IBM Plex Mono", ui-monospace, monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   for (const d of list) {
@@ -2155,6 +2174,14 @@ function drawDims(ctx, w, h, scale = 1, clear = true, withSel = true){
     ctx.fillStyle = d.sel ? '#14191E' : '#F4B400'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(mx - tw / 2, my - th / 2, tw, th, 4 * scale) : ctx.rect(mx - tw / 2, my - th / 2, tw, th); ctx.fill();
     ctx.fillStyle = d.sel ? '#F4B400' : '#1B1600'; ctx.fillText(label, mx, my + scale);
   }
+  // codes of the free pieces, the same as in the workshop sheet
+  if (showDims && withSel && !drag) (cfg.items || []).forEach((it, i) => {
+    const b = itemBoxes[i]; if (!b || it.t === 'rug' || sel?.item === i) return;
+    const p = P([(b.x0 + b.x1) / 200, b.y1 / 100 + .06, (b.z0 + b.z1) / 200]); if (!p.ok) return;
+    const t = 'P' + (i + 1), tw = ctx.measureText(t).width + 12 * scale, th = 18 * scale, on = sel?.item === i;
+    ctx.fillStyle = on ? '#F4B400' : 'rgba(20,25,30,.78)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(p.x - tw / 2, p.y - th / 2, tw, th, 9 * scale) : ctx.rect(p.x - tw / 2, p.y - th / 2, tw, th); ctx.fill();
+    ctx.fillStyle = on ? '#1B1600' : '#fff'; ctx.fillText(t, p.x, p.y + scale);
+  });
 }
 
 /* ================= loop ================= */
@@ -2473,7 +2500,7 @@ function renderUnits(){
   renderFree();
 }
 /* ================= free design tab: library of pieces + inspector ================= */
-let palGroup = 'custom';
+let palGroup = 'custom', lastIssues = [];
 const NO_COLOR = ['rug', 'plant', 'lamp', 'toilet', 'shower', 'bathtub', 'chair', 'tv', 'mirror', 'frame', 'hood'];
 const fillOf = id => id ? ` style="fill:${frontColorCss(id)};fill-opacity:.45"` : '';
 // front view of a custom piece, cm; yb is the height of its bottom
@@ -2486,10 +2513,10 @@ function customShape(it, x0, Y, yb = 0){
   if (it.t === 'panel') { const H = itemH(it), T = it.d, cls = {front: 'f', accent: 'acc', stone: 'mar', mirror: 'mir', glass: 'gl', dark: 'dk'}[o.mat] || 'f'; if (o.or === 'h') rect(x0, yb, x0 + W, yb + T, cls); else rect(x0, yb, x0 + W, yb + H, cls, o.mat === 'front' ? fillOf(col0) : ''); return out.join(''); }
   if (it.t === 'bar') { const H = itemH(it); if (o.base === 'legs') { vl(x0 + 6, yb, yb + H - 3, 'hd'); vl(x0 + W - 6, yb, yb + H - 3, 'hd'); } else rect(x0 + (o.endL !== 'sq' ? o.ew : 0), yb, x0 + W - (o.endR !== 'sq' ? o.ew : 0), yb + H - 3, 'f', fillOf(col0)); rect(x0, yb + H - 3, x0 + W, yb + H, o.top === 'wood' ? 'acc' : 'wt'); return out.join(''); }
   if (it.t !== 'cab') return '';
-  const H = itemH(it), {cols, rows, cells} = cabGrid(it), p0 = o.base === 'plinth' ? 10 : o.base === 'legs' ? 12 : 0, topT = o.top === 'stone' || o.top === 'wood' ? 3 : o.top === 'glass' ? 1.2 : 0;
+  const H = itemH(it), {cols, rows, cells, cf, rf} = cabGrid(it), p0 = o.base === 'plinth' ? 10 : o.base === 'legs' ? 12 : 0, topT = o.top === 'stone' || o.top === 'wood' ? 3 : o.top === 'glass' ? 1.2 : 0;
   const eL = o.endL !== 'sq' ? Math.min(o.ew, W * .45) : 0, eR = o.endR !== 'sq' ? Math.min(o.ew, W * .45) : 0, bx0 = x0 + eL, bx1 = x0 + W - eR, by0 = yb + p0, by1 = yb + H - topT;
   if (o.base === 'plinth') rect(bx0 + 1, yb, bx1 - 1, by0, 'pl'); else if (o.base === 'legs') { vl(bx0 + 5, yb, by0, 'hd'); vl(bx1 - 5, yb, by0, 'hd'); }
-  const fx = j => bx0 + (bx1 - bx0) * j / cols, fy = r => by1 - (by1 - by0) * r / rows;
+  const fx = j => bx0 + (bx1 - bx0) * cf[j], fy = r => by1 - (by1 - by0) * rf[r];
   for (const [a, b, k] of [[x0, bx0, o.endL], [bx1, x0 + W, o.endR]]) if (b - a > .5) { rect(a, by0, b, by1, 'op'); for (let r = 1; r < rows; r++) hl(a, b, fy(r)); if (k === 'ang') out.push(`<line x1="${a === x0 ? a : b}" x2="${a === x0 ? b : a}" y1="${Y(by0)}" y2="${Y(by1)}" class="hl"/>`); }
   cells.forEach((c, n) => {
     const r = Math.floor(n / cols), j = n % cols, a = fx(j), b = fx(j + 1), y0 = fy(r + 1), y1 = fy(r), w = b - a, cx = (a + b) / 2, hd = Math.min(20, w * .4);
@@ -2513,11 +2540,11 @@ function pieceIcon(key){
 }
 // interactive map of the cells of a custom cabinet
 function cellMap(it){
-  const {cols, rows, cells} = cabGrid(it), o = iopts(it), W = it.w, H = itemH(it), p0 = o.base === 'plinth' ? 10 : o.base === 'legs' ? 12 : 0, topT = o.top !== 'none' ? 3 : 0;
+  const {cols, rows, cells, cf, rf} = cabGrid(it), o = iopts(it), W = it.w, H = itemH(it), p0 = o.base === 'plinth' ? 10 : o.base === 'legs' ? 12 : 0, topT = o.top === 'stone' || o.top === 'wood' ? 3 : o.top === 'glass' ? 1.2 : 0;
   const eL = o.endL !== 'sq' ? Math.min(o.ew, W * .45) : 0, eR = o.endR !== 'sq' ? Math.min(o.ew, W * .45) : 0, bx0 = eL, bx1 = W - eR, by0 = p0, by1 = H - topT, Y = y => H - y;
   const fs = Math.max(7, Math.min(W / cols, (by1 - by0) / rows) * .2);
   let out = customShape(it, 0, Y, 0);
-  cells.forEach((c, n) => { const r = Math.floor(n / cols), j = n % cols, a = bx0 + (bx1 - bx0) * j / cols, b = bx0 + (bx1 - bx0) * (j + 1) / cols, y1 = by1 - (by1 - by0) * r / rows, y0 = by1 - (by1 - by0) * (r + 1) / rows;
+  cells.forEach((c, n) => { const r = Math.floor(n / cols), j = n % cols, a = bx0 + (bx1 - bx0) * cf[j], b = bx0 + (bx1 - bx0) * cf[j + 1], y1 = by1 - (by1 - by0) * rf[r], y0 = by1 - (by1 - by0) * rf[r + 1];
     out += `<g data-cell="${n}"><rect x="${a}" y="${Y(y1)}" width="${b - a}" height="${y1 - y0}" class="${n === cellSel ? 'selr' : 'hit'}"/><text x="${(a + b) / 2}" y="${Y((y0 + y1) / 2) + fs * .35}" class="lb" font-size="${fs}">${CELL_S[c.k]}</text></g>`; });
   return `<svg class="uv cellmap" viewBox="-4 -4 ${W + 8} ${H + 8}" role="img" aria-label="واجهة الخزانة">${out}</svg>`;
 }
@@ -2527,6 +2554,35 @@ function colorRow(attr, cur, inputId, auto = 'حسب التصميم'){
 }
 function stepRow(label, key, val, min, max, step = 5){
   return `<div class="ued-row"><span class="lab">${label}</span><span class="stepper"><button type="button" data-it="${key}-${step}" aria-label="أنقص">−</button><input id="i${key}" type="number" min="${min}" max="${max}" value="${val}" inputmode="numeric" aria-label="${label}"><button type="button" data-it="${key}+${step}" aria-label="زد">+</button></span><span class="hint">سم</span></div>`;
+}
+// design check: pieces that collide, leave the room, pass the ceiling, or leave no room to open their doors
+function checkIssues(){
+  const out = [], c = cfg, A = c.wallA, H = c.height, hasB = c.layout !== 'I', hasC = c.layout === 'U', D = Math.round(frame.D * 100);
+  (c.items || []).forEach((it, i) => {
+    const b = itemBoxes[i]; if (!b || it.t === 'rug') return;
+    const name = `${DEF(it.t).n} P${i + 1}`;
+    if (b.x0 < (hasB ? -2 : -60) || (hasC && b.x1 > A + 2) || b.z0 < -2) out.push({i, msg: `${name} تدخل في الجدار`});
+    if (b.y1 > H + 1) out.push({i, msg: `${name} أعلى من السقف بـ ${Math.round(b.y1 - H)} سم`});
+    if (b.y0 > 3 && it.t !== 'panel' && !(isUnitItem(it) && unitBox(it, H, Math.min(H - 4, 230))[0] > 3) && !(it.t === 'cab' && iopts(it).base === 'hang') && !it.sy) out.push({i, msg: `${name} مرفوعة ${Math.round(b.y0)} سم دون شيء تحتها`});
+    const obs = obstacles(i), hit = obs.find(o => Math.min(o.x1 - o.x0, o.z1 - o.z0) >= 6 && o.y1 - o.y0 >= 2 && b.x0 < o.x1 - 3 && b.x1 > o.x0 + 3 && b.z0 < o.z1 - 3 && b.z1 > o.z0 + 3 && b.y0 < o.y1 - 2 && b.y1 > o.y0 + 2 && !(o.item !== undefined && o.item < i && out.some(x => x.i === o.item && x.with === i)));
+    if (hit) out.push({i, with: hit.item, msg: `${name} متداخلة مع ${hit.item !== undefined ? DEF(c.items[hit.item].t).n + ' P' + (hit.item + 1) : 'وحدة على الجدار'}`});
+    // room in front to open doors and drawers
+    const opens = (isUnitItem(it) && UNIT[it.t].cat && !['shelf', 'mirror', 'clad', 'hooks', 'frame'].includes(it.t)) || it.t === 'cab' || (it.t === 'bar' && iopts(it).base === 'cab');
+    if (opens && ortho(it.r)) {
+      const r = Math.round(it.r) % 360, d = itemDepth(it), dir = it.t === 'bar' ? (r + 180) % 360 : r, f = aabbAt(it, it.x, it.z, it.r);
+      let gap = Infinity;
+      for (const o of obs) {
+        if (!(o.y0 < b.y1 - 2 && o.y1 > b.y0 + 2) || Math.min(o.x1 - o.x0, o.z1 - o.z0) < 6) continue;
+        if (dir === 0 && o.x0 < f.x1 - 3 && o.x1 > f.x0 + 3 && o.z0 >= f.z1 - 1) gap = Math.min(gap, o.z0 - f.z1);
+        if (dir === 180 && o.x0 < f.x1 - 3 && o.x1 > f.x0 + 3 && o.z1 <= f.z0 + 1) gap = Math.min(gap, f.z0 - o.z1);
+        if (dir === 270 && o.z0 < f.z1 - 3 && o.z1 > f.z0 + 3 && o.x0 >= f.x1 - 1) gap = Math.min(gap, o.x0 - f.x1);
+        if (dir === 90 && o.z0 < f.z1 - 3 && o.z1 > f.z0 + 3 && o.x1 <= f.x0 + 1) gap = Math.min(gap, f.x0 - o.x1);
+      }
+      const need = it.t === 'bar' ? 90 : c.room === 'kitchen' ? 90 : 60;
+      if (gap >= 0 && gap < need) out.push({i, msg: `أمام ${name} ${Math.round(gap)} سم فقط، ${gap < 45 ? 'الأبواب والجوارير لن تُفتح' : 'الممر ضيق'} (المستحسن ${need} سم)`});
+    }
+  });
+  return out;
 }
 function renderFree(){
   const pane = $('#pane-free'); if (!pane) return;
@@ -2545,7 +2601,9 @@ function renderFree(){
       <div class="ued-row"><button type="button" class="btn sm" data-it="wall">ألصق بالجدار</button><button type="button" class="btn sm" data-it="floor">أنزل إلى الأرض</button><span class="hint">${si.sy ? `مركّبة فوق قطعة أخرى (${si.sy} سم)` : ''}</span></div></div>
       <div class="sect"><h4>الدوران</h4><div class="ued-row"><div class="seg2"><button type="button" data-it="r-15">−15°</button><button type="button" data-it="r-45">−45°</button></div><span class="num"><input id="ir" type="number" step="1" value="${Math.round(si.r)}"><span>درجة</span></span><div class="seg2"><button type="button" data-it="r+45">+45°</button><button type="button" data-it="r+15">+15°</button><button type="button" data-it="r+90">90°</button></div></div></div>
       ${NO_COLOR.includes(si.t) ? '' : `<div class="sect"><h4>اللون</h4>${colorRow('icol', o.col, 'icolor')}
-        <div class="choice" data-ifin><button type="button" data-f="" aria-pressed="${!o.fin}">حسب التصميم</button><button type="button" data-f="matte" aria-pressed="${o.fin === 'matte'}">مطفي</button><button type="button" data-f="gloss" aria-pressed="${o.fin === 'gloss'}">لامع</button></div></div>`}
+        <div class="choice" data-ifin><button type="button" data-f="" aria-pressed="${!o.fin}">حسب التصميم</button><button type="button" data-f="matte" aria-pressed="${o.fin === 'matte'}">مطفي</button><button type="button" data-f="gloss" aria-pressed="${o.fin === 'gloss'}">لامع</button></div>
+        <div class="optseg"><span>المقابض</span><div class="choice" data-ihd><button type="button" data-v="" aria-pressed="${!o.hd}">حسب التصميم</button>${HANDLES.map(x => `<button type="button" data-v="${x.id}" aria-pressed="${o.hd === x.id}">${x.name}</button>`).join('')}</div></div>
+        ${(isUnitItem(si) && (UNIT[si.t].counter || si.t === 'vanity')) || (si.t === 'cab' && iopts(si).top === 'stone') || (si.t === 'bar' && iopts(si).top !== 'wood') ? `<div class="optseg"><span>خامة السطح</span><div class="choice" data-iwt><button type="button" data-v="" aria-pressed="${!o.wt}">حسب التصميم</button>${TOPS.map(x => `<button type="button" data-v="${x.id}" aria-pressed="${o.wt === x.id}">${x.name}</button>`).join('')}</div></div>` : ''}</div>`}
       ${T.opts ? `<div class="sect"><h4>الشكل والخيارات</h4><div class="opts">${optControls(T.opts, iopts(si), 'io')}</div></div>` : ''}`;
     if (si.t === 'cab') {
       const g = cabGrid(si), cs = g.cells[Math.min(cellSel, g.cells.length - 1)];
@@ -2553,14 +2611,18 @@ function renderFree(){
         <div class="ued-row"><span class="lab">الأعمدة</span><span class="stepper"><button type="button" data-grid="cols-1" aria-label="أقل">−</button><input id="icols" type="number" min="1" max="10" value="${g.cols}"><button type="button" data-grid="cols+1" aria-label="أكثر">+</button></span><span class="lab">الصفوف</span><span class="stepper"><button type="button" data-grid="rows-1" aria-label="أقل">−</button><input id="irows" type="number" min="1" max="10" value="${g.rows}"><button type="button" data-grid="rows+1" aria-label="أكثر">+</button></span></div>
         <div class="elev">${cellMap(si)}</div>
         <div class="choice" data-cellk>${Object.entries(CELLS).map(([k, n]) => `<button type="button" data-k="${k}" aria-pressed="${cs.k === k}">${n}</button>`).join('')}</div>
+        <div class="ued-row"><span class="lab">عرض العمود</span><span class="num"><input id="icw" type="number" value="${Math.round(cabSpans(si).bw * (g.cf[cellSel % g.cols + 1] - g.cf[cellSel % g.cols]))}"><span>سم</span></span><span class="lab">ارتفاع الصف</span><span class="num"><input id="irh" type="number" value="${Math.round(cabSpans(si).bh * (g.rf[Math.floor(cellSel / g.cols) + 1] - g.rf[Math.floor(cellSel / g.cols)]))}"><span>سم</span></span>${g.cw || g.rh ? '<button type="button" class="btn sm" data-even>تقسيم متساوٍ</button>' : ''}</div>
         ${colorRow('cellc', cs.c, 'ccolor', 'لون الخزانة')}
         <div class="ued-row"><button type="button" class="btn sm" data-cellall>طبّق هذه الخانة على كل الخانات</button></div></div>`;
     }
-    h += `<div class="ued-row acts"><button type="button" class="btn sm" data-it="dup">نسخ</button>${si.t === 'cab' || si.t === 'bar' ? `<button type="button" class="btn sm" data-open>${openT ? 'أغلق الأبواب' : 'افتح الأبواب'}</button>` : ''}<button type="button" class="btn sm danger" data-it="del">حذف</button></div>
+    h += `<div class="ued-row acts"><button type="button" class="btn sm" data-it="dup">نسخ</button>${si.t === 'cab' || si.t === 'bar' ? '<button type="button" class="btn sm" data-it="mirror">عكس يمين ويسار</button>' : ''}${si.t === 'cab' || si.t === 'bar' ? `<button type="button" class="btn sm" data-open>${openT ? 'أغلق الأبواب' : 'افتح الأبواب'}</button>` : ''}<button type="button" class="btn sm danger" data-it="del">حذف</button></div>
       <p class="hint">من لوحة المفاتيح: الأسهم للتحريك سنتيمتراً (مع Shift عشرة)، Q و E للتدوير، PageUp و PageDown للرفع والإنزال، Ctrl+D للنسخ. اضغط Alt أثناء السحب لإلغاء الالتصاق.</p></div>`;
   }
+  const issues = checkIssues(); lastIssues = issues;
+  $('[data-tab="free"]').innerHTML = 'تصميم حر' + (issues.length ? `<i class="badge">${issues.length}</i>` : '');
+  if (issues.length) h += `<div class="grp issues"><h3>فحص التصميم <small>${issues.length} ملاحظة</small></h3>${issues.map(x => `<button type="button" data-pickitem="${x.i}">${x.msg}</button>`).join('')}</div>`;
   const grp = PAL_GROUPS.find(g => g[0] === palGroup) || PAL_GROUPS[0], keys = grp[0] === 'custom' ? Object.keys(PIECES) : grp[2];
-  h += `<div class="grp"><h3>مكتبة القطع <small>اسحب القطعة إلى المشهد، أو اضغطها</small></h3>
+  h += `<div class="grp"><h3>مكتبة القطع <small>اسحبها إلى المشهد أو اضغطها؛ على الهاتف اضغط مطولاً ثم اسحب</small></h3>
     <div class="choice pg" data-pg>${PAL_GROUPS.map(g => `<button type="button" data-g="${g[0]}" aria-pressed="${g[0] === grp[0]}">${g[1]}</button>`).join('')}</div>
     <div class="ugrid pal">${keys.map(k => `<button type="button" data-pal="${k}">${pieceIcon(k)}<span>${PIECES[k]?.n || DEF(k).n}</span></button>`).join('')}</div></div>`;
   h += `<div class="grp"><h3>القطع في الغرفة <small>${items.length}</small></h3>
@@ -2727,6 +2789,7 @@ function itemAction(act){
   if (!sel || sel.item === undefined) return; const i = sel.item, it0 = cfg.items[i]; if (!it0) return;
   if (act === 'del') { editItems(L => { L.splice(i, 1); }); sel = null; drawSel(); renderUnits(); toast('حُذفت القطعة، ويمكنك التراجع'); return; }
   if (act === 'dup') { editItems(L => { const c0 = JSON.parse(JSON.stringify(L[i])), [fw] = footprint(c0), th = -c0.r * Math.PI / 180; c0.x += Math.round(Math.cos(th) * fw); c0.z += Math.round(-Math.sin(th) * fw); L.push(c0); }); select({item: cfg.items.length - 1}, true); restack(() => {}, false); return; }
+  if (act === 'mirror') { mirrorItem(); return; }
   if (act === 'floor') { restack(L => { L[i].y = 0; L[i].sy = 0; }); renderUnits(); return; }
   if (act === 'wall') { record(); const g = itemGroup(i), q = poseAt(it0, it0.x, it0.z, Math.round(it0.r / 90) * 90 % 360, localBox(g), obstacles(i), false); editItems(L => Object.assign(L[i], {x: q.x, z: q.z, r: q.r, sy: q.sy}), false); drawSel(); renderUnits(); return; }
   if (act[0] === 'r') { const v = act === 'rot' ? 90 : +act.slice(1); restack(L => { L[i].r = ((L[i].r + v) % 360 + 360) % 360; }); hist.key = 'rot'; renderUnits(); return; }
@@ -2743,6 +2806,26 @@ function setItemColor(v){ editItems(L => { const it = L[sel.item]; if (!it) retu
 function setItemFinish(v){ editItems(L => { const it = L[sel.item]; if (!it) return; const o = {...(it.o || {})}; if (v) o.fin = v; else delete o.fin; it.o = o; }); drawSel(); renderUnits(); }
 // the cell grid of a custom cabinet
 let cellSel = 0;
+// width of the selected cell's column or height of its row, cm; the others share what is left
+function setSpan(kind, v){
+  const it = curItem(); if (!it || it.t !== 'cab' || !isFinite(v)) return;
+  const g = cabGrid(it), {bw, bh} = cabSpans(it), n = kind === 'col' ? g.cols : g.rows, total = kind === 'col' ? bw : bh, ed = kind === 'col' ? g.cf : g.rf;
+  if (n < 2) { toast(kind === 'col' ? 'غيّر عرض الخزانة نفسها، فيها عمود واحد' : 'غيّر ارتفاع الخزانة نفسها، فيها صف واحد'); return; }
+  const k = kind === 'col' ? cellSel % g.cols : Math.floor(cellSel / g.cols), cur = ed.slice(1).map((e, i) => (e - ed[i]) * total);
+  const nv = clamp(v, 8, total - 8 * (n - 1)), rest = cur.reduce((a, b, i) => a + (i === k ? 0 : b), 0);
+  const out = cur.map((w, i) => i === k ? nv : w * (total - nv) / rest);
+  editItems(L => { const t = L[sel.item]; t.o = {...(t.o || {}), [kind === 'col' ? 'cw' : 'rh']: out}; }); hist.key = 'span-' + kind; renderUnits();
+}
+function evenSpans(){ editItems(L => { const t = L[sel.item]; if (!t?.o) return; delete t.o.cw; delete t.o.rh; }); renderUnits(); }
+// left becomes right: ends, columns, door hinges
+function mirrorItem(){
+  const it = curItem(); if (!it || (it.t !== 'cab' && it.t !== 'bar')) return;
+  editItems(L => { const t = L[sel.item], o = {...iopts(t), ...(t.o || {})}; [o.endL, o.endR] = [o.endR, o.endL];
+    if (t.t === 'cab') { const g = cabGrid(t), cells = []; for (let r = 0; r < g.rows; r++) for (let j = g.cols - 1; j >= 0; j--) { const c0 = {...g.cells[r * g.cols + j]}; c0.k = c0.k === 'doorL' ? 'doorR' : c0.k === 'doorR' ? 'doorL' : c0.k; cells.push(c0); } o.cells = cells; if (g.cw) o.cw = [...g.cw].reverse(); }
+    t.o = o; });
+  drawSel(); renderUnits();
+}
+function setItemPart(k, v){ editItems(L => { const t = L[sel.item]; if (!t) return; const o = {...(t.o || {})}; if (v) o[k] = v; else delete o[k]; t.o = o; }); drawSel(); renderUnits(); }
 function setGrid(k, v){
   restack(L => { const it = L[sel.item]; if (!it || it.t !== 'cab') return; const g = cabGrid(it), cols = k === 'cols' ? clamp(v, 1, 10) : g.cols, rows = k === 'rows' ? clamp(v, 1, 10) : g.rows;
     const cells = []; for (let r = 0; r < rows; r++) for (let j = 0; j < cols; j++) cells.push(g.cells[Math.min(r, g.rows - 1) * g.cols + Math.min(j, g.cols - 1)]);
@@ -2834,6 +2917,20 @@ function poseAt(it, x, z, r, lb, obs, free = !snapOn){
   }
   return {x, z, r, sy: Math.round(sy)};
 }
+// the free space around a piece while it moves: to the walls or to the nearest piece on each side, cm
+function gapDims(it, q, obs, lb){
+  const bb = aabbAt(it, q.x, q.z, q.r), A = cfg.wallA, y0 = lb.y0 + (it.y || 0) + q.sy, y1 = lb.y1 + (it.y || 0) + q.sy, hy = (Math.max(y0, 0) + 3) / 100;
+  const sameH = o => o.y0 < y1 - 1 && o.y1 > y0 + 1 && Math.min(o.x1 - o.x0, o.z1 - o.z0) >= 6;
+  const zo = o => o.z0 < bb.z1 - 1 && o.z1 > bb.z0 + 1, xo = o => o.x0 < bb.x1 - 1 && o.x1 > bb.x0 + 1, out = [], cz = (bb.z0 + bb.z1) / 200, cx = (bb.x0 + bb.x1) / 200;
+  let L = 0, Rr = A, Bk = 0;
+  for (const o of obs) { if (!sameH(o)) continue; if (zo(o)) { if (o.x1 <= bb.x0 + 1) L = Math.max(L, o.x1); if (o.x0 >= bb.x1 - 1) Rr = Math.min(Rr, o.x0); } if (xo(o) && o.z1 <= bb.z0 + 1) Bk = Math.max(Bk, o.z1); }
+  const push = (a, b, t) => { if (t >= 1) out.push({a, b, t: Math.round(t), sel: true}); };
+  push([L / 100, hy, cz], [bb.x0 / 100, hy, cz], bb.x0 - L);
+  if (bb.x1 <= A) push([bb.x1 / 100, hy, cz], [Rr / 100, hy, cz], Rr - bb.x1);
+  push([cx, hy, Bk / 100], [cx, hy, bb.z0 / 100], bb.z0 - Bk);
+  if (y0 > 3) out.push({a: [bb.x1 / 100 + .03, 0, bb.z1 / 100], b: [bb.x1 / 100 + .03, y0 / 100, bb.z1 / 100], t: Math.round(y0), sel: true});
+  return out;
+}
 // a unit on a wall becomes a free piece at the very same spot; the space it leaves stays empty
 function detachUnit(mod){
   const r = runsOf(cfg).find(x => x.id === mod.run); if (!r || !runGroups[mod.run]) return -1;
@@ -2870,18 +2967,26 @@ window.addEventListener('pointermove', e => {
     if (drag.mod) { i = detachUnit(drag.mod); if (i < 0) { drag = null; controls.enabled = true; return; } toast('صارت الوحدة قطعة حرة، حرّكها أينما شئت'); }
     drag = startItemDrag(i, drag.f); if (!drag) { controls.enabled = true; return; }
   }
-  const f = floorAt(e); if (!f) return;
+  dragTo(e);
+});
+function dragTo(e){
+  const f = floorAt(e); if (!f || !drag || drag.pending) return;
   const it = cfg.items[drag.i];
   const q = poseAt(it, drag.x0 + (f.x - drag.f0.x) * 100, drag.z0 + (f.z - drag.f0.z) * 100, drag.r, drag.lb, drag.obs, e.altKey || !snapOn);
   drag.x = q.x; drag.z = q.z; drag.rr = q.r; drag.sy = q.sy;
   drag.group.position.set(q.x / 100, ((it.y || 0) + q.sy) / 100, q.z / 100); drag.group.rotation.y = -q.r * Math.PI / 180;
+  liveDims = gapDims(it, q, drag.obs, drag.lb);
   if (selHelper && sel?.item === drag.i) { const bx = objBox(drag.group); selHelper.position.copy(bx.getCenter(new THREE.Vector3())); selDim = null; }
   renderer.shadowMap.needsUpdate = true; dirty = true;
-});
+}
+function dropDrag(){
+  const d = drag; drag = null; controls.enabled = true; liveDims = []; downAt = null;
+  editItems(L => { const it = L[d.i]; if (it) { it.x = d.x; it.z = d.z; it.r = d.rr ?? it.r; it.sy = d.sy; } }, false); select({item: d.i}, true);
+}
 window.addEventListener('pointerup', e => {
   if (drag) {
-    const d = drag; drag = null; controls.enabled = true;
-    if (!d.pending) { downAt = null; editItems(L => { const it = L[d.i]; if (it) { it.x = d.x; it.z = d.z; it.r = d.rr ?? it.r; it.sy = d.sy; } }, false); select({item: d.i}, true); return; }
+    if (!drag.pending) { dropDrag(); return; }
+    drag = null; controls.enabled = true; liveDims = [];
   }
   if (!downAt || e.target !== canvas) { downAt = null; return; }
   const moved = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y), dt = performance.now() - downAt.t; downAt = null;
@@ -3012,6 +3117,8 @@ function saleLines(){
     L.push([def.n, cat === 'top' ? `${a.qty.toFixed(2)} م²، ${byId(TOPS, c.worktop).name}` : det, a.qty * n(cat), cat]);
   }
   if (n('install')) L.push(['التوصيل والتركيب', '', n('install'), 'install']);
+  for (const x of c.extras || []) if (x.n || x.p) L.push([x.n || 'بند إضافي', x.d || '', +x.p || 0, 'extra']);
+  if (+c.disc > 0) { const base = L.reduce((s, l) => s + l[2], 0); L.push([`خصم ${c.disc}%`, '', -base * c.disc / 100, 'disc']); }
   const sub = L.reduce((s, l) => s + l[2], 0), vat = sub * n('vat') / 100, total = sub + vat;
   return {lines: L, sub, vat, total, deposit: total * n('deposit') / 100};
 }
@@ -3156,8 +3263,7 @@ function cutList(c){
       add(code, 'جانب', ch, cd, 18, 2, F(f), 2, 1); add(code, 'قاعدة', bw - 36, cd, 18, 1, F(f), 1, 0); add(code, 'سقف', bw - 36, cd, 18, 1, F(f), 1, 0); add(code, 'ظهر', bw - 4, ch - 4, 3, 1, 'back');
       if (g.cols > 1) add(code, 'فاصل عمودي', ch - 36, cd - 6, 18, g.cols - 1, F(f), 1, 0);
       if (g.rows > 1) add(code, 'رف فاصل', bw - 36, cd - 6, 18, g.rows - 1, F(f), 1, 0);
-      const cw = bw / g.cols, rh = ch / g.rows;
-      for (const cell of g.cells) { const cf = cell.c || f;
+      g.cells.forEach((cell, n) => { const cf = cell.c || f, j = n % g.cols, r = Math.floor(n / g.cols), cw = bw * (g.cf[j + 1] - g.cf[j]), rh = ch * (g.rf[r + 1] - g.rf[r]);
         switch (cell.k) {
           case 'door': case 'doorL': case 'doorR': doors(code, cw, rh, 1, cf); break;
           case 'double': doors(code, cw, rh, 2, cf); break;
@@ -3165,7 +3271,7 @@ function cutList(c){
           case 'flap': add(code, 'باب قلاب', cw - 3, rh - 3, 18, 1, F(cf), 2, 2); addHw('flap'); addHw('hinge', 2); if (!gola) addHw('handle'); break;
           case 'glass': add(code, 'باب إطار للزجاج', cw - 3, rh - 3, 18, 1, F(cf), 2, 2); add(code, 'زجاج باب', cw - 93, rh - 93, 4, 1, 'glass'); addHw('hinge', hingesFor(rh)); if (!gola) addHw('handle'); break;
           case 'panel': add(code, 'لوح ثابت', cw - 3, rh - 3, 18, 1, F(cf), 2, 2); break;
-        } }
+        } });
       for (const [k, e] of [[o.endL, eL], [o.endR, eR]]) if (e) { add(code, k === 'rnd' ? 'رف طرف مدوّر (قص منحني)' : 'رف طرف مائل (قص مائل)', e, cd, 18, 1 + g.rows, F(f), 1, 0); add(code, 'ظهر الطرف', e, ch, 18, 1, F(f), 1, 0); if (k === 'ang' && cd - e > 50) add(code, 'جانب الطرف', ch, cd - e, 18, 1, F(f), 2, 1); }
       if (o.base === 'plinth') { add(code, 'وزرة', W, 100, 18, 1, F(f), 1, 0); addHw('leg', 4 + (eL ? 1 : 0) + (eR ? 1 : 0)); }
       else if (o.base === 'legs') addHw('legMetal', 4 + 2 * Math.floor(bw / 800) + (eL ? 2 : 0) + (eR ? 2 : 0)); else if (o.base === 'hang') addHw('bracket', 2 + Math.floor(W / 600));
@@ -3215,6 +3321,7 @@ function cutList(c){
   const grouped = Object.values(groups).sort((a, b) => order(a.mat) - order(b.mat) || a.mat.localeCompare(b.mat) || b.L - a.L || b.W - a.W);
   const wt = stats.wt || [];
   const doorsN = parts.filter(p => p.kind.startsWith('باب') || p.kind === 'واجهة جلاية').reduce((s, p) => s + p.qty, 0), drawersN = parts.filter(p => p.kind === 'واجهة جارور').reduce((s, p) => s + p.qty, 0);
+  const nest = nestSheets({grouped}); for (const m of matList) { const n = nest.find(x => x.mat === m.mat && x.th === m.th); if (n) m.sheets = n.sheets.length; }
   return {parts, grouped, hw, ap, mats: matList, edgeM, wt, topM2: wt.reduce((s, [l, w]) => s + l * w / 1e6, 0), unitCount: units, doorsN, drawersN};
 }
 function costOf(cl){
@@ -3230,7 +3337,7 @@ function renderCost(){
   const p = prices, q = saleLines(), cl = cutList(cfg);
   const used = q.lines.map(l => l[3]).filter(k => PRICE_CAT[k]);
   const pin = (key, label, unit = p.cur, step = 1) => `<label for="p-${key}">${label}</label><span class="num"><input id="p-${key}" data-price="${key}" type="number" min="0" step="${step}" value="${p[key]}"><span>${unit}</span></span>`;
-  const rows = [...q.lines.filter(l => l[3] !== 'install').map(l => [l[0], l[1]]), ['أبواب', String(cl.doorsN)], ['جوارير', String(cl.drawersN)], ['مقابض', String(cl.hw.handle || 0)], ['مفصلات', String(cl.hw.hinge || 0)]];
+  const rows = [...q.lines.filter(l => !['install', 'extra', 'disc'].includes(l[3])).map(l => [l[0], l[1]]), ['أبواب', String(cl.doorsN)], ['جوارير', String(cl.drawersN)], ['مقابض', String(cl.hw.handle || 0)], ['مفصلات', String(cl.hw.hinge || 0)]];
   $('#pane-cost').innerHTML = `
     <div class="total"><span>سعر البيع مع التركيب</span><strong id="estOut"></strong></div>
     <div class="kpis"><div><span>تكلفة المواد والأجرة</span><b id="kCost"></b></div><div><span>الربح التقديري</span><b id="kProfit"></b></div></div>
@@ -3240,7 +3347,7 @@ function renderCost(){
         <button type="button" class="doc" data-doc="work"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 9h18M9 9v11M15 9v11"/></svg><span><b>ورقة الورشة</b><small>PDF بقائمة التقطيع والإكسسوارات والربح</small></span></button>
         <button type="button" class="doc" data-doc="csv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4zM4 10h16M4 15h16M10 4v16"/></svg><span><b>قائمة التقطيع CSV</b><small>لبرامج تحسين التقطيع وExcel</small></span></button>
       </div></div>
-    <div class="grp"><h3>الألواح المطلوبة <small>تقدير مع هدر 15%</small></h3><div class="list" id="boardList"></div></div>
+    <div class="grp"><h3>الألواح المطلوبة <small>حسب مخطط التقطيع</small></h3><div class="list" id="boardList"></div></div>
     <div class="grp"><h3>ملخص القطع</h3><div class="list">${rows.map(([a, b]) => `<div><span>${a}</span><b>${b}</b></div>`).join('')}</div></div>
     <details class="grp det" data-det="sale" ${openDetails.sale ? 'open' : ''}><summary>أسعار البيع</summary>
       <div class="prices">
@@ -3248,6 +3355,10 @@ function renderCost(){
         ${pin('install', 'التوصيل والتركيب')}${pin('vat', 'الضريبة', '%')}${pin('deposit', 'الدفعة الأولى', '%')}
         <label for="p-cur">العملة</label><span class="num"><input id="p-cur" data-price="cur" value="${esc(p.cur)}" style="width:78px"></span>
       </div><p class="hint">تظهر هنا أسعار القطع الموجودة في هذا التصميم فقط.</p></details>
+    <div class="grp"><h3>بنود إضافية وخصم <small>لهذا الزبون فقط</small></h3>
+      ${(cfg.extras || []).map((x, i) => `<div class="exrow"><input data-ex="${i}:n" value="${esc(x.n || '')}" placeholder="مثلاً: فك المطبخ القديم" aria-label="البند"><span class="num"><input data-ex="${i}:p" type="number" step="1" value="${+x.p || 0}" aria-label="المبلغ"><span>${esc(p.cur)}</span></span><button type="button" class="x" data-exdel="${i}" aria-label="حذف البند">×</button></div>`).join('')}
+      <div class="ued-row"><button type="button" class="btn sm" data-exadd>إضافة بند</button><span class="grow"></span><label class="sw-row" style="gap:8px"><span>خصم</span><span class="num"><input id="discIn" type="number" min="0" max="50" step="1" value="${+cfg.disc || 0}"><span>%</span></span></label></div>
+      <p class="hint">أي شيء لا تحسبه الأداة: نقل لطابق عالٍ، فك القديم، إكسسوار خاص، دهان. يظهر في عرض السعر.</p></div>
     <details class="grp det" data-det="work" ${openDetails.work ? 'open' : ''}><summary>تكاليف الورشة</summary>
       <div class="prices">
         ${pin('sheetCarcass', 'لوح هيكل 18 مم') + pin('sheetFront', 'لوح واجهات 18 مم') + pin('sheetAccent', 'لوح خشب الديكور') + pin('sheetBack', 'لوح ظهر HDF') + pin('sheetPanel', 'لوح خلفي داكن') + pin('edge', 'متر شريط حواف', p.cur, .1) + pin('topCost', 'متر مربع سطح (تكلفة)') + pin('stoneM2', 'متر مربع رخام أو حجر')
@@ -3345,7 +3456,7 @@ function newDoc(title){
   d.page();
   return d;
 }
-const PRINT_CSS = `<style>.st{fill:#C9CDD0;stroke:#14191E}.bk{fill:#5A646C;opacity:.55}.acc{fill:#8A6446;stroke:#14191E;stroke-width:.8}.mar{fill:#E9E9E6;stroke:#14191E}.stn{fill:#9C9B96;stroke:#14191E}.sl{stroke:#3A2A1E;stroke-width:1.2}.tvs{fill:#16191C;stroke:#14191E}.led{stroke:#F4B400;stroke-width:2.4}.art{fill:#E0A898;stroke:#14191E}.cu{fill:#BDBCB7;stroke:#14191E;stroke-width:.8}*{vector-effect:non-scaling-stroke}.f{fill:#fff;stroke:#14191E;stroke-width:1.3}.pl{fill:#14191E;opacity:.7}.ln{stroke:#14191E;stroke-width:1;fill:none}.hd{stroke:#14191E;stroke-width:2.6;stroke-linecap:round}.dk{fill:#2A2C2F;stroke:#14191E}.win{fill:#5F5247}.gl{fill:#BFD6DE;stroke:#14191E;stroke-width:.8}.mir{fill:#DCE4E7;stroke:#14191E;stroke-width:.6}.op{fill:#EEF1F2;stroke:#14191E;stroke-width:1.3}.gap{fill:none;stroke:#8A949B;stroke-dasharray:4 3}.wt{fill:#8A949B}.wall{fill:#F7F8F9;stroke:#D5DBDF}.flr{stroke:#14191E;stroke-width:2}.cor{fill:url(#hz);stroke:#8A949B}.hl{stroke:#8A949B}.lb{font-family:monospace;fill:#2A3238;text-anchor:middle}.cd{font-family:monospace;font-weight:700;fill:#14191E;text-anchor:middle}.hit,.selr{display:none}.over .f,.over .op{fill:#F6D5CF;stroke:#B23B2A}</style>`;
+const PRINT_CSS = `<style>.pfl{fill:#F4F5F3;stroke:none}.pwl{fill:#14191E}.pb{fill:#FFFFFF;stroke:#14191E;stroke-width:1.2}.pu{fill:none;stroke:#14191E;stroke-width:1;stroke-dasharray:5 3}.pi{fill:#FFF4D1;stroke:#14191E;stroke-width:1.3}.pr{fill:#E4E8EA;stroke:#9AA4AC;stroke-width:.8}.pt{fill:#5A646C;fill-opacity:.25;stroke:#5A646C;stroke-width:.6}.pg{fill:#BFD6DE;stroke:#14191E;stroke-width:1}.pd{stroke:#F4B400;stroke-width:1.6}.px{font-family:'IBM Plex Mono',monospace;fill:#14191E;text-anchor:middle}.pxm{font-family:'IBM Plex Mono',monospace;fill:#5A646C;text-anchor:middle}.st{fill:#C9CDD0;stroke:#14191E}.bk{fill:#5A646C;opacity:.55}.acc{fill:#8A6446;stroke:#14191E;stroke-width:.8}.mar{fill:#E9E9E6;stroke:#14191E}.stn{fill:#9C9B96;stroke:#14191E}.sl{stroke:#3A2A1E;stroke-width:1.2}.tvs{fill:#16191C;stroke:#14191E}.led{stroke:#F4B400;stroke-width:2.4}.art{fill:#E0A898;stroke:#14191E}.cu{fill:#BDBCB7;stroke:#14191E;stroke-width:.8}*{vector-effect:non-scaling-stroke}.f{fill:#fff;stroke:#14191E;stroke-width:1.3}.pl{fill:#14191E;opacity:.7}.ln{stroke:#14191E;stroke-width:1;fill:none}.hd{stroke:#14191E;stroke-width:2.6;stroke-linecap:round}.dk{fill:#2A2C2F;stroke:#14191E}.win{fill:#5F5247}.gl{fill:#BFD6DE;stroke:#14191E;stroke-width:.8}.mir{fill:#DCE4E7;stroke:#14191E;stroke-width:.6}.op{fill:#EEF1F2;stroke:#14191E;stroke-width:1.3}.gap{fill:none;stroke:#8A949B;stroke-dasharray:4 3}.wt{fill:#8A949B}.wall{fill:#F7F8F9;stroke:#D5DBDF}.flr{stroke:#14191E;stroke-width:2}.cor{fill:url(#hz);stroke:#8A949B}.hl{stroke:#8A949B}.lb{font-family:monospace;fill:#2A3238;text-anchor:middle}.cd{font-family:monospace;font-weight:700;fill:#14191E;text-anchor:middle}.hit,.selr{display:none}.over .f,.over .op{fill:#F6D5CF;stroke:#B23B2A}</style>`;
 function svgImage(svg, pxW){
   const vb = svg.match(/viewBox="([-\d.]+) ([-\d.]+) ([-\d.]+) ([-\d.]+)"/), h = Math.round(pxW * (+vb[4]) / (+vb[3]));
   const s = svg.replace('<svg class="uv"', `<svg xmlns="http://www.w3.org/2000/svg" width="${pxW}" height="${h}"`).replace(/(<svg[^>]*>)/, '$1' + PRINT_CSS);
@@ -3389,6 +3500,80 @@ async function elevationImages(codes){
   return out;
 }
 function placeElev(d, e){ const k = Math.min(1, 470 / e.h), w = Math.round(e.w * k), h = Math.round(e.h * k); d.need(h + 50); d.text(e.name, {sz: 20, w: 600}); d.image(e.img, w, h, {border: false}); }
+/* plan seen from above, cm: walls, units on walls, free pieces with their codes */
+function planSvg(){
+  const c = cfg, A = c.wallA, D = Math.round(frame.D * 100), hasC = c.layout === 'U', T = 12, out = [], fs = Math.max(A, D) * .026;
+  out.push(`<rect x="0" y="0" width="${A}" height="${D}" class="pfl"/>`);
+  out.push(`<rect x="${-T}" y="${-T}" width="${A + T + (hasC ? T : 0)}" height="${T}" class="pwl"/><rect x="${-T}" y="0" width="${T}" height="${D}" class="pwl"/>`);
+  if (hasC) out.push(`<rect x="${A}" y="0" width="${T}" height="${c.wallC}" class="pwl"/>`);
+  const tops = [], mods = [];
+  world.traverse(o => {
+    if (o.userData.mod) { const m = o.userData.mod, r = runsOf(c).find(x => x.id === m.run), L = r && layoutRun(c, r), u = L && (m.lvl === 'b' ? L.pb : L.pu)[m.i]; if (!u || UNIT[u.t].gap) return; const b = cmBox(objBox(o)); if (b.x1 - b.x0 > 0) mods.push({b, cls: u.t === 'window' ? 'pg' : m.lvl === 'u' ? 'pu' : 'pb'}); }
+    else if (o.isMesh && o.userData.top) { let p = o.parent, own = false; while (p) { if (p.userData.item !== undefined) { own = true; break; } p = p.parent; } if (!own) tops.push(cmBox(objBox(o))); }
+  });
+  for (const m of mods.filter(m => m.cls === 'pb')) out.push(`<rect x="${m.b.x0}" y="${m.b.z0}" width="${m.b.x1 - m.b.x0}" height="${m.b.z1 - m.b.z0}" class="pb"/>`);
+  for (const b of tops) out.push(`<rect x="${b.x0}" y="${b.z0}" width="${b.x1 - b.x0}" height="${b.z1 - b.z0}" class="pt"/>`);
+  for (const m of mods.filter(m => m.cls !== 'pb')) { const b = m.b, th = m.cls === 'pg' ? 6 : 0; out.push(`<rect x="${b.x0}" y="${b.z0 - th}" width="${b.x1 - b.x0}" height="${b.z1 - b.z0 + th}" class="${m.cls}"/>`); }
+  (c.items || []).forEach((it, i) => {
+    const th = -it.r * Math.PI / 180, cs = Math.cos(th), sn = Math.sin(th), w = it.w / 2, d = itemDepth(it) / 2, b = itemBoxes[i];
+    const pts = [[-w, -d], [w, -d], [w, d], [-w, d]].map(([px, pz]) => `${(it.x + px * cs + pz * sn).toFixed(1)},${(it.z - px * sn + pz * cs).toFixed(1)}`).join(' ');
+    const hung = b && b.y0 > 30, cls = it.t === 'rug' ? 'pr' : hung ? 'pu' : 'pi';
+    out.push(`<polygon points="${pts}" class="${cls}"/>`);
+    // the front of a piece: a short tick on the side its doors face
+    if (it.t !== 'rug' && it.t !== 'plant' && it.t !== 'lamp') out.push(`<line x1="${it.x + (-w * .5) * cs + d * sn}" y1="${it.z - (-w * .5) * sn + d * cs}" x2="${it.x + (w * .5) * cs + d * sn}" y2="${it.z - (w * .5) * sn + d * cs}" class="pd"/>`);
+    if (it.t !== 'rug') out.push(`<text x="${it.x}" y="${it.z + fs * .35}" class="px" font-size="${fs * .8}">P${i + 1}</text>`);
+  });
+  out.push(`<text x="${A / 2}" y="${-T - fs * .6}" class="pxm" font-size="${fs}">${A}</text><text x="${-T - fs * .7}" y="${D / 2}" class="pxm" font-size="${fs}" transform="rotate(-90 ${-T - fs * .7} ${D / 2})">${D}</text>`);
+  const pad = fs * 2.4;
+  return `<svg class="uv" viewBox="${-T - pad} ${-T - pad} ${A + 2 * T + 2 * pad} ${D + T + 2 * pad}" role="img" aria-label="المخطط من الأعلى">${out.join('')}</svg>`;
+}
+async function planImage(){ const im = await svgImage(planSvg(), PW - 2 * PM); const k = Math.min(1, 900 / im.h); return {...im, w: Math.round(im.w * k), h: Math.round(im.h * k)}; }
+/* cutting plan: parts nested on 280×207 sheets, row by row, with a 4 mm saw cut and 10 mm trim */
+const SHEET = {L: 2800, W: 2070, trim: 10, kerf: 4};
+function nestSheets(cl){
+  const {L: SL, W: SW, trim, kerf} = SHEET, groups = {};
+  cl.grouped.forEach((g, gi) => { if (NOSHEET.includes(g.mat)) return; const k = g.mat + '|' + g.th; const m = groups[k] || (groups[k] = {mat: g.mat, th: g.th, list: []}); for (let q = 0; q < g.qty; q++) m.list.push({L: g.L, W: g.W, n: gi + 1}); });
+  return Object.values(groups).map(m => {
+    const turn = ['carcass', 'back', 'panel'].includes(m.mat); // plain boards can turn; wood grain and fronts keep their direction
+    const ps = m.list.map(p => (p.W > SW - 2 * trim && p.L <= SW - 2 * trim) || (turn && p.W > p.L) ? {...p, L: p.W, W: p.L} : p).sort((a, b) => b.W - a.W || b.L - a.L);
+    const sheets = [];
+    for (const p of ps) {
+      let done = false;
+      for (const sh of sheets) {
+        for (const r of sh.rows) {
+          if (p.W <= r.h && r.x + p.L <= SL - trim) { sh.parts.push({...p, x: r.x, y: r.y}); r.x += p.L + kerf; done = true; break; }
+          if (turn && p.L <= r.h && r.x + p.W <= SL - trim) { sh.parts.push({...p, L: p.W, W: p.L, x: r.x, y: r.y}); r.x += p.W + kerf; done = true; break; }
+        }
+        if (done) break;
+        if (sh.y + p.W <= SW - trim && p.L <= SL - 2 * trim) { sh.rows.push({x: trim + p.L + kerf, y: sh.y, h: p.W}); sh.parts.push({...p, x: trim, y: sh.y}); sh.y += p.W + kerf; done = true; break; }
+      }
+      if (!done) { const sh = {rows: [{x: trim + p.L + kerf, y: trim, h: p.W}], parts: [{...p, x: trim, y: trim, over: p.L > SL - 2 * trim || p.W > SW - 2 * trim}], y: trim + p.W + kerf}; sheets.push(sh); }
+    }
+    const used = m.list.reduce((a, p) => a + p.L * p.W, 0);
+    return {...m, sheets, yield: used / (sheets.length * SL * SW)};
+  });
+}
+function drawNest(d, nest){
+  const {L: SL, W: SW} = SHEET, w = Math.round((PW - 2 * PM) * .8), k = w / SL, h = Math.round(SW * k), x0 = PW - PM - w;
+  for (const m of nest) {
+    d.need(h + 100);
+    d.text(`${matName(m.mat)} ${m.th} مم: ${m.sheets.length} ${m.sheets.length > 2 ? 'ألواح' : 'لوح'}، الاستفادة ${Math.round(m.yield * 100)}%`, {sz: 21, w: 600});
+    m.sheets.forEach((sh, si) => {
+      d.need(h + 46); const x = d.x, y0 = d.y;
+      x.fillStyle = '#F2F4F5'; x.fillRect(x0, y0, w, h); x.strokeStyle = INK; x.lineWidth = 2; x.strokeRect(x0, y0, w, h);
+      for (const p of sh.parts) {
+        const px = x0 + w - (p.x + p.L) * k, py = y0 + p.y * k, pw = p.L * k, ph = p.W * k; // drawn from the right, like the page reads
+        x.fillStyle = p.over ? '#F6D2CC' : '#FFFFFF'; x.fillRect(px, py, pw, ph); x.strokeStyle = INK; x.lineWidth = 1.2; x.strokeRect(px, py, pw, ph);
+        x.direction = 'ltr'; x.textAlign = 'center'; x.fillStyle = INK;
+        if (pw > 34 && ph > 18) { x.font = `600 ${Math.min(17, ph * .5)}px ${FF.m}`; x.fillText('#' + p.n, px + pw / 2, py + ph / 2 + (pw > 110 && ph > 40 ? -4 : 5)); }
+        if (pw > 110 && ph > 40) { x.font = `400 13px ${FF.m}`; x.fillStyle = MUTED; x.fillText(`${p.L}×${p.W}`, px + pw / 2, py + ph / 2 + 15); }
+      }
+      x.direction = 'rtl'; x.textAlign = 'right'; x.font = `400 16px ${FF.b}`; x.fillStyle = MUTED; x.fillText(`لوح ${si + 1} من ${m.sheets.length}: ${SL}×${SW}`, PW - PM, y0 + h + 22);
+      d.y = y0 + h + 40;
+    });
+  }
+  d.text('الأرقام هي أرقام الأسطر في قائمة التقطيع. ألواح الهيكل والظهر تُدار لتوفير الخامة، والواجهات وخشب الديكور تبقى باتجاه العرق. القص بسماكة منشار 4 مم وتنظيف حافة 10 مم.', {sz: 16, color: MUTED});
+}
 async function buildQuote(){
   await docFonts();
   const cl = cutList(cfg), q = saleLines(), num = 'Q' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '-' + (current?.id || 'x000').slice(-3).toUpperCase();
@@ -3404,6 +3589,7 @@ async function buildQuote(){
   if (+prices.deposit) rows.push([`الدفعة الأولى ${prices.deposit}%`, 'عند توقيع الطلب', money(q.deposit)], ['الباقي', 'عند التركيب', money(q.total - q.deposit)]);
   d.table([{label: 'البند', w: .32}, {label: 'التفاصيل', w: .42}, {label: 'المبلغ', w: .26, align: 'left', f: 'm'}], rows, {bold});
   { const ev = await elevationImages(false); d.h2('الواجهات', ev[0] ? Math.min(470, ev[0].h) + 50 : 80); for (const e of ev) placeElev(d, e); }
+  { const pl = await planImage(); d.h2('المخطط من الأعلى', pl.h + 20); d.image(pl.img, pl.w, pl.h, {border: false}); }
   d.h2('ملاحظات');
   for (const t of ['الأسعار صالحة لمدة 30 يوماً من تاريخ العرض.', 'تُعتمد المقاسات النهائية بعد الكشف في الموقع.', 'الصور توضيحية، وقد تختلف درجات الألوان قليلاً عن الخامات الحقيقية.']) d.text('• ' + t, {sz: 19});
   d.need(150); d.y += 50; const x = d.x; x.fillStyle = RULE; x.fillRect(PW - PM - 380, d.y + 50, 380, 2); x.fillRect(PM, d.y + 50, 380, 2);
@@ -3417,16 +3603,19 @@ async function buildWorkshop(){
   d.h2('الألواح');
   d.table([{label: 'الخامة', w: .42}, {label: 'السماكة', w: .14, align: 'center', f: 'm'}, {label: 'المساحة م²', w: .2, align: 'center', f: 'm'}, {label: 'ألواح 280×207', w: .24, align: 'center', f: 'm'}],
     cl.mats.map(m => [m.name, m.th + ' مم', m.area.toFixed(2), m.sheets ? String(m.sheets) : '-']));
-  d.text(`شريط الحواف: ${cl.edgeM.toFixed(1)} م. عدد الألواح تقديري مع هدر 15%، وراجعه في برنامج التقطيع.`, {sz: 18, color: MUTED});
+  d.text(`شريط الحواف: ${cl.edgeM.toFixed(1)} م. عدد الألواح حسب مخطط التقطيع في آخر هذه الورقة.`, {sz: 18, color: MUTED});
   if (cl.wt.length) { d.h2('سطح العمل'); d.table([{label: 'القطعة', w: .4}, {label: 'الطول مم', w: .3, align: 'center', f: 'm'}, {label: 'العمق مم', w: .3, align: 'center', f: 'm'}], cl.wt.map((w, i) => [`قطعة ${i + 1}`, String(w[0]), String(w[1])])); }
   d.h2('الإكسسوارات');
   const hwRows = Object.entries(cl.hw).map(([k, v]) => [HW[k], String(v)]); const apRows = Object.entries(cl.ap).map(([k, v]) => [APPL[k] + ' (جهاز)', String(v)]);
   d.table([{label: 'البند', w: .7}, {label: 'العدد', w: .3, align: 'center', f: 'm'}], [...hwRows, ...apRows]);
+  { const pl = await planImage(); d.h2('المخطط من الأعلى ورموز القطع الحرة', pl.h + 20); d.image(pl.img, pl.w, pl.h, {border: false}); d.text('المستطيلات المنقطة قطع معلّقة، والخط الأصفر جهة الأبواب.', {sz: 16, color: MUTED}); }
   { const ev = await elevationImages(true); d.h2('الواجهات ورموز الوحدات', ev[0] ? Math.min(470, ev[0].h) + 50 : 80); for (const e of ev) placeElev(d, e); }
   d.h2('قائمة التقطيع');
   d.table([{label: '#', w: .05, align: 'center', f: 'm'}, {label: 'الوحدات', w: .16, f: 'm'}, {label: 'القطعة', w: .18}, {label: 'الطول', w: .09, align: 'center', f: 'm'}, {label: 'العرض', w: .09, align: 'center', f: 'm'}, {label: 'مم', w: .06, align: 'center', f: 'm'}, {label: 'العدد', w: .07, align: 'center', f: 'm'}, {label: 'الخامة', w: .2}, {label: 'الحواف', w: .1, align: 'center'}],
     cl.grouped.map((g, i) => [String(i + 1), g.codes.join(' '), g.kind, String(g.L), String(g.W), String(g.th), String(g.qty), matName(g.mat), edgeTxt(g)]), {sz: 15, pad: 8});
   d.text('الحواف: ط = حافة على الطول، ع = حافة على العرض.', {sz: 16, color: MUTED});
+  { const nest = nestSheets(cl); if (nest.length) { d.h2('مخطط التقطيع على الألواح', Math.round((PW - 2 * PM) * .8 * SHEET.W / SHEET.L) + 100); drawNest(d, nest); } }
+  { const iss = checkIssues(); if (iss.length) { d.h2('ملاحظات الفحص'); for (const x of iss) d.text('• ' + x.msg, {sz: 18}); } }
   d.h2('التكلفة والربح');
   const profit = q.sub - cost.total;
   d.table([{label: 'البند', w: .65}, {label: 'المبلغ', w: .35, align: 'left', f: 'm'}], [
@@ -3502,9 +3691,14 @@ document.addEventListener('click', e => {
   const cc = e.target.closest('[data-cellc] [data-c]'); if (cc) { setCell('c', cc.dataset.c); return; }
   const ic = e.target.closest('[data-icol] [data-c]'); if (ic) { setItemColor(ic.dataset.c); return; }
   const fi = e.target.closest('[data-ifin] [data-f]'); if (fi) { setItemFinish(fi.dataset.f); return; }
+  const ih = e.target.closest('[data-ihd] [data-v]'); if (ih) { setItemPart('hd', ih.dataset.v); return; }
+  const iw2 = e.target.closest('[data-iwt] [data-v]'); if (iw2) { setItemPart('wt', iw2.dataset.v); return; }
+  if (e.target.closest('[data-even]')) { evenSpans(); return; }
   if (e.target.closest('[data-open]')) { setOpen(!openT); return; }
   const qy = e.target.closest('[data-qy]'); if (qy) { nudge('y', +qy.dataset.qy); return; }
   const pg = e.target.closest('[data-pg] [data-g]'); if (pg) { palGroup = pg.dataset.g; renderFree(); return; }
+  if (e.target.closest('[data-exadd]')) { record(); cfg = {...cfg, extras: [...(cfg.extras || []), {n: '', p: 0}]}; renderCost(); setTimeout(() => { const ins = $$('[data-ex$=":n"]'); ins[ins.length - 1]?.focus(); }); return; }
+  const exd = e.target.closest('[data-exdel]'); if (exd) { record(); const L = [...(cfg.extras || [])]; L.splice(+exd.dataset.exdel, 1); cfg = {...cfg, extras: L}; renderCost(); return; }
   const pl = e.target.closest('[data-pal]'); if (pl) { if (pl.dataset.dragged) { delete pl.dataset.dragged; return; } placePiece(pl.dataset.pal); return; }
   if (e.target.closest('.elev svg')) { select(null); return; }
   if (e.target.closest('[data-close]') || e.target.classList.contains('sheet')) { const s = e.target.closest('.sheet'); if (s) s.hidden = true; }
@@ -3512,6 +3706,8 @@ document.addEventListener('click', e => {
 document.addEventListener('input', e => {
   const t = e.target;
   if (t.dataset.range) { const k = t.dataset.range, v = +t.value; const n = $('#n-' + k); if (n) n.value = v; set(k, v, {ui: false}); }
+  if (t.dataset.ex) { const [i, f] = t.dataset.ex.split(':'); record('ex' + i + f); const L = (cfg.extras || []).map(x => ({...x})); if (L[+i]) { L[+i][f] = f === 'p' ? (+t.value || 0) : t.value.slice(0, 80); cfg = {...cfg, extras: L}; updateCostNumbers(); } }
+  if (t.id === 'discIn') { record('disc'); cfg = {...cfg, disc: Math.round(clamp(+t.value || 0, 0, 50))}; updateCostNumbers(); }
   if (t.dataset.price) { const k = t.dataset.price; prices[k] = ['cur', 'shop', 'shopPhone'].includes(k) ? t.value : (+t.value || 0); lsSet('wr_prices', prices); updateCostNumbers(); }
 });
 document.addEventListener('change', e => {
@@ -3532,6 +3728,8 @@ document.addEventListener('change', e => {
   if (t.id === 'icols') setGrid('cols', Math.round(+t.value) || 1);
   if (t.id === 'irows') setGrid('rows', Math.round(+t.value) || 1);
   if (t.id === 'icolor') setItemColor(t.value);
+  if (t.id === 'icw') setSpan('col', +t.value);
+  if (t.id === 'irh') setSpan('row', +t.value);
   if (t.id === 'ccolor') setCell('c', t.value);
 });
 $('#lightBtn').onclick = () => set('light', cfg.light === 'day' ? 'evening' : 'day');
@@ -3555,6 +3753,32 @@ window.addEventListener('pointermove', e => {
     const i = cfg.items.length - 1; downAt = {x: e.clientX, y: e.clientY, t: performance.now()}; controls.enabled = false;
     drag = startItemDrag(i, floorAt(e)); if (!drag) controls.enabled = true;
   }
+});
+let touchPal = null;
+document.addEventListener('touchstart', e => {
+  const b = e.target.closest('[data-pal]'); if (!b || e.touches.length > 1) return;
+  const t = e.touches[0]; touchPal = {key: b.dataset.pal, btn: b, x: t.clientX, y: t.clientY, on: false, made: false};
+  touchPal.timer = setTimeout(() => { if (!touchPal) return; touchPal.on = true; b.dataset.dragged = '1'; navigator.vibrate?.(15); const g = document.createElement('div'); g.className = 'ghost'; g.innerHTML = b.innerHTML; g.style.left = touchPal.x + 'px'; g.style.top = touchPal.y + 'px'; document.body.append(g); touchPal.ghost = g; stageEl.classList.add('dropping'); }, 380);
+}, {passive: true});
+document.addEventListener('touchmove', e => {
+  const d = touchPal; if (!d) return; const t = e.touches[0];
+  if (!d.on) { if (Math.hypot(t.clientX - d.x, t.clientY - d.y) > 8) { clearTimeout(d.timer); touchPal = null; } return; }
+  e.preventDefault();
+  const ev = {clientX: t.clientX, clientY: t.clientY};
+  if (d.made) { dragTo(ev); return; }
+  d.ghost.style.left = t.clientX + 'px'; d.ghost.style.top = t.clientY + 'px';
+  if (document.elementFromPoint(t.clientX, t.clientY) === canvas) {
+    const f = floorAt(ev); if (!f) return;
+    d.made = true; d.ghost.remove(); stageEl.classList.remove('dropping');
+    placePiece(d.key, {x: f.x * 100, z: f.z * 100});
+    controls.enabled = false; drag = startItemDrag(cfg.items.length - 1, floorAt(ev)); if (!drag) controls.enabled = true;
+  }
+}, {passive: false});
+document.addEventListener('touchend', () => {
+  const d = touchPal; touchPal = null; if (!d) return; clearTimeout(d.timer);
+  if (d.ghost && !d.made) { d.ghost.remove(); stageEl.classList.remove('dropping'); }
+  if (d.made && drag && !drag.pending) dropDrag();
+  if (d.on) setTimeout(() => delete d.btn.dataset.dragged, 400);
 });
 window.addEventListener('pointerup', () => { const d = palDrag; palDrag = null; if (d && d.ghost && !d.made) { d.ghost.remove(); stageEl.classList.remove('dropping'); } });
 
@@ -3745,7 +3969,7 @@ store.init();
 // warm the remaining swatch textures in idle time so the material tab opens instantly
 const idle = window.requestIdleCallback || (f => setTimeout(f, 200));
 ['walnut','quartz','granite','concrete','oakTop','tile','terrazzo','cement'].forEach((id, i) => idle(() => texCanvas(id)));
-window.__wr = {placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
+window.__wr = {setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
 })();
 </script>
 
