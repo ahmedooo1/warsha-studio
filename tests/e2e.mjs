@@ -23,6 +23,7 @@ async function open(browser, viewport) {
   await page.goto('file://' + path.join(root, 'index.html'));
   await page.waitForFunction(() => window.__wr, null, {timeout: 120000});
   await page.waitForTimeout(1500);
+  await page.evaluate(() => window.__wr.setQuality('performance'));
   return {page, errors};
 }
 
@@ -112,6 +113,16 @@ try {
   }
   await page.selectOption('#langSel', 'ar'); await page.waitForTimeout(1200);
   ok(await page.evaluate(() => document.documentElement.dir === 'rtl' && document.querySelector('[data-tab="free"]').textContent.startsWith('تصميم حر')), 'الرجوع إلى العربية');
+  console.log('جودة العرض');
+  for (const q of ['performance', 'standard', 'ultra']) {
+    const r = await page.evaluate(q => { const w = window.__wr; w.openDemo(0); w.setQuality(q); const t0 = performance.now(); const cv = w.snap(960, 600); const ms = performance.now() - t0; const px = cv.getContext('2d').getImageData(480, 300, 1, 1).data; const cl = w.cutList(); return {ms: Math.round(ms), lit: px[0] + px[1] + px[2] > 0, parts: cl.parts.length, total: Math.round(w.sale().total)}; }, q);
+    ok(r.lit, `${q}: صورة 960×600 في ${r.ms} مم ث (معالج رسوم برمجي)`);
+    console.log(`    parts=${r.parts} total=${r.total}`);
+  }
+  const same = await page.evaluate(() => { const w = window.__wr, out = []; for (const q of ['performance', 'ultra']) { w.setQuality(q); out.push(JSON.stringify([w.cutList().grouped.map(g => [g.L, g.W, g.qty]), Math.round(w.sale().total)])); } w.setQuality('performance'); return out[0] === out[1]; });
+  ok(same, 'الجودة لا تغيّر قائمة التقطيع ولا السعر');
+  const shot = await page.evaluate(() => { const c = window.__wr.snap(3840, 2160); return [c.width, c.height]; });
+  ok(shot[0] === 3840 && shot[1] >= 2160, `صورة 4K ${shot.join('×')}`);
   console.log('وضع العرض');
   await page.evaluate(() => window.__wr.setPresent(true)); await page.waitForTimeout(300);
   ok(await page.evaluate(() => getComputedStyle(document.querySelector('#panel')).display === 'none' && getComputedStyle(document.querySelector('.bar')).display === 'none'), 'الأدوات مخفية في وضع العرض');

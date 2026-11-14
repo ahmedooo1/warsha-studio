@@ -301,6 +301,29 @@ body.present .pres-brand span{font-size:13px;color:#5A646C}
 body.present .pres-exit{display:inline-flex;position:absolute;top:16px;inset-inline-end:16px;z-index:4;align-items:center;gap:8px;border:0;border-radius:10px;padding:9px 14px;background:rgba(20,25,30,.78);color:#fff;font-size:14px}
 body.present .pres-exit kbd{font-family:var(--f-num);font-size:11px;background:rgba(255,255,255,.18);border-radius:4px;padding:1px 5px}
 @media (max-width: 760px){ body.present .pres-exit kbd{display:none} body.present .pres-brand{top:10px;inset-inline-start:10px;padding:8px 12px} body.present .pres-exit{top:10px;inset-inline-end:10px} }
+.stage.eve{background:radial-gradient(circle at 50% 40%,#262A30,#0B0D10)}
+.pres-views,.pres-info,.pres-vars{display:none}
+body.present .pres-views{display:flex;position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:4;gap:2px;align-items:center;background:rgba(18,21,25,.82);backdrop-filter:blur(10px);border-radius:14px;padding:5px;max-width:calc(100% - 24px);overflow-x:auto;box-shadow:0 12px 34px rgba(0,0,0,.28)}
+body.present .pres-views button{border:0;background:none;color:#E9ECEE;font-size:13.5px;padding:9px 12px;border-radius:10px;white-space:nowrap}
+body.present .pres-views button:hover{background:rgba(255,255,255,.1)}
+body.present .pres-views button[aria-pressed="true"]{background:var(--tape);color:var(--tape-ink)}
+body.present .pres-views i{width:1px;height:22px;background:rgba(255,255,255,.18);margin-inline:4px;flex:none}
+body.present .hud{display:none}
+body.present .pres-info:not([hidden]){display:block;position:absolute;top:96px;inset-inline-start:16px;z-index:4;width:min(300px,calc(100% - 32px));background:rgba(255,255,255,.94);backdrop-filter:blur(10px);color:#14191E;border-radius:14px;padding:14px 16px;box-shadow:0 12px 34px rgba(0,0,0,.18)}
+.pres-info h3{margin:0 0 8px;font-family:var(--f-display);font-size:17px}
+.pi-row{display:grid;grid-template-columns:22px auto 1fr;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid #E3E7EA;font-size:13.5px}
+.pi-row i{width:22px;height:22px;border-radius:6px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);background-size:cover}
+.pi-row i.none{box-shadow:none}
+.pi-row span{color:#5A646C}.pi-row b{text-align:end;font-weight:600}
+.pi-total{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;font-size:14px}
+.pi-total b{font-family:var(--f-num);font-size:20px}
+.pres-info small{color:#5A646C}
+body.present .pres-vars:not([hidden]){display:flex;position:absolute;bottom:84px;left:50%;transform:translateX(-50%);z-index:4;gap:8px;align-items:center;background:rgba(18,21,25,.82);border-radius:14px;padding:6px 10px;color:#E9ECEE;font-size:13px}
+.pres-vars button{border:2px solid transparent;background:none;padding:0;border-radius:9px;position:relative;overflow:hidden;width:84px;height:54px}
+.pres-vars button img{width:100%;height:100%;object-fit:cover;display:block}
+.pres-vars button b{position:absolute;inset-inline-start:4px;bottom:3px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;padding:0 5px;border-radius:5px}
+.pres-vars button[aria-pressed="true"]{border-color:var(--tape)}
+@media (max-width: 760px){ body.present .pres-views{bottom:10px} body.present .pres-views button{padding:8px 9px;font-size:12.5px} body.present .pres-vars{bottom:70px} }
 .exrow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center}
 .exrow > input{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:7px 10px;min-width:0}
 .exrow .x{width:30px;height:30px}
@@ -360,10 +383,14 @@ body.present .pres-exit kbd{font-family:var(--f-num);font-size:11px;background:r
     <div class="tag" id="tag"></div>
     <div class="pres-brand" id="presBrand"></div>
     <button type="button" class="pres-exit" id="presExit" aria-label="إنهاء العرض">إنهاء العرض <kbd>Esc</kbd></button>
+    <nav class="pres-views" aria-label="زوايا العرض"><button type="button" data-pv="angle">زاوية</button><button type="button" data-pv="front">أمامي</button><button type="button" data-pv="eye">داخلي</button><button type="button" data-pv="corner">من الركن</button><button type="button" data-pv="top">مخطط</button><i></i><button type="button" data-pv="tour">جولة</button><button type="button" data-pv="open">فتح الأبواب</button><button type="button" data-pv="light">نهار / مساء</button><button type="button" data-pv="info">المواد والسعر</button><button type="button" data-pv="shot">صورة 4K</button></nav>
+    <aside class="pres-info" id="presInfo" hidden></aside>
+    <div class="pres-vars" id="presVars" hidden></div>
     <div class="hud">
       <div class="seg" role="group" aria-label="زاوية الكاميرا">
         <button data-cam="front" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="16" height="12" rx="1"/></svg><span class="lbl">أمامي</span></button>
         <button data-cam="angle" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M12 12v8M4 8l8 4 8-4"/></svg><span class="lbl">زاوية</span></button>
+        <button data-cam="eye" aria-pressed="false" title="من داخل الغرفة بمستوى العين"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span class="lbl">داخلي</span></button>
         <button data-cam="top" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 10h6v10"/></svg><span class="lbl">مخطط</span></button>
       </div>
       <div class="seg" role="group" aria-label="تراجع وإعادة">
@@ -377,6 +404,7 @@ body.present .pres-exit kbd{font-family:var(--f-num);font-size:11px;background:r
       <div class="seg" role="group" aria-label="التحريك والعرض">
         <button id="snapBtn" aria-pressed="true" title="التصاق القطع بالجدران وببعضها"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v9a6 6 0 0 0 12 0V3"/><path d="M6 7h4M14 7h4"/></svg><span class="lbl">التصاق</span></button>
         <button id="openBtn" aria-pressed="false" title="فتح أبواب وجوارير الخزائن المخصصة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h9v16H4z"/><path d="M13 4l7 3v14l-7-1"/></svg><span class="lbl">فتح</span></button>
+        <button id="qualityBtn" title="جودة العرض"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg><span class="lbl" id="qualityLbl">عادية</span></button>
         <button id="tourBtn" aria-pressed="false" title="جولة حول التصميم"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 4 0 0 0 18 0"/><path d="M17 9l4 3-4 3"/><circle cx="12" cy="8" r="2.5"/></svg><span class="lbl">جولة</span></button>
       </div>
     </div>
@@ -453,6 +481,7 @@ body.present .pres-exit kbd{font-family:var(--f-num);font-size:11px;background:r
     <header><h2>صورة للزبون</h2><button class="x" data-close aria-label="إغلاق">×</button></header>
     <div class="body">
       <img class="shot" id="shot" alt="صورة التصميم">
+      <div class="choice" id="shotRes" role="group" aria-label="دقة الصورة"><button type="button" data-res="1600" aria-pressed="true">واتساب</button><button type="button" data-res="1920">Full HD</button><button type="button" data-res="3840">4K</button><button type="button" data-res="a4">طباعة A4</button></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <button class="btn primary" id="shotSave">حفظ الصورة</button>
         <p class="hint" id="shotHint">احفظ الصورة وأرسلها للزبون عبر واتساب.</p>
@@ -479,6 +508,13 @@ body.present .pres-exit kbd{font-family:var(--f-num);font-size:11px;background:r
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/environments/RoomEnvironment.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/lights/RectAreaLightUniformsLib.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/shaders/SSAOShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/math/SimplexNoise.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/Pass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/SSAOPass.js"></script>
 <script src="js/fab.js"></script>
 <script src="js/i18n.js"></script>
 <script>
@@ -1057,6 +1093,43 @@ controls.enableDamping = true; controls.dampingFactor = .09; controls.screenSpac
 controls.maxPolarAngle = Math.PI * .49; controls.minAzimuthAngle = -Math.PI * .47; controls.maxAzimuthAngle = Math.PI * .47;
 controls.minDistance = 1.2;
 
+/* ================= render quality: the same model, drawn with more or less care ================= */
+// Performance for phones and modest computers, Standard for daily design, Ultra for client presentations and final images.
+// Quality never touches the design: only pixel density, shadow resolution and ambient occlusion change.
+const QUALITY = {
+  performance: {pr: 1, shadow: 1024, ao: false},
+  standard: {pr: mobile ? 1.5 : 2, shadow: 2048, ao: false},
+  ultra: {pr: Math.min(Math.max(devicePixelRatio || 1, 1.5), 2.5), shadow: 4096, ao: true},
+};
+let quality = lsGet('wr_quality', mobile ? 'performance' : 'standard'); if (!QUALITY[quality]) quality = 'standard';
+let composer = null, ssao = null;
+const canMSAA = renderer.capabilities.isWebGL2;
+function buildComposer(){
+  if (composer) return;
+  const rt = () => new THREE.WebGLRenderTarget(2, 2, {type: THREE.HalfFloatType, samples: canMSAA ? 4 : 0});
+  composer = new THREE.EffectComposer(renderer, rt());
+  ssao = new THREE.SSAOPass(scene, camera, 2, 2);
+  ssao.beautyRenderTarget.dispose(); ssao.beautyRenderTarget = rt();
+  // radius in metres for a room; depth limits are fractions of the camera range (80 m)
+  ssao.kernelRadius = .5; ssao.minDistance = .00002; ssao.maxDistance = .012;
+  composer.addPass(ssao);
+  // HDR to screen: the tone mapping and sRGB conversion the renderer would do on its own
+  composer.addPass(new THREE.ShaderPass({uniforms: {tDiffuse: {value: null}},
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: 'uniform sampler2D tDiffuse; varying vec2 vUv; void main(){ gl_FragColor = texture2D(tDiffuse, vUv);\n#include <tonemapping_fragment>\n#include <encodings_fragment>\n}'}));
+}
+function sizeComposer(w, h, pr){ if (!composer) return; composer.setPixelRatio(pr); composer.setSize(w, h); }
+function renderNow(){ if (QUALITY[quality].ao && composer) composer.render(); else renderer.render(scene, camera); }
+function applyQuality(){
+  const Q = QUALITY[quality];
+  renderer.setPixelRatio(Math.min(Q.pr, 3));
+  for (const l of [sun, key]) { if (l.shadow.mapSize.x !== Q.shadow) { l.shadow.mapSize.set(Q.shadow, Q.shadow); l.shadow.map?.dispose(); l.shadow.map = null; } }
+  if (Q.ao) { buildComposer(); }
+  document.querySelectorAll('[data-q]').forEach(b => b.setAttribute('aria-pressed', b.dataset.q === quality));
+  renderer.shadowMap.needsUpdate = true;
+}
+function setQuality(q){ if (!QUALITY[q]) return; quality = q; lsSet('wr_quality', q); applyQuality(); resize(); dirty = true; }
+
 const hemi = new THREE.HemisphereLight(0xEAF0FF, 0x6B5A48, .4); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xFFE6C4, 3); sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -.0004; sun.shadow.normalBias = .02;
@@ -1222,6 +1295,23 @@ function microFront(parent, x0, x1, y0, y1, fz){
   box(parent, std('ovenwin', {color: col('#25211D'), roughness: .2}), x0 + .05, x0 + w * .68, y0 + .05, y1 - .05, fz + .0225, fz + .0235, {cast: false});
   box(parent, M.steel, x0 + w * .75, x1 - .04, y0 + .06, y1 - .06, fz + .022, fz + .025, {cast: false});
 }
+// standard modules open too: a door turns on its hinge, a drawer slides out with its box, a flap lifts
+function doorPivot(parent, hx, y, z, sign){ const pv = new THREE.Group(); pv.position.set(hx, y, z); parent.add(pv); anims.push({o: pv, k: 'door', a: sign}); return pv; }
+function flapPivot(parent, y, z){ const pv = new THREE.Group(); pv.position.set(0, y, z); parent.add(pv); anims.push({o: pv, k: 'flap'}); return pv; }
+function drawerPivot(parent, dz){ const pv = new THREE.Group(); parent.add(pv); anims.push({o: pv, k: 'drawer', dz}); return pv; }
+function drawerBox(p, x0, x1, y0, y1, z, dd){
+  const bm = std('drawerbox', {color: col('#E4E1DA'), roughness: .7}), bh = Math.max(.04, Math.min(.2, (y1 - y0) * .7));
+  box(p, bm, x0 + .03, x1 - .03, y0 + .02, y0 + .032, z - dd, z, {cast: false});
+  for (const xx of [x0 + .03, x1 - .042]) box(p, bm, xx, xx + .012, y0 + .02, y0 + .02 + bh, z - dd, z, {cast: false});
+  box(p, bm, x0 + .03, x1 - .03, y0 + .02, y0 + .02 + bh, z - dd, z - dd + .012, {cast: false});
+}
+// the inside of a carcass behind a door: seen only when the door is open
+function cabinetInside(p, c, a, b, y0, y1, z, fid){
+  const im = std('inner-' + fid, {color: col(frontColorCss(fid)).multiplyScalar(.6), roughness: .8}), t = .018;
+  // the carcass is solid in the model, so its inside is painted just in front of its face, under the closed door
+  box(p, im, a + t, b - t, y0 + t, y1 - t, z + .0005, z + .0025, {cast: false});
+  box(p, carcassMat(fid), a + t, b - t, (y0 + y1) / 2 - .009, (y0 + y1) / 2 + .009, z + .0006, z + .004, {cast: false});
+}
 function baseModule(parent, c, x0, x1, type, idx, o = {}){
   const w = x1 - x0, plinth = .1, top = .86, gola = c.handle === 'gola', fz = .56;
   box(parent, carcassMat(c.front), x0 + .002, x1 - .002, 0, plinth, 0, fz - .06, {cast: false});
@@ -1233,21 +1323,22 @@ function baseModule(parent, c, x0, x1, type, idx, o = {}){
   if (type === 'drawers') {
     let acc = plinth; const tot = ftop - plinth;
     const ks = +o.n === 2 ? [.39, .39] : +o.n === 4 ? [.2, .2, .19, .19] : [.32, .26, .2];
-    for (const k of ks) { const y0 = acc, y1 = acc + k / .78 * tot; frontPanel(parent, c, x0, x1, y0, y1, fz); handle(parent, c.handle, (x0 + x1) / 2, y1 - .06, fz + FT, false, Math.min(.32, w * .5)); acc = y1; }
+    for (const k of ks) { const y0 = acc, y1 = acc + k / .78 * tot, pv = drawerPivot(parent, .36); frontPanel(pv, c, x0, x1, y0, y1, fz); handle(pv, c.handle, (x0 + x1) / 2, y1 - .06, fz + FT, false, Math.min(.32, w * .5)); drawerBox(pv, x0, x1, y0, y1, fz, .45); acc = y1; }
     return;
   }
   if (type === 'cook') {
     const dh = .14 * (ftop - plinth) / .76;
-    frontPanel(parent, c, x0, x1, plinth, plinth + dh, fz); handle(parent, c.handle, (x0 + x1) / 2, plinth + dh - .05, fz + FT, false, Math.min(.32, w * .5));
+    { const pv = drawerPivot(parent, .3); frontPanel(pv, c, x0, x1, plinth, plinth + dh, fz); handle(pv, c.handle, (x0 + x1) / 2, plinth + dh - .05, fz + FT, false, Math.min(.32, w * .5)); drawerBox(pv, x0, x1, plinth, plinth + dh, fz, .4); }
     ovenFront(parent, x0, x1, plinth + dh + G, ftop - G, fz);
     return;
   }
   const doors = type === 'dw' ? 1 : w > .64 ? 2 : 1;
   for (let i = 0; i < doors; i++) {
     const a = x0 + (w / doors) * i, b = a + w / doors;
-    frontPanel(parent, c, a, b, plinth, ftop, fz);
-    if (type === 'dw') handle(parent, c.handle, (a + b) / 2, ftop - .06, fz + FT, false, Math.min(.32, w * .5));
-    else { const right = doors === 2 ? i === 0 : idx % 2 === 0; handle(parent, c.handle, right ? b - .045 : a + .045, ftop - .12, fz + FT, true, .16); }
+    if (type === 'dw') { frontPanel(parent, c, a, b, plinth, ftop, fz); handle(parent, c.handle, (a + b) / 2, ftop - .06, fz + FT, false, Math.min(.32, w * .5)); }
+    else { const right = doors === 2 ? i === 0 : idx % 2 === 0, hx = right ? a : b, pv = doorPivot(parent, hx, 0, fz, right ? -1 : 1);
+      cabinetInside(parent, c, a, b, plinth, type === 'sink' ? .62 : ftop, fz, c.front);
+      frontPanel(pv, c, a - hx, b - hx, plinth, ftop, 0); handle(pv, c.handle, (right ? b - .045 : a + .045) - hx, ftop - .12, FT, true, .16); }
   }
 }
 function upperModule(parent, c, x0, x1, y0, idx, t = 'udoor'){
@@ -1259,18 +1350,20 @@ function upperModule(parent, c, x0, x1, y0, idx, t = 'udoor'){
     const n = w > .64 ? 2 : 1, fm = frontMat(fid, c.finish), fw = .045, z = d;
     for (let i = 0; i < n; i++) {
       const a = x0 + w / n * i + G, b = x0 + w / n * (i + 1) - G, ya = y0 - .015 + G, yb = y0 + h - G;
-      box(parent, fm, a, b, ya, ya + fw, z, z + FT, {r: .002}); box(parent, fm, a, b, yb - fw, yb, z, z + FT, {r: .002});
-      box(parent, fm, a, a + fw, ya + fw, yb - fw, z, z + FT); box(parent, fm, b - fw, b, ya + fw, yb - fw, z, z + FT);
-      const pane = new THREE.Mesh(new THREE.PlaneGeometry(b - a - 2 * fw, yb - ya - 2 * fw), M.doorglass); pane.position.set((a + b) / 2, (ya + yb) / 2, z + FT * .5); parent.add(pane);
-      const right = n === 2 ? i === 0 : idx % 2 === 0; handle(parent, c.handle, right ? b - .045 : a + .045, y0 + .1, z + FT, true, .16);
+      const right = n === 2 ? i === 0 : idx % 2 === 0, hx = right ? a : b, pv = doorPivot(parent, hx, 0, z, right ? -1 : 1), A = a - hx, B = b - hx;
+      box(pv, fm, A, B, ya, ya + fw, 0, FT, {r: .002}); box(pv, fm, A, B, yb - fw, yb, 0, FT, {r: .002});
+      box(pv, fm, A, A + fw, ya + fw, yb - fw, 0, FT); box(pv, fm, B - fw, B, ya + fw, yb - fw, 0, FT);
+      const pane = new THREE.Mesh(new THREE.PlaneGeometry(B - A - 2 * fw, yb - ya - 2 * fw), M.doorglass); pane.position.set((A + B) / 2, (ya + yb) / 2, FT * .5); pv.add(pane);
+      handle(pv, c.handle, (right ? b - .045 : a + .045) - hx, y0 + .1, FT, true, .16);
     }
   } else {
     box(parent, carcassMat(fid), x0, x1, y0, y0 + h, 0, d);
-    if (t === 'lift') { frontPanel(parent, c, x0, x1, y0 - .015, y0 + h, d, {fid}); handle(parent, c.handle, (x0 + x1) / 2, y0 + .045, d + FT, false, Math.min(.4, w * .5)); }
+    if (t === 'lift') { const pv = flapPivot(parent, y0 + h, d); cabinetInside(parent, c, x0, x1, y0, y0 + h, d, fid); frontPanel(pv, c, x0, x1, y0 - .015 - (y0 + h), 0, 0, {fid}); handle(pv, c.handle, (x0 + x1) / 2, y0 + .045 - (y0 + h), FT, false, Math.min(.4, w * .5)); }
     else {
       const doors = w > .64 ? 2 : 1;
-      for (let i = 0; i < doors; i++) { const a = x0 + (w / doors) * i, b = a + w / doors; frontPanel(parent, c, a, b, y0 - .015, y0 + h, d, {fid});
-        const right = doors === 2 ? i === 0 : idx % 2 === 0; handle(parent, c.handle, right ? b - .045 : a + .045, y0 + .1, d + FT, true, .16); }
+      for (let i = 0; i < doors; i++) { const a = x0 + (w / doors) * i, b = a + w / doors, right = doors === 2 ? i === 0 : idx % 2 === 0, hx = right ? a : b, pv = doorPivot(parent, hx, 0, d, right ? -1 : 1);
+        cabinetInside(parent, c, a, b, y0, y0 + h, d, fid);
+        frontPanel(pv, c, a - hx, b - hx, y0 - .015, y0 + h, 0, {fid}); handle(pv, c.handle, (right ? b - .045 : a + .045) - hx, y0 + .1, FT, true, .16); }
     }
   }
   // LED strip & fake contact shadow on the splash below
@@ -1369,6 +1462,18 @@ function shell(c, o){
   // o: {W, D, H, back:{holes}, left:{len, holes (z coordinates)}, right:{len}|null}
   const t = .12, wm = wallMat(c.wall), fm = floorMat(c.floor);
   box(world, [M.slab, M.slab, fm, M.slab, M.slab, M.slab], -t, o.W + (o.right ? t : 0), -.08, 0, -t, o.D, {tile: 1.6, cast: false});
+  // ceiling seen only from inside (one-sided, facing down), so the views from above stay open; recessed downlights glow in the evening
+  { const cm = std('ceiling', {color: col('#F3F3F1'), roughness: .95, emissive: col('#ECEAE4'), emissiveIntensity: .5}), cg = new THREE.Mesh(new THREE.PlaneGeometry(o.W + (o.right ? t : 0), o.D), cm);
+    cg.rotation.x = Math.PI / 2; cg.position.set((o.W + (o.right ? t : 0)) / 2, o.H, o.D / 2); cg.userData.skip = true; world.add(cg);
+    const dl = glow('downlight', '#FFE7C4', 6), nx = Math.max(1, Math.round(o.W / 1.3)), nz = Math.max(1, Math.round(o.D / 1.4));
+    for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) { const m = new THREE.Mesh(new THREE.CircleGeometry(.045, 24), dl); m.rotation.x = Math.PI / 2; m.position.set((i + .5) * o.W / nx, o.H - .002, (j + .5) * o.D / nz); m.userData.skip = true; world.add(m);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(.045, .06, 24), XM.metalBlack || cm); ring.rotation.x = Math.PI / 2; ring.position.set(m.position.x, o.H - .0015, m.position.z); ring.userData.skip = true; world.add(ring); }
+    // the downlights' light: one soft panel over the whole room, on in the evening only
+    // walls the room does not have (front, and right in L and I rooms) exist only from inside, facing in: views from outside see through them
+    const gw = (w, h, x, z, ry) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), wm); m.position.set(x, h / 2, z); m.rotation.y = ry; m.receiveShadow = true; m.userData.skip = true; world.add(m); };
+    gw(o.W + (o.right ? t : 0), o.H, (o.W + (o.right ? t : 0)) / 2, o.D, Math.PI);
+    if (!o.right) gw(o.D, o.H, o.W, o.D / 2, -Math.PI / 2);
+    const fill = new THREE.RectAreaLight(0xFFE0BC, 0, o.W * .8, o.D * .8); fill.position.set(o.W / 2, o.H - .01, o.D / 2); fill.rotation.x = -Math.PI / 2; fill.userData = {day: 0, eve: 1.4}; world.add(fill); dynLights.push(fill); }
   const back = new THREE.Group(); world.add(back);
   const bh = o.back.holes || [];
   const bw = new THREE.Mesh(wallWithHoles(o.W + t, o.H, t, bh.map(h => shift(h, t))), [wm, wm]); bw.position.set(-t, 0, -t); bw.castShadow = bw.receiveShadow = true; back.add(bw);
@@ -2161,6 +2266,8 @@ function applyLight(){
   for (const m of glowMats) m.emissiveIntensity = eve ? m.userData.onI : (m.userData.dayI ?? (m.userData.onI > 10 ? .6 : .05));
   if (skyMats.m) { skyMats.m.map = eve ? skyMats.eve : skyMats.day; skyMats.m.color.setScalar(eve ? .7 : 1.25); skyMats.m.needsUpdate = true; }
   renderer.toneMappingExposure = eve ? 1.15 : 1.0;
+  stageEl.classList.toggle('eve', eve);
+  if (MC.ceiling) MC.ceiling.emissiveIntensity = eve ? .08 : .5;
   $('#lightBtn').setAttribute('aria-pressed', eve);
   renderer.shadowMap.needsUpdate = true; dirty = true;
 }
@@ -2173,9 +2280,16 @@ function setCam(mode, instant){
   let dist = rad / Math.sin(Math.min(vf, hf) / 2) * (asp > 1.2 ? .84 : .92);
   const az = mode === 'front' ? 0 : mode === 'angle' ? (cfg.room === 'kitchen' && cfg.layout === 'U' ? .28 : .55) : .0, pol = mode === 'top' ? .08 : mode === 'front' ? 1.32 : 1.12;
   if (mode === 'top') dist = rad / Math.sin(Math.min(vf, hf) / 2) * .8;
-  const pos = new THREE.Vector3().setFromSphericalCoords(dist, pol, az).add(target);
+  let pos = new THREE.Vector3().setFromSphericalCoords(dist, pol, az).add(target);
+  // inside the room at eye height, like a photographer standing at the door
+  const eye = mode === 'eye' || mode === 'corner';
+  const fov = eye ? (asp < .9 ? 70 : 58) : (asp < .9 ? 52 : 40);
+  if (camera.fov !== fov) { camera.fov = fov; camera.updateProjectionMatrix(); }
+  // the camera may stand just behind the open front: the walls there are only visible from inside
+  if (mode === 'eye') { pos = new THREE.Vector3(f.cx, 1.55, f.D + .45); target.set(f.cx, 1.15, Math.min(f.D * .25, 1)); }
+  if (mode === 'corner') { const solidRight = cfg.layout === 'U'; pos = new THREE.Vector3(solidRight ? f.W - .45 : f.W + .2, 1.75, f.D + .35); target.set(f.W * .32, 1.0, f.D * .28); }
   controls.maxDistance = dist * 2.4;
-  if (instant) { camera.position.copy(pos); controls.target.copy(target); controls.update(); dirty = true; return; }
+  if (instant) { tween = null; camera.position.copy(pos); controls.target.copy(target); controls.update(); dirty = true; return; }
   tween = {t: 0, p0: camera.position.clone(), p1: pos, q0: controls.target.clone(), q1: target};
 }
 let tween = null;
@@ -2213,7 +2327,7 @@ function drawDims(ctx, w, h, scale = 1, clear = true, withSel = true){
 let dirty = true, W = 1, Hh = 1;
 function resize(){
   const r = stageEl.getBoundingClientRect(); W = Math.max(1, r.width); Hh = Math.max(1, r.height);
-  renderer.setSize(W, Hh, false); camera.aspect = W / Hh; camera.fov = W / Hh < .9 ? 52 : 40; camera.updateProjectionMatrix();
+  renderer.setSize(W, Hh, false); sizeComposer(W, Hh, renderer.getPixelRatio()); camera.aspect = W / Hh; camera.fov = (camMode === 'eye' || camMode === 'corner') ? (W / Hh < .9 ? 70 : 58) : W / Hh < .9 ? 52 : 40; camera.updateProjectionMatrix();
   const pr = Math.min(devicePixelRatio || 1, 2); dimCv.width = W * pr; dimCv.height = Hh * pr; dirty = true;
 }
 new ResizeObserver(() => { const fresh = W === 1; resize(); if (fresh) setCam(camMode, true); }).observe(stageEl);
@@ -2227,7 +2341,7 @@ function applyAnims(){
 }
 function setOpen(on){
   openT = on ? 1 : 0; $('#openBtn')?.setAttribute('aria-pressed', on);
-  if (on && !anims.length) toast('الفتح يعمل على الخزائن المخصصة والبار');
+  if (on && !anims.length) toast('لا توجد أبواب تُفتح في هذا التصميم');
   syncQbar(); const b = $('#itemEditor [data-open]'); if (b) b.textContent = on ? 'أغلق الأبواب' : 'افتح الأبواب';
 }
 function startTour(){ const off = camera.position.clone().sub(controls.target); tour0 = {s: new THREE.Spherical().setFromVector3(off)}; tourT = 0; tourOn = true; tween = null; $('#tourBtn').setAttribute('aria-pressed', true); }
@@ -2239,7 +2353,7 @@ function loop(){
   if (tween) { tween.t = Math.min(1, tween.t + .045); const e = 1 - Math.pow(1 - tween.t, 3); camera.position.lerpVectors(tween.p0, tween.p1, e); controls.target.lerpVectors(tween.q0, tween.q1, e); if (tween.t >= 1) tween = null; dirty = true; }
   const moved = controls.update();
   if (!dirty && !moved) return;
-  dirty = false; renderer.render(scene, camera);
+  dirty = false; renderNow();
   const pr = dimCv.width / W; drawDims(dctx, dimCv.width, dimCv.height, pr);
 }
 
@@ -2586,11 +2700,11 @@ function checkIssues(){
   (c.items || []).forEach((it, i) => {
     const b = itemBoxes[i]; if (!b || it.t === 'rug') return;
     const name = `${DEF(it.t).n} P${i + 1}`;
-    if (b.x0 < (hasB ? -2 : -60) || (hasC && b.x1 > A + 2) || b.z0 < -2) out.push({i, msg: `${name} تدخل في الجدار`});
-    if (b.y1 > H + 1) out.push({i, msg: `${name} أعلى من السقف بـ ${Math.round(b.y1 - H)} سم`});
-    if (b.y0 > 3 && it.t !== 'panel' && !(isUnitItem(it) && unitBox(it, H, Math.min(H - 4, 230))[0] > 3) && !(it.t === 'cab' && iopts(it).base === 'hang') && !it.sy) out.push({i, msg: `${name} مرفوعة ${Math.round(b.y0)} سم دون شيء تحتها`});
+    if (b.x0 < (hasB ? -2 : -60) || (hasC && b.x1 > A + 2) || b.z0 < -2) out.push({i, msg: I18N.f('issueWall', {n: name})});
+    if (b.y1 > H + 1) out.push({i, msg: I18N.f('issueCeil', {n: name, v: Math.round(b.y1 - H)})});
+    if (b.y0 > 3 && it.t !== 'panel' && !(isUnitItem(it) && unitBox(it, H, Math.min(H - 4, 230))[0] > 3) && !(it.t === 'cab' && iopts(it).base === 'hang') && !it.sy) out.push({i, msg: I18N.f('issueFloat', {n: name, v: Math.round(b.y0)})});
     const obs = obstacles(i), hit = obs.find(o => Math.min(o.x1 - o.x0, o.z1 - o.z0) >= 6 && o.y1 - o.y0 >= 2 && b.x0 < o.x1 - 3 && b.x1 > o.x0 + 3 && b.z0 < o.z1 - 3 && b.z1 > o.z0 + 3 && b.y0 < o.y1 - 2 && b.y1 > o.y0 + 2 && !(o.item !== undefined && o.item < i && out.some(x => x.i === o.item && x.with === i)));
-    if (hit) out.push({i, with: hit.item, msg: `${name} متداخلة مع ${hit.item !== undefined ? DEF(c.items[hit.item].t).n + ' P' + (hit.item + 1) : 'وحدة على الجدار'}`});
+    if (hit) out.push({i, with: hit.item, msg: I18N.f('issueHit', {n: name, m: hit.item !== undefined ? DEF(c.items[hit.item].t).n + ' P' + (hit.item + 1) : I18N.f('wallUnit')})});
     // room in front to open doors and drawers
     const opens = (isUnitItem(it) && UNIT[it.t].cat && !['shelf', 'mirror', 'clad', 'hooks', 'frame'].includes(it.t)) || it.t === 'cab' || (it.t === 'bar' && iopts(it).base === 'cab');
     if (opens && ortho(it.r)) {
@@ -2604,7 +2718,7 @@ function checkIssues(){
         if (dir === 90 && o.z0 < f.z1 - 3 && o.z1 > f.z0 + 3 && o.x1 <= f.x0 + 1) gap = Math.min(gap, f.x0 - o.x1);
       }
       const need = it.t === 'bar' ? 90 : c.room === 'kitchen' ? 90 : 60;
-      if (gap >= 0 && gap < need) out.push({i, msg: `أمام ${name} ${Math.round(gap)} سم فقط، ${gap < 45 ? 'الأبواب والجوارير لن تُفتح' : 'الممر ضيق'} (المستحسن ${need} سم)`});
+      if (gap >= 0 && gap < need) out.push({i, msg: I18N.f(gap < 45 ? 'issueDoors' : 'issueAisle', {n: name, v: Math.round(gap), need})});
     }
   });
   return out;
@@ -2659,7 +2773,7 @@ function renderFree(){
 function syncQbar(){
   const q = $('#qbar'); if (!q) return; const it = curItem();
   q.hidden = !it; if (!it) return;
-  q.querySelector('[data-open]').hidden = !(it.t === 'cab' || it.t === 'bar');
+  q.querySelector('[data-open]').hidden = false;
   q.querySelector('[data-open]').setAttribute('aria-pressed', !!openT);
 }
 function openTab(name){ $$('[data-tab]').forEach(t => t.setAttribute('aria-selected', t.dataset.tab === name)); for (const p of ['space', 'units', 'free', 'mat', 'cost']) $('#pane-' + p).hidden = p !== name; }
@@ -3101,7 +3215,8 @@ const COST_DEF = {sheetCarcass:70, sheetFront:140, sheetBack:22, sheetAccent:160
   bracket:3, flap:8, tilt:12, led:8, legMetal:6, cushion:40, floatbr:4, hook:2, upholstery:35, slats:45};
 const PRICE_DEF = {cur:'$', shop:'', shopPhone:'', install:250, vat:0, deposit:50, ...Object.fromEntries(Object.entries(PRICE_CAT).map(([k, v]) => [k, v.def])), ...COST_DEF};
 let prices = {...PRICE_DEF, ...lsGet('wr_prices', {})};
-const fmt = n => Math.round(n).toLocaleString('en-US');
+const numLocale = () => I18N.lang === 'ar' ? 'en-US' : I18N.locale;
+const fmt = n => Math.round(n).toLocaleString(numLocale()).replace(/[\u202F\u00A0]/g, ' ');
 const openDetails = {sale: false, work: false};
 document.addEventListener('toggle', e => { const k = e.target?.dataset?.det; if (k) openDetails[k] = e.target.open; }, true);
 
@@ -3471,10 +3586,21 @@ let logoImg = null;
 function logoReady(){ if (!prices.shopLogo) { logoImg = null; return Promise.resolve(); } if (logoImg && logoImg.src === prices.shopLogo && logoImg.complete) return Promise.resolve();
   return new Promise(res => { const im = new Image(); im.onload = () => { logoImg = im; res(); }; im.onerror = () => { logoImg = null; res(); }; im.src = prices.shopLogo; }); }
 const FF = {d: '"Reem Kufi","IBM Plex Sans Arabic",sans-serif', b: '"IBM Plex Sans Arabic",system-ui,sans-serif', m: '"IBM Plex Mono","IBM Plex Sans Arabic",ui-monospace,monospace'};
+// French and Turkish documents read left to right: the page is laid out as a mirror of the Arabic one
+// (positions and alignments swap; text, photos and drawings themselves are not mirrored)
+function mirrorCtx(x){
+  const P = CanvasRenderingContext2D.prototype, al = Object.getOwnPropertyDescriptor(P, 'textAlign');
+  const flip = a => a === 'right' ? 'left' : a === 'left' ? 'right' : a === 'start' ? 'end' : a === 'end' ? 'start' : a;
+  Object.defineProperty(x, 'textAlign', {configurable: true, get(){ return flip(al.get.call(this)); }, set(v){ al.set.call(this, flip(v)); }});
+  x.fillText = (s, X, Y, mw) => mw === undefined ? P.fillText.call(x, s, PW - X, Y) : P.fillText.call(x, s, PW - X, Y, mw);
+  x.fillRect = (X, Y, w, h) => P.fillRect.call(x, PW - X - w, Y, w, h);
+  x.strokeRect = (X, Y, w, h) => P.strokeRect.call(x, PW - X - w, Y, w, h);
+  x.drawImage = (img, ...a) => { if (a.length === 2) return P.drawImage.call(x, img, PW - a[0] - img.width, a[1]); if (a.length === 4) return P.drawImage.call(x, img, PW - a[0] - a[2], a[1], a[2], a[3]); return P.drawImage.call(x, img, ...a.slice(0, 4), PW - a[4] - a[6], a[5], a[6], a[7]); };
+}
 function newDoc(title){
   TAPE = /^#[0-9a-f]{6}$/i.test(prices.brand || '') ? prices.brand : '#F4B400';
   const d = {pages: [], title};
-  d.page = () => { const cv = document.createElement('canvas'); cv.width = PW; cv.height = PH; const x = cv.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, PW, PH); d.pages.push(cv); d.x = x; d.y = PM;
+  d.page = () => { const cv = document.createElement('canvas'); cv.width = PW; cv.height = PH; const x = cv.getContext('2d'); if (!I18N.rtl) mirrorCtx(x); x.fillStyle = '#fff'; x.fillRect(0, 0, PW, PH); d.pages.push(cv); d.x = x; d.y = PM;
     if (d.pages.length > 1) { d.set(16, 500, 'b', MUTED); x.textAlign = 'right'; x.fillText(`${prices.shop || 'ورشة العرض'}، ${title}`, PW - PM, PM - 30); x.fillStyle = RULE; x.fillRect(PM, PM - 16, PW - 2 * PM, 2); } };
   d.set = (sz, w = 400, f = 'b', color = INK) => { d.x.font = `${w} ${sz}px ${FF[f]}`; d.x.fillStyle = color; d.x.direction = 'rtl'; };
   d.need = h => { if (d.y + h > PH - PM - 20) d.page(); };
@@ -3524,7 +3650,7 @@ function svgImage(svg, pxW){
 }
 async function docFonts(){ try { await Promise.all(['400 20px "IBM Plex Sans Arabic"', '600 20px "IBM Plex Sans Arabic"', '600 20px "Reem Kufi"', '400 16px "IBM Plex Mono"'].map(f => document.fonts.load(f))); } catch {} }
 const money = v => `${fmt(v)} ${prices.cur}`;
-const today = () => new Date().toLocaleDateString('en-GB');
+const today = () => new Date().toLocaleDateString(I18N.lang === 'ar' ? 'en-GB' : I18N.locale);
 function projectLine(){ const c = cfg; return `${ROOMS[c.room]}${c.room === 'kitchen' ? ' ' + KLAYOUTS[c.layout] : ''}، ${dimsText(c)} سم، ارتفاع ${c.height} سم`; }
 function docHeader(d, kind, number){
   const x = d.x; let right = PW - PM;
@@ -3597,7 +3723,7 @@ function drawNest(d, nest){
   const SL = fab.sheetL, SW = fab.sheetW, w = Math.round((PW - 2 * PM) * .8), k = w / SL, h = Math.round(SW * k), x0 = PW - PM - w;
   for (const m of nest) {
     d.need(h + 100);
-    d.text(`${matName(m.mat)} ${m.th} مم: ${m.sheets.length} ${m.sheets.length > 2 ? 'ألواح' : 'لوح'}، الاستفادة ${Math.round(m.yield * 100)}%`, {sz: 21, w: 600});
+    d.text(I18N.f('sheetHead', {m: matName(m.mat), t: m.th, n: m.sheets.length, y: Math.round(m.yield * 100)}), {sz: 21, w: 600});
     m.sheets.forEach((sh, si) => {
       d.need(h + 46); const x = d.x, y0 = d.y;
       x.fillStyle = '#F2F4F5'; x.fillRect(x0, y0, w, h); x.strokeStyle = INK; x.lineWidth = 2; x.strokeRect(x0, y0, w, h);
@@ -3608,7 +3734,7 @@ function drawNest(d, nest){
         if (pw > 34 && ph > 18) { x.font = `600 ${Math.min(17, ph * .5)}px ${FF.m}`; x.fillText('#' + p.n, px + pw / 2, py + ph / 2 + (pw > 110 && ph > 40 ? -4 : 5)); }
         if (pw > 110 && ph > 40) { x.font = `400 13px ${FF.m}`; x.fillStyle = MUTED; x.fillText(`${p.L}×${p.W}`, px + pw / 2, py + ph / 2 + 15); }
       }
-      x.direction = 'rtl'; x.textAlign = 'right'; x.font = `400 16px ${FF.b}`; x.fillStyle = MUTED; x.fillText(`لوح ${si + 1} من ${m.sheets.length}: ${SL}×${SW}`, PW - PM, y0 + h + 22);
+      x.direction = 'rtl'; x.textAlign = 'right'; x.font = `400 16px ${FF.b}`; x.fillStyle = MUTED; x.fillText(I18N.f('sheetN', {i: si + 1, n: m.sheets.length, L: SL, W: SW}), PW - PM, y0 + h + 22);
       d.y = y0 + h + 40;
     });
   }
@@ -3616,7 +3742,7 @@ function drawNest(d, nest){
 }
 function quoteTerms(){
   const days = +prices.quoteDays || 30, own = String(prices.terms || '').split('\n').map(t => t.trim()).filter(Boolean);
-  return [`الأسعار صالحة لمدة ${days} يوماً من تاريخ العرض.`, ...(own.length ? own : ['تُعتمد المقاسات النهائية بعد الكشف في الموقع.', 'الصور توضيحية، وقد تختلف درجات الألوان قليلاً عن الخامات الحقيقية.'])];
+  return [I18N.f('validity', {d: days}), ...(own.length ? own : ['تُعتمد المقاسات النهائية بعد الكشف في الموقع.', 'الصور توضيحية، وقد تختلف درجات الألوان قليلاً عن الخامات الحقيقية.'])];
 }
 async function buildQuote(){
   await docFonts(); await logoReady();
@@ -3791,6 +3917,9 @@ $('#snapBtn').setAttribute('aria-pressed', snapOn);
 $('#snapBtn').onclick = () => { snapOn = !snapOn; lsSet('wr_snap', snapOn); $('#snapBtn').setAttribute('aria-pressed', snapOn); toast(snapOn ? 'القطع تلتصق بالجدران وببعضها' : 'تحريك حر بلا التصاق'); };
 $('#openBtn').onclick = () => setOpen(!openT);
 $('#tourBtn').onclick = () => tourOn ? stopTour() : startTour();
+const Q_NAMES = {performance: 'أداء', standard: 'عادية', ultra: 'فائقة'};
+function syncQualityBtn(){ $('#qualityLbl').textContent = I18N.t(Q_NAMES[quality]); $('#qualityBtn').title = I18N.t('جودة العرض') + ': ' + I18N.t(Q_NAMES[quality]); $('#qualityBtn').setAttribute('aria-pressed', quality === 'ultra'); }
+$('#qualityBtn').onclick = () => { const order = ['performance', 'standard', 'ultra']; setQuality(order[(order.indexOf(quality) + 1) % 3]); syncQualityBtn(); toast(I18N.t('جودة العرض') + ': ' + I18N.t(Q_NAMES[quality])); };
 // drag a piece from the library straight into the room: it is made where the pointer enters and follows it
 let palDrag = null;
 document.addEventListener('pointerdown', e => { const b = e.target.closest('[data-pal]'); if (!b || e.pointerType === 'touch' || e.button > 0) return; palDrag = {key: b.dataset.pal, x: e.clientX, y: e.clientY, btn: b, ghost: null}; });
@@ -3914,7 +4043,7 @@ async function makeVariant(d){
   const letters = ['أ', 'ب', 'ج', 'د', 'هـ', 'و', 'ز', 'ح', 'ط', 'ي'], v = letters.find(l => !used.includes(l)) || String(same.length + 1);
   if (!d.variant) { const base = {...d, variant: 'أ'}; delete base.id; try { await store.save(d.id, base); } catch {} }
   const row = {...d, variant: v, updatedAt: Date.now()}; delete row.id;
-  try { const id = newId(); await store.save(id, row); renderClients(); toast(`أُنشئت النسخة البديلة ${v} لـ ${d.name}`); }
+  try { const id = newId(); await store.save(id, row); renderClients(); toast(I18N.f('variantMade', {v, n: d.name}, ['n'])); }
   catch (err) { toast(err?.code === 'quota' ? 'مساحة الحفظ ممتلئة، نزّل نسخة احتياطية واحذف تصاميم قديمة' : 'تعذّر إنشاء النسخة'); }
 }
 async function exportFile(list, full){
@@ -3940,7 +4069,7 @@ async function importFile(file){
     if (data.fab) { fab = WarshaFab.sanitizeFab(data.fab); lsSet('wr_fab', fab); }
     renderCost();
   }
-  renderClients(); toast(fail ? `استُورد ${n} مشروع، وتعذّر ${fail}` : `استُورد ${n} ${n === 1 ? 'مشروع' : 'مشاريع'}`);
+  renderClients(); toast(fail ? I18N.f('importedFail', {n, f: fail}) : I18N.f('imported', {n}));
 }
 document.addEventListener('click', e => { if (e.target.closest('#backupBtn')) exportFile(store.list, true); });
 document.addEventListener('change', e => { if (e.target.id === 'importIn' && e.target.files[0]) { importFile(e.target.files[0]); e.target.value = ''; } });
@@ -3966,8 +4095,21 @@ function openDemo(i){
 }
 
 /* ================= client presentation: the room only, no editing tools ================= */
+function presInfo(){
+  const q = saleLines(), f = frontDef(cfg.front), t = byId(TOPS, cfg.worktop), hd = byId(HANDLES, cfg.handle), fl = byId(FLOORS, cfg.floor);
+  const sw = id => { const d = frontDef(id); return d.wood ? `background-image:url(${sURL[d.wood] || ''});background-color:${frontColorCss(id)}` : `background:${d.color}`; };
+  const rows = [[I18N.t('الواجهات'), f.name + '، ' + I18N.t(cfg.finish === 'gloss' ? 'لامع' : 'مطفي'), sw(cfg.front)], ...(cfg.room === 'kitchen' || (cfg.items || []).some(it => it.t === 'bar') ? [[I18N.t('سطح العمل'), t.name, `background:${t.color || '#ccc'}`]] : []), [I18N.t('المقابض'), hd.name, ''], [I18N.t('الأرضية'), fl.name, '']];
+  $('#presInfo').innerHTML = `<h3>${I18N.t('المواد')}</h3>${rows.map(([k, v, st]) => `<div class="pi-row">${st ? `<i style="${st}"></i>` : '<i class="none"></i>'}<span>${k}</span><b>${I18N.t(v)}</b></div>`).join('')}<div class="pi-total"><span>${I18N.t('السعر النهائي')}</span><b>${money(q.total)}</b></div>${+prices.vat ? `<small>${I18N.t('شامل الضريبة')}</small>` : ''}`;
+}
+function presVariants(){
+  const box = $('#presVars'), same = current ? store.list.filter(d => d.name === current.name) : [];
+  if (same.length < 2) { box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = `<span>${I18N.t('البدائل')}</span>` + same.sort((a, b) => String(a.variant || '').localeCompare(String(b.variant || ''))).map(d => `<button type="button" data-pvar="${esc(d.id)}" aria-pressed="${d.id === current.id}">${d.thumb ? `<img src="${esc(d.thumb)}" alt="">` : ''}<b data-notr>${esc(d.variant || 'أ')}</b></button>`).join('');
+}
 function setPresent(on){
   document.body.classList.toggle('present', on);
+  if (on) { presInfo(); presVariants(); $('#presInfo').hidden = true; }
   if (on) { select(null); showDimsBefore = showDims; showDims = false; const b = $('#presBrand'); b.innerHTML = `${prices.shopLogo ? `<img src="${prices.shopLogo}" alt="">` : ''}<div><b>${esc(prices.shop || 'ورشة العرض')}</b><span>${esc(current?.name ? 'تصميم ' + current.name : projectLine())}</span></div>`; try { document.documentElement.requestFullscreen?.().catch(() => {}); } catch {} }
   else { showDims = showDimsBefore; stopTour(); try { if (document.fullscreenElement) document.exitFullscreen(); } catch {} }
   $('#dimBtn').setAttribute('aria-pressed', showDims); setTimeout(() => { resize(); dirty = true; }, 60);
@@ -3976,21 +4118,31 @@ let showDimsBefore = true;
 $('#presentBtn').onclick = () => setPresent(true);
 $('#presExit').onclick = () => setPresent(false);
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('present')) setPresent(false); });
+$('.pres-views').addEventListener('click', e => {
+  const b = e.target.closest('[data-pv]'); if (!b) return; const v = b.dataset.pv;
+  if (['angle', 'front', 'eye', 'corner', 'top'].includes(v)) { stopTour(); setCam(v); $$('.pres-views [data-pv]').forEach(x => ['angle', 'front', 'eye', 'corner', 'top'].includes(x.dataset.pv) && x.setAttribute('aria-pressed', x === b)); }
+  else if (v === 'tour') { tourOn ? stopTour() : startTour(); b.setAttribute('aria-pressed', tourOn); }
+  else if (v === 'open') { setOpen(!openT); b.setAttribute('aria-pressed', !!openT); }
+  else if (v === 'light') { set('light', cfg.light === 'evening' ? 'day' : 'evening'); }
+  else if (v === 'info') { presInfo(); $('#presInfo').hidden = !$('#presInfo').hidden; b.setAttribute('aria-pressed', !$('#presInfo').hidden); }
+  else if (v === 'shot') { toast(I18N.t('نجهّز الصورة…')); setTimeout(() => { shotRes = '3840'; $$('#shotRes [data-res]').forEach(x => x.setAttribute('aria-pressed', x.dataset.res === '3840')); showShot(makeShot('3840')); }, 30); }
+});
+$('#presVars').addEventListener('click', e => { const b = e.target.closest('[data-pvar]'); if (!b) return; const d = store.list.find(x => x.id === b.dataset.pvar); if (!d) return; cfg = sanitize(d.cfg, DEFAULT); setClient({id: d.id, name: d.name, phone: d.phone || '', note: d.note || ''}); resetHistory(); renderAll(); build(); presInfo(); presVariants(); });
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.body.classList.contains('present')) setTimeout(() => { resize(); dirty = true; }, 60); });
 
 /* ================= snapshot / export ================= */
 function snapshot(w, h, withFooter, withDims = withFooter){
   const pr = renderer.getPixelRatio(), size = new THREE.Vector2(); renderer.getSize(size);
-  renderer.setPixelRatio(1); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  renderer.setPixelRatio(1); renderer.setSize(w, h, false); sizeComposer(w, h, 1); camera.aspect = w / h; camera.updateProjectionMatrix();
   if (selHelper) selHelper.visible = false;
-  renderer.render(scene, camera);
+  renderNow();
   if (selHelper) selHelper.visible = true;
   const foot = withFooter ? Math.round(h * .13) : 0, out = document.createElement('canvas'); out.width = w; out.height = h + foot;
   const x = out.getContext('2d'), dark = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme !== 'light' || document.documentElement.dataset.theme === 'dark';
-  const g = x.createRadialGradient(w / 2, h * .4, 10, w / 2, h * .4, w * .8); g.addColorStop(0, dark ? '#1A1F24' : '#DDE3E6'); g.addColorStop(1, dark ? '#0E1114' : '#C9D1D6'); x.fillStyle = g; x.fillRect(0, 0, w, h);
+  const eveBg = cfg.light === 'evening', g = x.createRadialGradient(w / 2, h * .4, 10, w / 2, h * .4, w * .8); g.addColorStop(0, dark || eveBg ? '#22262B' : '#DDE3E6'); g.addColorStop(1, dark || eveBg ? '#0B0D10' : '#C9D1D6'); x.fillStyle = g; x.fillRect(0, 0, w, h);
   x.drawImage(renderer.domElement, 0, 0, w, h);
   if (withDims) { drawDims(x, w, h, w / 720, false, false); }
-  renderer.setPixelRatio(pr); renderer.setSize(size.x, size.y, false); camera.aspect = size.x / size.y; camera.updateProjectionMatrix(); dirty = true;
+  renderer.setPixelRatio(pr); renderer.setSize(size.x, size.y, false); sizeComposer(size.x, size.y, pr); camera.aspect = size.x / size.y; camera.updateProjectionMatrix(); dirty = true;
   if (withFooter) {
     x.fillStyle = '#14191E'; x.fillRect(0, h, w, foot); x.fillStyle = '#F4B400'; x.fillRect(0, h, w, Math.max(3, foot * .05));
     const s = foot / 100; x.direction = 'rtl'; x.textAlign = 'right'; x.fillStyle = '#FFFFFF';
@@ -4004,15 +4156,21 @@ function snapshot(w, h, withFooter, withDims = withFooter){
   return out;
 }
 let shotBlob = null;
-$('#exportBtn').onclick = () => {
-  const ar = clamp(W / Hh, .7, 1.8); let cv;
-  // some phones cannot allocate a large drawing buffer; step down until the frame comes back with content
-  for (const w of [1600, 1200, 900]) {
-    const h = Math.round(w / ar); cv = snapshot(w, h, true);
-    const px = cv.getContext('2d').getImageData(w / 2 | 0, h / 2 | 0, 1, 1).data; if (px[0] + px[1] + px[2] > 0) break;
-  }
-  cv.toBlob(b => { shotBlob = b; $('#shot').src = URL.createObjectURL(b); $('#exportSheet').hidden = false; $('#shotHint').textContent = 'احفظ الصورة وأرسلها للزبون عبر واتساب.'; }, 'image/jpeg', .9);
-};
+// final images: any resolution, drawn in Ultra quality whatever the screen is; the design itself is not touched
+let shotRes = '1600';
+function makeShot(res){
+  const ar = clamp(W / Hh, .7, 1.8), q0 = quality, big = res !== '1600';
+  const size = res === 'a4' ? [3508, 2480] : res === '3840' ? [3840, 2160] : res === '1920' ? [1920, 1080] : null;
+  if (big && quality !== 'ultra') { quality = 'ultra'; applyQuality(); }
+  let cv;
+  const tries = size ? [size, [Math.round(size[0] * .75), Math.round(size[1] * .75)], [1920, Math.round(1920 * size[1] / size[0])]] : [1600, 1200, 900].map(w => [w, Math.round(w / ar)]);
+  for (const [w, h] of tries) { cv = snapshot(w, h, true); const px = cv.getContext('2d').getImageData(w / 2 | 0, h / 2 | 0, 1, 1).data; if (px[0] + px[1] + px[2] > 0) break; }
+  if (quality !== q0) { quality = q0; applyQuality(); resize(); }
+  return cv;
+}
+$('#shotRes').addEventListener('click', e => { const b = e.target.closest('[data-res]'); if (!b) return; shotRes = b.dataset.res; $$('#shotRes [data-res]').forEach(x => x.setAttribute('aria-pressed', x === b)); $('#shotHint').textContent = I18N.t('نجهّز الصورة…'); setTimeout(() => showShot(makeShot(shotRes)), 30); });
+function showShot(cv){ cv.toBlob(b => { shotBlob = b; $('#shot').src = URL.createObjectURL(b); $('#exportSheet').hidden = false; $('#shotHint').textContent = `${cv.width} × ${cv.height}، ` + I18N.t('احفظ الصورة وأرسلها للزبون عبر واتساب.'); }, 'image/jpeg', .92); }
+$('#exportBtn').onclick = () => { showShot(makeShot(shotRes)); };
 $('#docSave').onclick = async () => { if (!docFile) return; const r = await saveFile(docFile.name, docFile.blob); if (r === 'saved') toast('حُفظ الملف'); else if (r !== 'declined') $('#docHint').textContent = 'تعذّر حفظ الملف هنا.'; };
 $('#shotSave').onclick = async () => {
   const r = await saveFile((current ? current.name : 'تصميم') + '، ورشة العرض.jpg', shotBlob);
@@ -4099,6 +4257,7 @@ if (!window.claude) $('#ask').hidden = true;
 // pick up the last design exactly where it was left
 { const dr = lsGet('wr_draft', null); if (dr?.cfg) { try { cfg = sanitize(dr.cfg, DEFAULT); if (dr.client?.name) setClient(dr.client); } catch { cfg = {...DEFAULT}; } } }
 renderAll();
+applyQuality(); syncQualityBtn();
 resize();
 build();
 setCam('angle', true);
@@ -4111,7 +4270,7 @@ $('#langSel').onchange = e => { I18N.setLang(e.target.value); setClient(current)
 // warm the remaining swatch textures in idle time so the material tab opens instantly
 const idle = window.requestIdleCallback || (f => setTimeout(f, 200));
 ['walnut','quartz','granite','concrete','oakTop','tile','terrazzo','cement'].forEach((id, i) => idle(() => texCanvas(id)));
-window.__wr = {openDemo, DEMOS, exportFile, importFile, setPresent, get fab(){ return fab; }, set fab(v){ fab = WarshaFab.sanitizeFab(v); }, store, setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
+window.__wr = {openNow: v => { openT = openV = v; applyAnims(); renderer.shadowMap.needsUpdate = true; dirty = true; }, setQuality, get quality(){ return quality; }, dirty: () => { dirty = true; }, setCam, openDemo, DEMOS, exportFile, importFile, setPresent, get fab(){ return fab; }, set fab(v){ fab = WarshaFab.sanitizeFab(v); }, store, setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
 })();
 </script>
 
