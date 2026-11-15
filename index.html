@@ -307,6 +307,7 @@ body.present .pres-exit kbd{font-family:var(--f-num);font-size:11px;background:r
 .photo-pill b{font-family:var(--f-num);font-weight:500;font-size:12px;opacity:.8}
 .photo-pill i{display:block;width:54px;height:3px;border-radius:2px;background:rgba(255,255,255,.18);overflow:hidden}
 .photo-pill i::after{content:"";display:block;height:100%;width:var(--p,0%);background:#F4B400;transition:width .2s}
+.diag{direction:ltr;text-align:left;font:11.5px/1.5 ui-monospace,Menlo,Consolas,monospace;background:#101317;color:#DDE3E8;border-radius:10px;padding:10px 12px;max-height:260px;overflow:auto;white-space:pre-wrap;word-break:break-word;margin:8px 0 0}
 .pres-views,.pres-info,.pres-vars{display:none}
 body.present .pres-views{display:flex;position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:4;gap:2px;align-items:center;background:rgba(18,21,25,.82);backdrop-filter:blur(10px);border-radius:14px;padding:5px;max-width:calc(100% - 24px);overflow-x:auto;box-shadow:0 12px 34px rgba(0,0,0,.28)}
 body.present .pres-views button{border:0;background:none;color:#E9ECEE;font-size:13.5px;padding:9px 12px;border-radius:10px;white-space:nowrap}
@@ -4201,9 +4202,57 @@ function renderClients(){
     : `<div class="empty">لا يوجد زبائن محفوظون بعد. صمّم لزبونك ثم اضغط «حفظ»، أو افتح أحد المشاريع التجريبية.</div>`)
     + `<div class="grp demos"><h3>مشاريع تجريبية للعرض</h3><div class="chips">${DEMOS.map((x, i) => `<button type="button" class="chip" data-demo="${i}">${x.name}</button>`).join('')}</div></div>`
     + `<div class="grp"><h3>النسخ الاحتياطي</h3><div class="ued-row"><button type="button" class="btn sm" id="backupBtn">تنزيل نسخة احتياطية كاملة</button><label class="btn sm">استيراد ملف<input type="file" id="importIn" accept=".json,application/json" hidden></label></div><p class="hint">النسخة الاحتياطية ملف واحد فيه كل التصاميم وأسعار الورشة وإعدادات التصنيع وهويتها. احفظها خارج الجهاز بانتظام. الاستيراد يقبل نسخة احتياطية كاملة أو مشروعاً واحداً.</p></div>`
-    + `<p class="hint">${store.db ? 'التصاميم محفوظة في هذه الصفحة، ويراها كل من تشاركه الرابط مع صلاحية التعديل.' : 'التصاميم محفوظة على هذا الجهاز فقط.'}</p>`;
+    + `<p class="hint">${store.db ? 'التصاميم محفوظة في هذه الصفحة، ويراها كل من تشاركه الرابط مع صلاحية التعديل.' : 'التصاميم محفوظة على هذا الجهاز فقط.'}</p>`
+    + `<div class="grp"><h3>فحص هذا الجهاز</h3><div class="ued-row"><button type="button" class="btn sm" id="diagBtn">ابدأ الفحص</button><button type="button" class="btn sm ghost" id="diagCopy" hidden>نسخ النتائج</button></div><pre class="diag" id="diagOut" data-notr hidden></pre><p class="hint">يقيس على هذا الجهاز سرعة الرسم في المستويات الثلاثة، والتصوير الواقعي، والصورة الكبيرة، وذاكرة الخامات. يستغرق من دقيقة إلى بضع دقائق، ولا يغيّر التصميم.</p></div>`;
+}
+/* ================= device test: measures this phone or computer, results to copy ================= */
+// Uses the design on screen, changes nothing in it, and puts the quality level back at the end.
+async function deviceTest(out){
+  const lines = [], log = t => { lines.push(t); out.textContent = lines.join('\n'); out.scrollTop = out.scrollHeight; };
+  const gl = renderer.getContext(), dbg = gl.getExtension('WEBGL_debug_renderer_info'), q0 = quality, wait = ms => new Promise(r => setTimeout(r, ms));
+  const lost = () => gl.isContextLost();
+  log(`Warsha Studio, device test ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC`);
+  log(`GPU: ${dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)}`);
+  log(`WebGL2: ${renderer.capabilities.isWebGL2 ? 'yes' : 'no'}, max texture ${renderer.capabilities.maxTextureSize}, anisotropy ${maxAniso}`);
+  log(`Screen ${screen.width}x${screen.height} @${devicePixelRatio}, view ${W}x${Hh}, CPU threads ${navigator.hardwareConcurrency || '?'}, RAM ${navigator.deviceMemory ? navigator.deviceMemory + ' GB' : '?'}`);
+  log(navigator.userAgent);
+  log(`Design: ${cfg.room} / ${cfg.layout}, HDR ${envReady ? 'loaded' : 'NOT loaded'}`);
+  const fps = async () => {   // forced frames, paced by the screen refresh: real throughput, capped at the refresh rate
+    photoBusy = true; let n = 0; const t0 = performance.now();
+    try { while (n < 60 && (performance.now() - t0 < 4000 || n < 3)) { renderNow(); await new Promise(r => requestAnimationFrame(r)); n++; } } finally { photoBusy = false; }
+    return n / ((performance.now() - t0) / 1000);
+  };
+  const res = {};
+  for (const q of ['performance', 'standard', 'ultra']) {
+    setQuality(q); const t0 = performance.now(); await texReady(); const load = performance.now() - t0; await wait(300);
+    const f = await fps(), st = texStats(), mem = performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) + ' MB' : '?';
+    res[q] = f;
+    log(`${q}: ${f.toFixed(1)} fps, textures ${st.textures} (${st.mb} MB on GPU, ${st.failed} sets failed), loaded in ${(load / 1000).toFixed(1)} s, JS heap ${mem}${lost() ? ', CONTEXT LOST' : ''}`);
+  }
+  try {
+    const w = Math.round(W * renderer.getPixelRatio()), h = Math.round(Hh * renderer.getPixelRatio()), t0 = performance.now();
+    await photoShot(w, h, 8, false, false);
+    log(`photo: ${Math.round((performance.now() - t0) / 8)} ms per frame at ${w}x${h} (64 frames on screen = ${((performance.now() - t0) / 8 * 64 / 1000).toFixed(1)} s)${lost() ? ', CONTEXT LOST' : ''}`);
+  } catch (e) { log('photo: FAILED ' + (e.message || e)); }
+  try {
+    const t0 = performance.now(), cv = await makeShot('3840');
+    log(`export 4K: ${cv.width}x${cv.height} in ${((performance.now() - t0) / 1000).toFixed(1)} s${cv.width < 3840 ? ' (smaller size used: the device could not do 4K)' : ''}${lost() ? ', CONTEXT LOST' : ''}`);
+  } catch (e) { log('export 4K: FAILED ' + (e.message || e)); }
+  setQuality(q0);
+  const pick = res.ultra >= 30 ? 'ultra' : res.standard >= 30 ? 'standard' : 'performance';
+  log(`suggested level for editing: ${pick}`);
+  return lines.join('\n');
 }
 $('#clientBtn').onclick = () => { renderClients(); $('#clientsSheet').hidden = false; };
+let diagText = '';
+$('#clientsSheet').addEventListener('click', async e => {
+  if (e.target.closest('#diagBtn')) {
+    const b = $('#diagBtn'), out = $('#diagOut'); b.disabled = true; out.hidden = false; $('#diagCopy').hidden = true; b.textContent = I18N.t('يجري الفحص') + '…';
+    try { diagText = await deviceTest(out); } catch (err) { diagText = out.textContent + '\nFAILED: ' + (err.message || err); out.textContent = diagText; }
+    b.disabled = false; b.textContent = I18N.t('ابدأ الفحص'); $('#diagCopy').hidden = false; return;
+  }
+  if (e.target.closest('#diagCopy')) { try { await navigator.clipboard.writeText(diagText); toast('نُسخت النتائج'); } catch { const r = document.createRange(); r.selectNodeContents($('#diagOut')); getSelection().removeAllRanges(); getSelection().addRange(r); toast('حدّد النص وانسخه'); } }
+});
 $('#newClient').onclick = () => { setClient(null); sel = null; resetHistory(); cfg = {...DEFAULT, light: cfg.light}; renderAll(); build(); setCam('angle'); $('#clientsSheet').hidden = true; toast('بدأت تصميماً جديداً'); };
 $('#clientList').addEventListener('click', async e => {
   const o = e.target.closest('[data-open]'); const del = e.target.closest('[data-del]');
@@ -4496,7 +4545,7 @@ $('#langSel').onchange = e => { I18N.setLang(e.target.value); setClient(current)
 // warm the remaining swatch textures in idle time so the material tab opens instantly
 const idle = window.requestIdleCallback || (f => setTimeout(f, 200));
 ['walnut','quartz','granite','concrete','oakTop','tile','terrazzo','cement'].forEach((id, i) => idle(() => texCanvas(id)));
-window.__wr = {texReady, texStats, setPhoto, get photoN(){ return photoN; }, photoShot: async (w, h, n) => (await photoShot(w, h, n, false, false)), makeShot, get envReady(){ return envReady; }, openNow: v => { openT = openV = v; applyAnims(); renderer.shadowMap.needsUpdate = true; dirty = true; }, setQuality, get quality(){ return quality; }, dirty: () => { dirty = true; }, setCam, openDemo, DEMOS, exportFile, importFile, setPresent, get fab(){ return fab; }, set fab(v){ fab = WarshaFab.sanitizeFab(v); }, store, setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
+window.__wr = {deviceTest: () => deviceTest(document.createElement('pre')), texReady, texStats, setPhoto, get photoN(){ return photoN; }, photoShot: async (w, h, n) => (await photoShot(w, h, n, false, false)), makeShot, get envReady(){ return envReady; }, openNow: v => { openT = openV = v; applyAnims(); renderer.shadowMap.needsUpdate = true; dirty = true; }, setQuality, get quality(){ return quality; }, dirty: () => { dirty = true; }, setCam, openDemo, DEMOS, exportFile, importFile, setPresent, get fab(){ return fab; }, set fab(v){ fab = WarshaFab.sanitizeFab(v); }, store, setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
 })();
 </script>
 
