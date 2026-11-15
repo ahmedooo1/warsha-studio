@@ -252,6 +252,11 @@ svg.uv .over .lb{fill:var(--bad)}
 .qbar button.warn{background:var(--bad);color:#fff}
 .qbar svg{width:19px;height:19px}
 .qbar{transition:opacity .18s} .qbar.away{opacity:0;pointer-events:none}
+.qbar .grip{cursor:grab;touch-action:none;opacity:.6;width:28px}
+.qbar .grip:active{cursor:grabbing;opacity:1}
+.qbar.placed{transform:none}
+/* on a phone the bar folds into two short rows, small enough to sit in a corner beside the piece */
+@media (max-width:560px){ .qbar{flex-wrap:wrap;justify-content:center;max-width:min(calc(100% - 16px), 262px);overflow:visible} .qbar i{display:none} .qbar button{width:40px;height:38px} .qbar .grip{width:40px} }
 .qbar i{width:1px;height:22px;background:rgba(255,255,255,.2);margin-inline:3px;flex:none}
 .sect{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:10px}
 .sect h4{margin:0;font-size:14px;font-weight:600;display:flex;gap:8px;align-items:baseline}
@@ -434,6 +439,7 @@ body.present .pres-vars:not([hidden]){display:flex;position:absolute;bottom:84px
       </div>
     </div>
     <div class="qbar" id="qbar" hidden role="toolbar" aria-label="القطعة المحددة">
+      <button type="button" class="grip" id="qbarGrip" title="اسحب لتحريك الشريط، واضغط مرتين لإرجاعه إلى مكانه التلقائي" aria-label="تحريك الشريط"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button>
       <button type="button" data-it="r-15" title="تدوير 15° (Q)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 1 0 2.3-5.6"/><path d="M4 4v4h4"/></svg></button>
       <button type="button" data-it="r+15" title="تدوير 15° (E)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4h-4"/></svg></button>
       <button type="button" data-it="r+90" title="تدوير 90°"><b>90°</b></button>
@@ -2679,7 +2685,7 @@ new ResizeObserver(() => { const fresh = W === 1; resize(); if (fresh) setCam(ca
 controls.addEventListener('change', () => { dirty = true; });
 // the piece's toolbar steps aside while the view turns, so it never sits over what you are looking at
 controls.addEventListener('start', () => $('#qbar')?.classList.add('away'));
-controls.addEventListener('end', () => $('#qbar')?.classList.remove('away'));
+controls.addEventListener('end', () => { $('#qbar')?.classList.remove('away'); placeQbar(); });
 let openT = 0, openV = 0, tourOn = false, tourT = 0, tour0 = null;
 const ease = v => v < .5 ? 2 * v * v : 1 - Math.pow(-2 * v + 2, 2) / 2;
 function applyAnims(){
@@ -2710,7 +2716,7 @@ function loop(){
   const busy = moved || !!tween || tourOn || !!(drag && !drag.pending) || openV !== openT;
   if (busy) { moveAt = performance.now(); if (sharpOn) { sharpOn = false; setPR(basePR()); } }
   if (!dirty && !moved) {
-    if (!sharpOn && performance.now() - moveAt > 220) { sharpOn = true; if (setPR(STILL_PR())) { dirty = false; renderNow(); drawDims(dctx, dimCv.width, dimCv.height, dimCv.width / W); } }
+    if (!sharpOn && performance.now() - moveAt > 220) { sharpOn = true; placeQbar(); if (setPR(STILL_PR())) { dirty = false; renderNow(); drawDims(dctx, dimCv.width, dimCv.height, dimCv.width / W); } }
     return;
   }
   dirty = false; renderNow();
@@ -3142,9 +3148,42 @@ function renderFree(){
   pane.innerHTML = h;
   syncQbar();
 }
+// Where the piece's toolbar sits: where the user dragged it (kept between visits), otherwise the first place that does not
+// cover the selected piece, corners first so the middle of the room stays in view, or the one that covers it the least.
+let qbarPos = lsGet('wr_qbar', null);
+function pieceRect(){
+  const g = sel?.item !== undefined ? itemGroup(sel.item) : null; if (!g) return null;
+  const b = new THREE.Box3().setFromObject(g); if (b.isEmpty()) return null;
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const px of [b.min.x, b.max.x]) for (const py of [b.min.y, b.max.y]) for (const pz of [b.min.z, b.max.z]) {
+    const v = new THREE.Vector3(px, py, pz).project(camera), sx = (v.x + 1) / 2 * W, sy = (1 - v.y) / 2 * Hh;
+    x0 = Math.min(x0, sx); x1 = Math.max(x1, sx); y0 = Math.min(y0, sy); y1 = Math.max(y1, sy); }
+  return {x0, x1, y0, y1};
+}
+function placeQbar(){
+  const q = $('#qbar'); if (!q || q.hidden) return;
+  const qw = q.offsetWidth, qh = q.offsetHeight, pad = 8, st = stageEl.getBoundingClientRect();
+  const hud = $('.hud'), low = (hud && !document.body.classList.contains('present') ? hud.getBoundingClientRect().top - st.top : Hh) - qh - pad;
+  let x, y;
+  if (qbarPos) { x = qbarPos.x * W; y = qbarPos.y * Hh; }
+  else {
+    const pr = pieceRect(), top = 54, cands = [[pad, top], [pad, low], [W - qw - pad, low], [W - qw - pad, top], [(W - qw) / 2, top], [(W - qw) / 2, low]];
+    const cover = ([cx, cy]) => !pr ? 0 : Math.max(0, Math.min(cx + qw, pr.x1) - Math.max(cx, pr.x0)) * Math.max(0, Math.min(cy + qh, pr.y1) - Math.max(cy, pr.y0));
+    [x, y] = cands.reduce((best, c) => cover(c) < cover(best) - 1 ? c : best, cands[0]);
+  }
+  q.style.left = clamp(x, pad, Math.max(pad, W - qw - pad)) + 'px'; q.style.top = clamp(y, pad, Math.max(pad, Hh - qh - pad)) + 'px'; q.classList.add('placed');
+}
+{ const grip = $('#qbarGrip'); let d = null;
+  grip.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); const q = $('#qbar'); d = {px: e.clientX, py: e.clientY, x: q.offsetLeft, y: q.offsetTop, moved: false}; grip.setPointerCapture(e.pointerId); });
+  grip.addEventListener('pointermove', e => { if (!d) return; const q = $('#qbar'), dx = e.clientX - d.px, dy = e.clientY - d.py; if (Math.hypot(dx, dy) > 3) d.moved = true;
+    q.style.left = clamp(d.x + dx, 8, W - q.offsetWidth - 8) + 'px'; q.style.top = clamp(d.y + dy, 8, Hh - q.offsetHeight - 8) + 'px'; });
+  grip.addEventListener('pointerup', () => { if (!d) return; const q = $('#qbar'); if (d.moved) { qbarPos = {x: q.offsetLeft / W, y: q.offsetTop / Hh}; lsSet('wr_qbar', qbarPos); } d = null; });
+  grip.addEventListener('dblclick', () => { qbarPos = null; lsSet('wr_qbar', null); placeQbar(); toast('رجع الشريط إلى مكانه التلقائي'); });
+  new ResizeObserver(() => placeQbar()).observe(stageEl); }
 function syncQbar(){
   const q = $('#qbar'); if (!q) return; const it = curItem();
   q.hidden = !it; if (!it) return;
+  requestAnimationFrame(placeQbar);
   q.querySelector('[data-open]').hidden = false;
   q.querySelector('[data-open]').setAttribute('aria-pressed', !!openT);
   q.querySelector('[data-it="spot"]').classList.toggle('warn', lastClashes.some(c => c.a === sel.item || c.b.item === sel.item));
@@ -5063,7 +5102,7 @@ async function photoCompare(n){
     return {w, h, pixels: cnt, mean: +(sum / cnt / 3).toFixed(3), max};
   } finally { photoBusy = false; photoN = 0; dirty = true; }
 }
-window.__wr = {tallOf, get pixelRatio(){ return renderer.getPixelRatio(); }, get rcStats(){ return rcStats; }, setRC, get clashes(){ return lastClashes.map(c => ({a: c.a, b: c.b.item ?? (c.b.mod ? 'unit' : 'top'), depth: Math.round(c.depth * 10) / 10})); }, set noClash(v){ noClash = v; }, settle: i => { const g = itemGroup(i); return g ? settleDrop({i, group: g}) : null; }, photoCompare, deviceTest: () => deviceTest(document.createElement('pre')), texReady, texStats, setPhoto, get photoN(){ return photoN; }, photoShot: async (w, h, n) => (await photoShot(w, h, n, false, false)), makeShot, get envReady(){ return envReady; }, openNow: v => { openT = openV = v; applyAnims(); renderer.shadowMap.needsUpdate = true; dirty = true; }, setQuality, get quality(){ return quality; }, dirty: () => { dirty = true; }, setCam, openDemo, DEMOS, exportFile, importFile, setPresent, get fab(){ return fab; }, set fab(v){ fab = WarshaFab.sanitizeFab(v); }, store, setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
+window.__wr = {tallOf, pieceRect: () => pieceRect(), get qbarPos(){ return qbarPos; }, get pixelRatio(){ return renderer.getPixelRatio(); }, get rcStats(){ return rcStats; }, setRC, get clashes(){ return lastClashes.map(c => ({a: c.a, b: c.b.item ?? (c.b.mod ? 'unit' : 'top'), depth: Math.round(c.depth * 10) / 10})); }, set noClash(v){ noClash = v; }, settle: i => { const g = itemGroup(i); return g ? settleDrop({i, group: g}) : null; }, photoCompare, deviceTest: () => deviceTest(document.createElement('pre')), texReady, texStats, setPhoto, get photoN(){ return photoN; }, photoShot: async (w, h, n) => (await photoShot(w, h, n, false, false)), makeShot, get envReady(){ return envReady; }, openNow: v => { openT = openV = v; applyAnims(); renderer.shadowMap.needsUpdate = true; dirty = true; }, setQuality, get quality(){ return quality; }, dirty: () => { dirty = true; }, setCam, openDemo, DEMOS, exportFile, importFile, setPresent, get fab(){ return fab; }, set fab(v){ fab = WarshaFab.sanitizeFab(v); }, store, setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
 })();
 </script>
 

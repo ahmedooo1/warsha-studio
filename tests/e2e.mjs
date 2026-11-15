@@ -222,6 +222,21 @@ try {
     const fb = await fp.evaluate(async () => { const w = window.__wr; w.setQuality('performance'); w.openDemo(0); await w.texReady(); const cv = w.snap(400, 250); const px = cv.getContext('2d').getImageData(200, 125, 1, 1).data; return {failed: w.texStats().failed, lit: px[0] + px[1] + px[2] > 0}; });
     ok(fb.lit && ferr.length === 0, `الخامات المرسومة تبقى إن لم تُحمّل الصور، بلا خطأ (${fb.failed} مجموعة لم تُحمّل)` + (ferr.length ? ': ' + ferr[0] : ''));
     await fp.close(); }
+  console.log('شريط أدوات القطعة على الهاتف');
+  { const ph = await open(browser, {width: 412, height: 915});
+    const r = await ph.page.evaluate(async () => { const w = window.__wr; w.openDemo(0);
+      w.set({...w.cfg, items: [{t: 'cab', w: 100, h: 38, d: 35, y: 217, x: 110, z: 18, r: 0, o: {base: 'hang', cols: 2, rows: 1, cells: [{k: 'flap'}, {k: 'flap'}]}}], itemsAuto: false}); w.select({item: 0}, true);
+      await new Promise(f => setTimeout(f, 600)); const q = document.querySelector('#qbar'), st = document.querySelector('#stage').getBoundingClientRect(), b = q.getBoundingClientRect(), pr = w.pieceRect();
+      const lap = Math.max(0, Math.min(b.right - st.left, pr.x1) - Math.max(b.left - st.left, pr.x0)) * Math.max(0, Math.min(b.bottom - st.top, pr.y1) - Math.max(b.top - st.top, pr.y0));
+      const allIn = [...q.querySelectorAll('button')].filter(x => !x.hidden).every(x => { const r = x.getBoundingClientRect(); return r.left >= st.left - 1 && r.right <= st.right + 1; });
+      return {lap: Math.round(lap), allIn}; });
+    ok(r.lap === 0 && r.allIn, `الشريط لا يغطي القطعة المحددة وكل أزراره ظاهرة على عرض 412 (تغطية ${r.lap})`);
+    const g = await ph.page.evaluate(() => { const r = document.querySelector('#qbarGrip').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; });
+    await ph.page.mouse.move(g[0], g[1]); await ph.page.mouse.down(); await ph.page.mouse.move(g[0] - 60, g[1] + 120, {steps: 6}); await ph.page.mouse.up();
+    const moved = await ph.page.evaluate(() => !!window.__wr.qbarPos && !!localStorage.getItem('wr_qbar'));
+    await ph.page.evaluate(() => document.querySelector('#qbarGrip').dispatchEvent(new MouseEvent('dblclick', {bubbles: true})));
+    ok(moved && await ph.page.evaluate(() => window.__wr.qbarPos === null), 'سحب الشريط من مقبضه يُحفظ، والضغط مرتين يعيده');
+    await ph.page.close(); }
   console.log('الهاتف');
   const m = await open(browser, {width: 390, height: 844});
   await m.page.evaluate(() => window.__wr.openDemo(6)); await m.page.waitForTimeout(800);
