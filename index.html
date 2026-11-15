@@ -329,6 +329,8 @@ body.present .pres-exit kbd{font-family:var(--f-num);font-size:11px;background:r
 .rc-plan button[aria-pressed="true"],.rc-front button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .rc-plan [data-rc="bl"],.rc-plan [data-rc="fl"],.rc-front [data-rc="tl"]{border-top-left-radius:18px}
 .rc-plan [data-rc="br"],.rc-plan [data-rc="fr"],.rc-front [data-rc="tr"]{border-top-right-radius:18px}
+.rc-front [data-rc="dl"]{border-bottom-left-radius:18px}.rc-front [data-rc="dr"]{border-bottom-right-radius:18px}
+.rc-kind{flex-wrap:wrap;gap:8px}
 .tog{display:flex;align-items:center;gap:8px;cursor:pointer}.tog input{width:18px;height:18px;accent-color:#E5484D}
 .pres-views,.pres-info,.pres-vars{display:none}
 body.present .pres-views{display:flex;position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:4;gap:2px;align-items:center;background:rgba(18,21,25,.82);backdrop-filter:blur(10px);border-radius:14px;padding:5px;max-width:calc(100% - 24px);overflow-x:auto;box-shadow:0 12px 34px rgba(0,0,0,.28)}
@@ -762,7 +764,7 @@ const ITEM = {
   // pieces drawn from scratch by the carpenter
   cab:     {n:'خزانة مخصصة', w:120, min:20, max:480, d:45, cat:'custom', custom:true, opts:[
     opt.seg('base', 'تحت الخزانة', {plinth:'قاعدة', legs:'أرجل', hang:'معلّقة', none:'بلا'}, 'plinth'),
-    opt.seg('endL', 'الطرف الأيسر', {sq:'مستقيم', ang:'مائل', rnd:'مدوّر'}, 'sq'), opt.seg('endR', 'الطرف الأيمن', {sq:'مستقيم', ang:'مائل', rnd:'مدوّر'}, 'sq'),
+    opt.seg('endL', 'الطرف الأيسر من فوق', {sq:'مستقيم', ang:'مائل', rnd:'مدوّر'}, 'sq'), opt.seg('endR', 'الطرف الأيمن من فوق', {sq:'مستقيم', ang:'مائل', rnd:'مدوّر'}, 'sq'),
     opt.num('ew', 'عرض الطرف', 15, 90, 35, 5), opt.seg('top', 'السطح', {none:'من الخشب نفسه', stone:'حجر', wood:'خشب', glass:'زجاج'}, 'none'), opt.bool('led', 'إضاءة LED', false)]},
   bar:     {n:'بار ومطبخ أمريكي', w:180, min:80, max:480, d:90, cat:'custom', custom:true, opts:[
     opt.seg('base', 'تحت السطح', {cab:'خزائن', open:'رفوف مفتوحة', legs:'أرجل', water:'جانبا شلال'}, 'cab'),
@@ -1026,11 +1028,12 @@ function autoItems(c){
 }
 // rounded corners of a piece or a wall unit: one radius (cm) and the corners it applies to.
 // Seen from above: fl fr bl br (front/back, left/right as you face the piece). Seen from the front: tl tr (top left, top right).
-const RC_CORNERS = {fl: 'أمام يسار', fr: 'أمام يمين', bl: 'خلف يسار', br: 'خلف يمين', tl: 'أعلى يسار', tr: 'أعلى يمين'};
+const RC_CORNERS = {fl: 'أمام يسار', fr: 'أمام يمين', bl: 'خلف يسار', br: 'خلف يمين', tl: 'أعلى يسار', tr: 'أعلى يمين', dl: 'أسفل يسار', dr: 'أسفل يمين'};
 function cleanRC(rc){
   if (!rc || typeof rc !== 'object') return undefined;
   const r = Math.round(clamp(Number(rc.r) || 0, 0, 150)), c = Array.isArray(rc.c) ? [...new Set(rc.c.filter(k => k in RC_CORNERS))] : [];
-  return r >= 1 && c.length ? {r, c} : (c.length ? {r: 10, c} : undefined);
+  const k = rc.k === 'cut' ? {k: 'cut'} : {};
+  return r >= 1 && c.length ? {r, c, ...k} : (c.length ? {r: 10, c, ...k} : undefined);
 }
 function sanitizeUnits(u){
   if (!u || typeof u !== 'object') return null;
@@ -3050,7 +3053,14 @@ function pieceIcon(key){
   const k = 'p-' + key; if (ICONS[k]) return ICONS[k];
   if (!PIECES[key]) return UNIT[key] && !ITEM[key] ? unitIcon(key) : itemIcon(key);
   const it = PIECES[key].it, H = it.t === 'panel' ? (it.o?.or === 'h' ? it.d : it.h) : it.h, Y = y => H - y;
-  return ICONS[k] = `<svg class="uv" viewBox="-4 -4 ${it.w + 8} ${H + 8}" aria-hidden="true">${customShape({...it, y: 0}, 0, Y, 0)}</svg>`;
+  // the corners shaped from the front show in the picture too
+  const fc = (it.rc?.c || []).filter(c => ['tl', 'tr', 'dl', 'dr'].includes(c)), r = Math.min(it.rc?.r || 0, H / 2, it.w / 2);
+  let clip = '', att = '';
+  if (fc.length && r > 0) { const W = it.w, cut = it.rc.k === 'cut', on = c => fc.includes(c) ? r : 0, a = (rr, x, y) => rr ? (cut ? `L${x} ${y}` : `A${rr} ${rr} 0 0 1 ${x} ${y}`) : '';
+    const tl = on('tl'), tr = on('tr'), dr = on('dr'), dl = on('dl');
+    const d = `M${tl} 0H${W - tr}${a(tr, W, tr)}V${H - dr}${a(dr, W - dr, H)}H${dl}${a(dl, 0, H - dl)}V${tl}${a(tl, tl, 0)}Z`;
+    clip = `<defs><clipPath id="cp-${key}"><path d="${d}"/></clipPath></defs>`; att = ` clip-path="url(#cp-${key})"`; clip += `<path d="${d}" class="ln" fill="none"/>`; }
+  return ICONS[k] = `<svg class="uv" viewBox="-4 -4 ${it.w + 8} ${H + 8}" aria-hidden="true"><g${att}>${customShape({...it, y: 0}, 0, Y, 0)}</g>${clip}</svg>`;
 }
 // interactive map of the cells of a custom cabinet
 function cellMap(it){
@@ -3138,7 +3148,7 @@ function renderFree(){
   h += `<div class="grp"><label class="tog"><input type="checkbox" id="noClash" ${noClash ? 'checked' : ''}> <b>منع التداخل</b></label><p class="hint">القطع لا تدخل في بعضها: القطعة المسحوبة تنزاح إلى أقرب مكان فارغ، والتعديل الذي يُدخل خشباً في خشب لا يُطبّق. التداخل يظهر بالأحمر مع عمقه.</p></div>`;
   $('[data-tab="free"]').innerHTML = 'تصميم حر' + (issues.length ? `<i class="badge">${issues.length}</i>` : '');
   if (issues.length) h += `<div class="grp issues"><h3>فحص التصميم <small>${issues.length} ملاحظة</small></h3>${issues.map(x => x.clash ? `<div class="iss"><button type="button" data-pickitem="${x.i}">${x.msg}</button><span><button type="button" class="btn sm" data-isspot="${x.i}">مكان فارغ</button><button type="button" class="btn sm danger" data-isdel="${x.i}">حذف</button></span></div>` : `<button type="button" data-pickitem="${x.i}">${x.msg}</button>`).join('')}</div>`;
-  const grp = PAL_GROUPS.find(g => g[0] === palGroup) || PAL_GROUPS[0], keys = grp[0] === 'custom' ? Object.keys(PIECES) : grp[2];
+  const grp = PAL_GROUPS.find(g => g[0] === palGroup) || PAL_GROUPS[0], keys = grp[0] === 'custom' ? Object.keys(PIECES).filter(k => PIECES[k].g === 'custom') : grp[2];
   h += `<div class="grp"><h3>مكتبة القطع <small>اسحبها إلى المشهد أو اضغطها؛ على الهاتف اضغط مطولاً ثم اسحب</small></h3>
     <div class="choice pg" data-pg>${PAL_GROUPS.map(g => `<button type="button" data-g="${g[0]}" aria-pressed="${g[0] === grp[0]}">${g[1]}</button>`).join('')}</div>
     <div class="ugrid pal">${keys.map(k => `<button type="button" data-pal="${k}">${pieceIcon(k)}<span>${PIECES[k]?.n || DEF(k).n}</span></button>`).join('')}</div></div>`;
@@ -3266,11 +3276,25 @@ const PIECES = {
   barHigh:  {n:'بار مرتفع بأرجل', g:'custom', it:{t:'bar', w:150, h:105, d:55, o:{base:'legs', stools:2, over:25, endL:'sq', endR:'sq', top:'wood'}}},
   panel:    {n:'لوح حر', g:'custom', it:{t:'panel', w:60, h:80, d:2, o:{or:'v', mat:'accent'}}},
   shelfP:   {n:'رف حر', g:'custom', it:{t:'panel', w:80, h:25, d:4, y:140, o:{or:'h', mat:'accent'}}},
+  // TV units: every one is a custom cabinet, so all of it stays editable (size, cells, widths, ends, top, base, corners)
+  tvFloat:  {n:'معلّقة بثلاث قلابات', g:'tv', it:{t:'cab', w:200, h:40, d:40, y:25, o:{base:'hang', cols:3, rows:1, cells:ROW('flap', 3), led:true}}},
+  tvNiche:  {n:'معلّقة بفتحة في الوسط', g:'tv', it:{t:'cab', w:240, h:45, d:40, y:22, o:{base:'hang', cols:3, rows:1, cells:[{k:'flap'}, {k:'open'}, {k:'flap'}], cw:[1, 1.3, 1], led:true}}},
+  tvRound:  {n:'بطرفين مدوّرين من الأمام', g:'tv', it:{t:'cab', w:220, h:46, d:42, y:22, o:{base:'hang', cols:3, rows:1, cells:[{k:'flap'}, {k:'open'}, {k:'flap'}]}, rc:{r:23, c:['tl', 'tr', 'dl', 'dr']}}},
+  tvCut:    {n:'بزوايا مائلة من الأمام', g:'tv', it:{t:'cab', w:200, h:50, d:42, o:{base:'plinth', cols:4, rows:1, cells:ROW('flap', 4), top:'wood'}, rc:{r:12, c:['tl', 'tr'], k:'cut'}}},
+  tvRndTop: {n:'بطرفين مدوّرين من فوق', g:'tv', it:{t:'cab', w:240, h:48, d:44, o:{base:'plinth', cols:3, rows:1, cells:[{k:'flap'}, {k:'open'}, {k:'flap'}], endL:'rnd', endR:'rnd', ew:40, top:'wood'}}},
+  tvDraw:   {n:'جوارير بأرجل', g:'tv', it:{t:'cab', w:180, h:58, d:45, o:{base:'legs', cols:3, rows:2, cells:ROW('drawer', 6), top:'wood'}}},
+  tvTwo:    {n:'بمستويين: رفوف وجوارير', g:'tv', it:{t:'cab', w:200, h:62, d:42, o:{base:'legs', cols:3, rows:2, cells:[...ROW('open', 3), ...ROW('drawer', 3)], rh:[1, 1.2], top:'wood'}}},
+  tvGlass:  {n:'بأبواب زجاج على الطرفين', g:'tv', it:{t:'cab', w:200, h:55, d:42, o:{base:'plinth', cols:4, rows:1, cells:[{k:'glass'}, {k:'flap'}, {k:'flap'}, {k:'glass'}], top:'stone', led:true}}},
+  tvLong:   {n:'طويلة منخفضة', g:'tv', it:{t:'cab', w:300, h:35, d:40, y:20, o:{base:'hang', cols:5, rows:1, cells:[{k:'open'}, ...ROW('flap', 3), {k:'open'}], cw:[.6, 1, 1, 1, .6], led:true}}},
+  tvStone:  {n:'بسطح حجر', g:'tv', it:{t:'cab', w:200, h:50, d:45, o:{base:'plinth', cols:2, rows:1, cells:[{k:'doorL'}, {k:'doorR'}], top:'stone'}}},
+  tvSlim:   {n:'ضيقة بعمق 30', g:'tv', it:{t:'cab', w:160, h:40, d:30, y:30, o:{base:'hang', cols:2, rows:1, cells:ROW('flap', 2), endL:'ang', endR:'ang', ew:25}}},
+  tvWide:   {n:'كبيرة بأبواب', g:'tv', it:{t:'cab', w:260, h:60, d:45, o:{base:'legs', cols:4, rows:1, cells:[{k:'doorL'}, {k:'doorR'}, {k:'doorL'}, {k:'doorR'}], top:'wood'}}},
 };
 const PAL_GROUPS = [
   ['custom', 'مخصّص وأشكال خاصة'],
   ['kitchen', 'المطبخ', ['door', 'drawers', 'sink', 'cook', 'dw', 'bopen', 'washer', 'fridge', 'pantry', 'oventall', 'udoor', 'glass', 'lift', 'uopen', 'hood']],
   ['tall', 'خزائن طويلة ومكتبات', ['wdoor', 'wmirror', 'wdrawer', 'wopen', 'bookcase', 'vitrine', 'coat', 'btall', 'wcol']],
+  ['tv', 'طاولات تلفزيون', [...Object.keys(PIECES).filter(k => PIECES[k].g === 'tv'), 'tvAng', 'tvOne', 'tvCorner', 'tvbase']],
   ['low', 'وحدات منخفضة', ['tvbase', 'sideboard', 'vanity', 'shoe', 'bench', 'desk']],
   ['wall', 'على الجدار', ['clad', 'tv', 'shelf', 'mcab', 'mirror', 'frame', 'hooks']],
   ['furn', 'أثاث', Object.keys(ITEM).filter(t => !ITEM[t].custom)],
@@ -3607,8 +3631,8 @@ function settleDrop(d){
 // A board across it is cut back straight to where the arc passes (the side and the door at a rounded front corner:
 // the corner opens, as an open rounded end). A front left with less than a third of its face is removed with its handle.
 // The design data never changes: only the drawing. The cut list carries the radius and what to cut back.
-function rrPoly(x0, x1, y0, y1, r){   // convex rounded rectangle, counter-clockwise; r = [r00, r10, r11, r01]
-  const out = [], seg = 10, P = [[x0, y0, 180], [x1, y0, 270], [x1, y1, 0], [x0, y1, 90]], S = [[1, 1], [-1, 1], [-1, -1], [1, -1]];
+function rrPoly(x0, x1, y0, y1, r, seg = 10){   // convex rounded rectangle, counter-clockwise; r = [r00, r10, r11, r01]; seg 1 = cut straight (chamfer)
+  const out = [], P = [[x0, y0, 180], [x1, y0, 270], [x1, y1, 0], [x0, y1, 90]], S = [[1, 1], [-1, 1], [-1, -1], [1, -1]];
   P.forEach(([cx, cy, a0], k) => { const rr = r[k]; if (rr <= 1e-4) { out.push([cx, cy]); return; }
     const ox = cx + S[k][0] * rr, oy = cy + S[k][1] * rr; for (let i = 0; i <= seg; i++) { const a = (a0 + 90 * i / seg) * Math.PI / 180; out.push([ox + rr * Math.cos(a), oy + rr * Math.sin(a)]); } });
   return out;
@@ -3644,9 +3668,10 @@ function shapeCorners(root, rc){
   const W = H.max.x - H.min.x, D = H.max.z - H.min.z, Ht = H.max.y - H.min.y, has = k => list.includes(k);
   const rp = Math.min(rad, W / 2, D / 2), rf = Math.min(rad, W / 2, Ht / 2);
   // plan (x, z): corners 00 = back left, 10 = back right, 11 = front right, 01 = front left (front is +z)
-  const F = (has('bl') || has('br') || has('fl') || has('fr')) ? rrPoly(H.min.x, H.max.x, H.min.z, H.max.z, [has('bl') ? rp : 0, has('br') ? rp : 0, has('fr') ? rp : 0, has('fl') ? rp : 0]) : null;
-  // front (x, y): only the top corners
-  const S = (has('tl') || has('tr')) ? rrPoly(H.min.x, H.max.x, H.min.y, H.max.y, [0, 0, has('tr') ? rf : 0, has('tl') ? rf : 0]) : null;
+  const seg = rc.k === 'cut' ? 1 : 10;
+  const F = (has('bl') || has('br') || has('fl') || has('fr')) ? rrPoly(H.min.x, H.max.x, H.min.z, H.max.z, [has('bl') ? rp : 0, has('br') ? rp : 0, has('fr') ? rp : 0, has('fl') ? rp : 0], seg) : null;
+  // front (x, y): top and bottom corners; the four with a radius of half the height give round ends, ( ___ )
+  const S = (has('tl') || has('tr') || has('dl') || has('dr')) ? rrPoly(H.min.x, H.max.x, H.min.y, H.max.y, [has('dl') ? rf : 0, has('dr') ? rf : 0, has('tr') ? rf : 0, has('tl') ? rf : 0], seg) : null;
   const hidden = new Set();
   for (const {m, T, b} of info) {
     const dx = b.max.x - b.min.x, dy = b.max.y - b.min.y, dz = b.max.z - b.min.z, cx = (b.min.x + b.max.x) / 2, cy = (b.min.y + b.max.y) / 2, cz = (b.min.z + b.max.z) / 2;
@@ -3701,13 +3726,14 @@ function applyCorners(){
   world.traverse(o => { const m = o.userData.mod; if (!m) return; const u = cfg.units?.[m.run]?.[m.lvl]?.[m.i]; if (u?.rc) shapeCorners(o, u.rc); });
 }
 const rcCount = c => (c.items || []).reduce((s, it) => s + (it.rc?.c.length || 0), 0) + Object.values(c.units || {}).reduce((s, r) => s + [...(r.b || []), ...(r.u || [])].reduce((t, u) => t + (u.rc?.c.length || 0), 0), 0);
-function rcNote(rc){ return I18N.f('rcNote', {c: rc.c.map(k => I18N.t(RC_CORNERS[k])).join(I18N.lang === 'ar' ? '، ' : ', '), r: rc.r}); }
+function rcNote(rc){ return I18N.f(rc.k === 'cut' ? 'rcNoteCut' : 'rcNote', {c: rc.c.map(k => I18N.t(RC_CORNERS[k])).join(I18N.lang === 'ar' ? '، ' : ', '), r: rc.r}); }
 // panel controls: the corners laid out as they are, from above and from the front
 function cornersUI(rc){
   const on = k => rc?.c?.includes(k), b = k => `<button type="button" data-rc="${k}" aria-pressed="${!!on(k)}">${RC_CORNERS[k]}</button>`;
   return `<div class="grp rcg"><h3>الزوايا المدوّرة <small>${rc?.c?.length ? rc.c.length + ' × ' + rc.r + ' سم' : 'كلها مستقيمة'}</small></h3>
     <div class="rc-box"><span class="lab">من فوق</span><div class="rc-plan">${b('bl')}${b('br')}<i>الأمام</i>${b('fl')}${b('fr')}</div></div>
-    <div class="rc-box"><span class="lab">من الأمام</span><div class="rc-front">${b('tl')}${b('tr')}</div></div>
+    <div class="rc-box"><span class="lab">من الأمام</span><div class="rc-front">${b('tl')}${b('tr')}${b('dl')}${b('dr')}</div></div>
+    <div class="ued-row rc-kind"><span class="lab">الشكل</span><span class="choice"><button type="button" data-rck="round" aria-pressed="${rc?.k !== 'cut'}">قوس</button><button type="button" data-rck="cut" aria-pressed="${rc?.k === 'cut'}">مائل</button></span><button type="button" class="btn sm" data-rc-ends>طرفان مدوّران من الأمام ( ___ )</button></div>
     <div class="ued-row"><span class="lab">نصف القطر</span><span class="num"><input id="rcR" type="number" min="1" max="150" value="${rc?.r || 10}" inputmode="numeric"><span>سم</span></span></div>
     <p class="hint">من فوق: الأسطح والرفوف تأخذ القوس، والجانب والواجهة عند الزاوية يُقصّران فتصير الزاوية مفتوحة. من الأمام: الأبواب والظهر تأخذ القوس، والجانب والسقف يُقصّران. القياس في قائمة التقطيع يبقى للوح كاملاً مع ملاحظة القص.</p></div>`;
 }
@@ -4859,7 +4885,14 @@ async function importFile(file){
 document.addEventListener('click', e => { if (e.target.closest('#backupBtn')) exportFile(store.list, true); });
 document.addEventListener('click', e => { const b = e.target.closest('[data-rc]'); if (!b || !sel) return; const k = b.dataset.rc;
   setRC(rc => { const c = new Set(rc?.c || []); c.has(k) ? c.delete(k) : c.add(k); return c.size ? {r: rc?.r || +($('#rcR')?.value) || 10, c: [...c]} : null; }); });
-document.addEventListener('change', e => { if (e.target.id !== 'rcR' || !sel) return; const r = Math.round(clamp(+e.target.value || 10, 1, 150)); setRC(rc => rc?.c?.length ? {r, c: rc.c} : null); });
+document.addEventListener('change', e => { if (e.target.id !== 'rcR' || !sel) return; const r = Math.round(clamp(+e.target.value || 10, 1, 150)); setRC(rc => rc?.c?.length ? {...rc, r} : null); });
+// arc or straight cut, and round ends seen from the front: the four front corners with a radius of half the height
+document.addEventListener('click', e => { const b = e.target.closest('[data-rck]'); if (!b || !sel) return; const k = b.dataset.rck;
+  setRC(rc => rc?.c?.length ? {r: rc.r, c: rc.c, ...(k === 'cut' ? {k} : {})} : null); });
+document.addEventListener('click', e => { if (!e.target.closest('[data-rc-ends]') || !sel) return;
+  const hb = sel.item !== undefined ? (b => b ? b.y1 - b.y0 : 0)(itemBoxes[sel.item]) : (s => s ? (s.y1 - s.y0) * 100 : 0)(selBounds());
+  if (!hb) return; const r = Math.min(150, Math.ceil(hb / 2));
+  setRC(rc => ({r, c: [...new Set([...(rc?.c || []).filter(k => !['tl', 'tr', 'dl', 'dr'].includes(k)), 'tl', 'tr', 'dl', 'dr'])], ...(rc?.k === 'cut' ? {k: 'cut'} : {})})); });
 document.addEventListener('change', e => { if (e.target.id === 'noClash') { noClash = e.target.checked; lsSet('wr_noclash', noClash); toast(I18N.t(noClash ? 'منع التداخل' : 'التداخل مسموح، ويظهر بالأحمر')); } });
 document.addEventListener('change', e => { if (e.target.id === 'importIn' && e.target.files[0]) { importFile(e.target.files[0]); e.target.value = ''; } });
 
