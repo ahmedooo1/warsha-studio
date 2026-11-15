@@ -189,6 +189,25 @@ try {
   ok(nw.at === 510 && nw.sale, `الصف فوق العلوية حتى السقف (${nw.at} مم) وسعره في العرض`);
   ok(nw.clashes === 0 && nw.back, 'لا تداخل، والمشروع التجريبي يعود كما كان');
   ok(nw.bar && nw.barGone, 'شريط أدوات القطعة يُغلق بزر الإغلاق');
+  console.log('النسخ والتداخل: مكان فارغ وحذف');
+  const sp = await page.evaluate(() => { const w = window.__wr, out = {}; w.openDemo(0);
+    const cab = x => ({t: 'cab', w: 100, h: 38, d: 35, y: 217, x, z: 18, r: 0, o: {base: 'hang', cols: 2, rows: 1, cells: [{k: 'flap'}, {k: 'flap'}]}});
+    w.set({...w.cfg, items: [cab(110)], itemsAuto: false});
+    for (let k = 0; k < 4; k++) { w.select({item: w.cfg.items.length - 1}); w.itemAction('dup'); }
+    out.n = w.cfg.items.length; out.dupClashes = w.clashes.length; out.walls = [...new Set(w.cfg.items.map(it => it.r))].length;
+    w.noClash = false; const c = structuredClone(w.cfg.items); c[1].x = c[0].x + 30; w.set({...w.cfg, items: c}); out.forced = w.clashes.length;
+    w.renderFree(); document.querySelector('[data-isspot]')?.click(); out.fixed = w.clashes.length;
+    w.select({item: 0}); w.itemAction('spot:C'); out.right = w.cfg.items[0].r === 90 && w.clashes.length === 0;
+    const c2 = structuredClone(w.cfg.items); Object.assign(c2[2], {x: c2[1].x, z: c2[1].z, r: c2[1].r}); w.set({...w.cfg, items: c2}); w.renderFree();
+    const n0 = w.cfg.items.length; document.querySelector('[data-isdel]')?.click(); out.deleted = n0 - w.cfg.items.length; out.end = w.clashes.length; w.noClash = true;
+    w.openDemo(0); w.select({run: 'A', lvl: 'b', i: 1}); document.querySelector('[data-u="dup"]')?.click();
+    out.unitTo = w.sel?.run; out.unitA = w.cfg.units.A.b.length; out.unitThere = w.sel ? w.cfg.units[w.sel.run].b.length : 0; w.openDemo(0);
+    return out; });
+  ok(sp.n === 5 && sp.dupClashes === 0 && sp.walls >= 2, `4 نسخ لخزانة فوق العلوية: كل نسخة في مكان فارغ، على ${sp.walls} جدار، بلا تداخل`);
+  ok(sp.forced === 1 && sp.fixed === 0, 'زر «مكان فارغ» في فحص التصميم يفك التداخل');
+  ok(sp.right, 'نقل القطعة إلى مكان فارغ على الجدار الأيمن');
+  ok(sp.deleted === 1 && sp.end === 0, 'زر «حذف» في فحص التصميم يحذف النسخة المتداخلة');
+  ok(sp.unitTo && sp.unitTo !== 'A' && sp.unitA === 6, `نسخة وحدة لا مكان لها على الجدار الرئيسي تذهب إلى ${sp.unitTo}`);
   console.log('وضع العرض');
   await page.evaluate(() => window.__wr.setPresent(true)); await page.waitForTimeout(300);
   ok(await page.evaluate(() => getComputedStyle(document.querySelector('#panel')).display === 'none' && getComputedStyle(document.querySelector('.bar')).display === 'none'), 'الأدوات مخفية في وضع العرض');

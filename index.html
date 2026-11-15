@@ -249,6 +249,7 @@ svg.uv .over .lb{fill:var(--bad)}
 .qbar button:hover{background:rgba(255,255,255,.12)}
 .qbar button[aria-pressed="true"]{background:var(--tape);color:var(--tape-ink)}
 .qbar button.del{color:#FF9C8C}
+.qbar button.warn{background:var(--bad);color:#fff}
 .qbar svg{width:19px;height:19px}
 .qbar{transition:opacity .18s} .qbar.away{opacity:0;pointer-events:none}
 .qbar i{width:1px;height:22px;background:rgba(255,255,255,.2);margin-inline:3px;flex:none}
@@ -287,6 +288,12 @@ svg.uv [data-cell]{cursor:pointer}
 .issues button{border:0;background:none;text-align:start;padding:4px 0;font-size:13.5px;color:var(--ink);display:flex;gap:8px;align-items:baseline}
 .issues button::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--bad);transform:translateY(-1px)}
 .issues button:hover{text-decoration:underline}
+.issues .iss{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.issues .iss>button{flex:1 1 180px}
+.issues .iss span{display:flex;gap:6px}
+.issues .iss .btn{padding:4px 10px;display:inline-flex}
+.issues .iss .btn::before{content:none}
+.ued-row.spots{flex-wrap:wrap;gap:6px}
 .logo-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .logo-row img{height:56px;max-width:160px;object-fit:contain;border:1px solid var(--line);border-radius:8px;background:#fff;padding:4px}
 .logo-row .ph{width:56px;height:56px;border:1px dashed var(--line);border-radius:8px;display:grid;place-items:center;font-size:12px;color:var(--muted)}
@@ -435,6 +442,7 @@ body.present .pres-vars:not([hidden]){display:flex;position:absolute;bottom:84px
       <button type="button" data-qy="-5" title="إنزال 5 سم (PageDown)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button>
       <i></i>
       <button type="button" data-open title="فتح الأبواب والجوارير"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h9v16H4z"/><path d="M13 4l7 3v14l-7-1"/></svg></button>
+      <button type="button" data-it="spot" title="انقل إلى مكان فارغ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v6M12 15v6M3 12h6M15 12h6M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg></button>
       <button type="button" data-it="dup" title="نسخ (Ctrl+D)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg></button>
       <button type="button" data-it="del" class="del" title="حذف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
       <i></i>
@@ -3065,7 +3073,7 @@ function checkIssues(){
     if (b.y1 > H + 1) out.push({i, msg: I18N.f('issueCeil', {n: name, v: Math.round(b.y1 - H)})});
     if (b.y0 > 3 && it.t !== 'panel' && !(isUnitItem(it) && unitBox(it, H, Math.min(H - 4, 230))[0] > 3) && !(it.t === 'cab' && iopts(it).base === 'hang') && !it.sy) out.push({i, msg: I18N.f('issueFloat', {n: name, v: Math.round(b.y0)})});
     const obs = obstacles(i);
-    for (const c of lastClashes) if (c.a === i) out.push({i, with: c.b.item, msg: I18N.f('clashMsg', {a: name, b: whoName(c.b), v: Math.max(1, Math.round(c.depth))})});
+    for (const c of lastClashes) if (c.a === i) out.push({i, clash: true, with: c.b.item, msg: I18N.f('clashMsg', {a: name, b: whoName(c.b), v: Math.max(1, Math.round(c.depth))})});
     // room in front to open doors and drawers
     const opens = (isUnitItem(it) && UNIT[it.t].cat && !['shelf', 'mirror', 'clad', 'hooks', 'frame'].includes(it.t)) || it.t === 'cab' || (it.t === 'bar' && iopts(it).base === 'cab');
     if (opens && ortho(it.r)) {
@@ -3098,7 +3106,7 @@ function renderFree(){
       <div class="sect"><h4>المكان</h4>
       <div class="ued-row pos"><label><span>من اليسار</span><span class="num"><input id="ix" type="number" value="${si.x}"><span>سم</span></span></label><label><span>من الخلف</span><span class="num"><input id="iz" type="number" value="${si.z}"><span>سم</span></span></label><label><span>عن الأرض</span><span class="num"><input id="ibottom" type="number" value="${bottom}"><span>سم</span></span></label></div>
       <div class="ued-row"><div class="seg2"><button type="button" data-al="right">${arrowR} لليمين</button><button type="button" data-al="mid">في الوسط</button><button type="button" data-al="left">لليسار ${arrowL}</button></div></div>
-      <div class="ued-row"><button type="button" class="btn sm" data-it="wall">ألصق بالجدار</button><button type="button" class="btn sm" data-it="floor">أنزل إلى الأرض</button><span class="hint">${si.sy ? `مركّبة فوق قطعة أخرى (${si.sy} سم)` : ''}</span></div></div>
+      <div class="ued-row"><button type="button" class="btn sm" data-it="wall">ألصق بالجدار</button><button type="button" class="btn sm" data-it="floor">أنزل إلى الأرض</button><button type="button" class="btn sm" data-it="spot">مكان فارغ</button><span class="hint">${si.sy ? `مركّبة فوق قطعة أخرى (${si.sy} سم)` : ''}</span></div></div>
       <div class="sect"><h4>الدوران</h4><div class="ued-row"><div class="seg2"><button type="button" data-it="r-15">−15°</button><button type="button" data-it="r-45">−45°</button></div><span class="num"><input id="ir" type="number" step="1" value="${Math.round(si.r)}"><span>درجة</span></span><div class="seg2"><button type="button" data-it="r+45">+45°</button><button type="button" data-it="r+15">+15°</button><button type="button" data-it="r+90">90°</button></div></div></div>
       ${NO_COLOR.includes(si.t) ? '' : `<div class="sect"><h4>اللون</h4>${colorRow('icol', o.col, 'icolor')}
         <div class="choice" data-ifin><button type="button" data-f="" aria-pressed="${!o.fin}">حسب التصميم</button><button type="button" data-f="matte" aria-pressed="${o.fin === 'matte'}">مطفي</button><button type="button" data-f="gloss" aria-pressed="${o.fin === 'gloss'}">لامع</button></div>
@@ -3115,6 +3123,7 @@ function renderFree(){
         ${colorRow('cellc', cs.c, 'ccolor', 'لون الخزانة')}
         <div class="ued-row"><button type="button" class="btn sm" data-cellall>طبّق هذه الخانة على كل الخانات</button></div></div>`;
     }
+    h += `<div class="ued-row spots"><span class="hint">انقل إلى مكان فارغ على</span>${runsOf(cfg).map(r => `<button type="button" class="btn sm" data-it="spot:${r.id}">${r.name}</button>`).join('')}</div>`;
     h += cornersUI(si.rc);
     h += `<div class="ued-row acts"><button type="button" class="btn sm" data-it="dup">نسخ</button>${si.t === 'cab' || si.t === 'bar' ? '<button type="button" class="btn sm" data-it="mirror">عكس يمين ويسار</button>' : ''}${si.t === 'cab' || si.t === 'bar' ? `<button type="button" class="btn sm" data-open>${openT ? 'أغلق الأبواب' : 'افتح الأبواب'}</button>` : ''}<button type="button" class="btn sm danger" data-it="del">حذف</button></div>
       <p class="hint">من لوحة المفاتيح: الأسهم للتحريك سنتيمتراً (مع Shift عشرة)، Q و E للتدوير، PageUp و PageDown للرفع والإنزال، Ctrl+D للنسخ. اضغط Alt أثناء السحب لإلغاء الالتصاق.</p></div>`;
@@ -3122,7 +3131,7 @@ function renderFree(){
   const issues = checkIssues(); lastIssues = issues;
   h += `<div class="grp"><label class="tog"><input type="checkbox" id="noClash" ${noClash ? 'checked' : ''}> <b>منع التداخل</b></label><p class="hint">القطع لا تدخل في بعضها: القطعة المسحوبة تنزاح إلى أقرب مكان فارغ، والتعديل الذي يُدخل خشباً في خشب لا يُطبّق. التداخل يظهر بالأحمر مع عمقه.</p></div>`;
   $('[data-tab="free"]').innerHTML = 'تصميم حر' + (issues.length ? `<i class="badge">${issues.length}</i>` : '');
-  if (issues.length) h += `<div class="grp issues"><h3>فحص التصميم <small>${issues.length} ملاحظة</small></h3>${issues.map(x => `<button type="button" data-pickitem="${x.i}">${x.msg}</button>`).join('')}</div>`;
+  if (issues.length) h += `<div class="grp issues"><h3>فحص التصميم <small>${issues.length} ملاحظة</small></h3>${issues.map(x => x.clash ? `<div class="iss"><button type="button" data-pickitem="${x.i}">${x.msg}</button><span><button type="button" class="btn sm" data-isspot="${x.i}">مكان فارغ</button><button type="button" class="btn sm danger" data-isdel="${x.i}">حذف</button></span></div>` : `<button type="button" data-pickitem="${x.i}">${x.msg}</button>`).join('')}</div>`;
   const grp = PAL_GROUPS.find(g => g[0] === palGroup) || PAL_GROUPS[0], keys = grp[0] === 'custom' ? Object.keys(PIECES) : grp[2];
   h += `<div class="grp"><h3>مكتبة القطع <small>اسحبها إلى المشهد أو اضغطها؛ على الهاتف اضغط مطولاً ثم اسحب</small></h3>
     <div class="choice pg" data-pg>${PAL_GROUPS.map(g => `<button type="button" data-g="${g[0]}" aria-pressed="${g[0] === grp[0]}">${g[1]}</button>`).join('')}</div>
@@ -3138,6 +3147,7 @@ function syncQbar(){
   q.hidden = !it; if (!it) return;
   q.querySelector('[data-open]').hidden = false;
   q.querySelector('[data-open]').setAttribute('aria-pressed', !!openT);
+  q.querySelector('[data-it="spot"]').classList.toggle('warn', lastClashes.some(c => c.a === sel.item || c.b.item === sel.item));
 }
 function openTab(name){ $$('[data-tab]').forEach(t => t.setAttribute('aria-selected', t.dataset.tab === name)); for (const p of ['space', 'units', 'free', 'mat', 'cost']) $('#pane-' + p).hidden = p !== name; }
 function select(m, from3D = false){
@@ -3176,6 +3186,15 @@ function setUnitOpt(k, v){ editUnits(u => { const m = curUnit(u); if (!m) return
 function unitAction(act){
   if (!sel || sel.item !== undefined) return; const {run, lvl, i} = sel;
   if (act === 'free') { const k = detachUnit(sel); if (k >= 0) { select({item: k}, true); toast('صارت الوحدة قطعة حرة، اسحبها أينما شئت'); } return; }
+  // a copy that does not fit on its wall goes to the end of the first other wall with room for it, at the same level
+  if (act === 'dup') {
+    const room = id => { const x = ctxFor(id); return availOf(x.r, x.talls, lvl, x.hoods) - sumW(x.U[lvl] || []); }, m0 = cfg.units[run]?.[lvl]?.[i];
+    if (m0 && room(run) < m0.w) {
+      const to = runsOf(cfg).map(r => r.id).filter(id => id !== run).find(id => room(id) >= m0.w);
+      if (to) { editUnits(u => { const L = u[to][lvl] || (u[to][lvl] = []); L.push(JSON.parse(JSON.stringify(m0))); sel = {run: to, lvl, i: L.length - 1}; }); view.run = to; renderUnits(); drawSel(); toast(I18N.f('spotMoved', {w: I18N.t(runName(to))})); return; }
+      toast('لا مكان للنسخة على أي جدار: تظهر بالأحمر، احذفها أو صغّر وحدة');
+    }
+  }
   editUnits(u => {
     const L = u[run][lvl], m = L[i]; if (!m) return;
     if (act === 'del') {
@@ -3297,7 +3316,24 @@ function itemAction(act){
   if (!sel || sel.item === undefined) return; const i = sel.item, it0 = cfg.items[i]; if (!it0) return;
   if (act === 'close') { select(null); return; }
   if (act === 'del') { editItems(L => { L.splice(i, 1); }); sel = null; drawSel(); renderUnits(); toast('حُذفت القطعة، ويمكنك التراجع'); return; }
-  if (act === 'dup') { editItems(L => { const c0 = JSON.parse(JSON.stringify(L[i])), [fw] = footprint(c0), th = -c0.r * Math.PI / 180; c0.x += Math.round(Math.cos(th) * fw); c0.z += Math.round(-Math.sin(th) * fw); L.push(c0); }); select({item: cfg.items.length - 1}, true); restack(() => {}, false); return; }
+  if (act === 'dup') {
+    // the copy goes next to the original; if it lands on something it moves to the nearest free place, on the same
+    // wall first, then on the others; if the room has none at that height it stays selected, red, to delete or move
+    editItems(L => { const c0 = JSON.parse(JSON.stringify(L[i])), [fw] = footprint(c0), th = -c0.r * Math.PI / 180; c0.x += Math.round(Math.cos(th) * fw); c0.z += Math.round(-Math.sin(th) * fw); L.push(c0); }, true, false);
+    const k = cfg.items.length - 1; select({item: k}, true);
+    if (lastClashes.some(c => c.a === k || c.b.item === k)) {
+      const home = wallOfItem(it0), q = toFreeSpot(k, null, home === 'A' || home === 'D' ? it0.x : it0.z);
+      if (q) { editItems(L => { Object.assign(L[k], {x: q.x, z: q.z, r: q.r}); }, false, false); select({item: k}, true); toast(q.home ? 'وُضعت النسخة في أقرب مكان فارغ' : I18N.f('spotMoved', {w: I18N.t(runName(q.wall))})); }
+      else toast('لا مكان فارغ للنسخة بهذا الارتفاع: احذفها أو حرّكها');
+    }
+    restack(() => {}, false); return;
+  }
+  if (act.startsWith('spot')) {
+    const w = act.slice(5) || null, q = toFreeSpot(i, w);
+    if (!q) { toast(w ? I18N.f('spotNone', {w: I18N.t(runName(w))}) : 'لا مكان فارغ بهذا الارتفاع على أي جدار'); return; }
+    editItems(L => { Object.assign(L[i], {x: q.x, z: q.z, r: q.r}); }, true, false); select({item: i}, true); restack(() => {}, false, false); renderUnits();
+    toast(I18N.f('spotMoved', {w: I18N.t(runName(q.wall))})); return;
+  }
   if (act === 'mirror') { mirrorItem(); return; }
   if (act === 'floor') { restack(L => { L[i].y = 0; L[i].sy = 0; }); renderUnits(); return; }
   if (act === 'wall') { record(); const g = itemGroup(i), q = poseAt(it0, it0.x, it0.z, Math.round(it0.r / 90) * 90 % 360, localBox(g), obstacles(i), false); editItems(L => Object.assign(L[i], {x: q.x, z: q.z, r: q.r, sy: q.sy}), false); drawSel(); renderUnits(); return; }
@@ -3467,6 +3503,40 @@ function keepInside(){
 const buildScene = build;
 build = function(){ buildScene(); applyCorners(); keepInside(); refreshClashes(); };
 // after a change to the pieces: a new clash is undone (prevention on) or reported (off); old ones are left to the user
+// A free place for piece i against one wall (A main, B left, C right, D front), at the height it has now: the
+// nearest place along that wall where none of its boards enters another piece, a unit or a worktop, inside the room.
+// The piece is turned to face out of that wall. null when the wall is full at that height.
+const WALL_R = {A: 0, B: 270, C: 90, D: 180};
+const runName = id => runsOf(cfg).find(r => r.id === id)?.name || id;
+function wallOfItem(it){
+  const A = cfg.wallA, D = Math.round(frame.D * 100), dist = {A: it.z, B: it.x, C: A - it.x, D: D - it.z};
+  const byR = Object.keys(WALL_R).find(k => WALL_R[k] === ((Math.round(it.r) % 360) + 360) % 360);
+  return byR && dist[byR] < itemDepth(it) / 2 + 30 ? byR : Object.keys(dist).sort((p, q) => dist[p] - dist[q])[0];
+}
+function freeSpot(i, wall, prefer){
+  const it = cfg.items[i], g = itemGroup(i); if (!it || !g) return null;
+  const A = cfg.wallA, D = Math.round(frame.D * 100), r = WALL_R[wall], dd = itemDepth(it) / 2, along = wall === 'A' || wall === 'D', len = along ? A : D;
+  const at = s => wall === 'A' ? [s, dd] : wall === 'D' ? [s, D - dd] : wall === 'B' ? [dd, s] : [A - dd, s];
+  // read the boards of the piece turned towards that wall, then put the group back as it was
+  const p0 = g.position.clone(), r0 = g.rotation.y, [x0, z0] = at(len / 2);
+  g.position.x = x0 / 100; g.position.z = z0 / 100; g.rotation.y = -r * Math.PI / 180;
+  const mine = boards(g); g.position.copy(p0); g.rotation.y = r0; g.updateMatrixWorld(true);
+  if (!mine.length) return null;
+  const H = hull(mine), others = solidsOf(i), want = prefer ?? (wall === wallOfItem(it) ? (along ? it.x : it.z) : len / 2);
+  const cands = []; for (let s = 0; s <= len; s++) cands.push(s); cands.sort((p, q) => Math.abs(p - want) - Math.abs(q - want));
+  for (const s of cands) {
+    const [x, z] = at(s), dx = x - x0, dz = z - z0;
+    if (H.x0 + dx < -.5 || H.x1 + dx > A + .5 || H.z0 + dz < -.5 || H.z1 + dz > D + .5) continue;
+    if (!clashWith(i, mine, others, dx, dz).length) return {x: Math.round(x), z: Math.round(z), r};
+  }
+  return null;
+}
+// move piece i to a free place: on the wall asked, or first on its own wall, then on the others
+function toFreeSpot(i, wall = null, prefer){
+  const home = wallOfItem(cfg.items[i]), order = wall ? [wall] : [home, ...RUN_IDS.filter(w => w !== home)];
+  for (const w of order) { const q = freeSpot(i, w, w === home ? prefer : undefined); if (q) return {...q, wall: w, home: w === home}; }
+  return null;
+}
 function guardClash(before, keys0){
   const fresh = lastClashes.filter(c => !keys0.has(clashKey(c)));
   if (!fresh.length) return false;
@@ -4483,6 +4553,7 @@ document.addEventListener('click', e => {
   const is = e.target.closest('[data-ioseg] [data-v]'); if (is) { setItemOpt(is.closest('[data-ioseg]').dataset.ioseg, is.dataset.v); return; }
   const ia = e.target.closest('[data-it]'); if (ia) { itemAction(ia.dataset.it); return; }
   const ai = e.target.closest('[data-additem]'); if (ai) { addItem(ai.dataset.additem); return; }
+  const isd = e.target.closest('[data-isdel],[data-isspot]'); if (isd) { const k = +(isd.dataset.isdel ?? isd.dataset.isspot); select({item: k}, true); itemAction(isd.dataset.isdel !== undefined ? 'del' : 'spot'); return; }
   const pi = e.target.closest('[data-pickitem]'); if (pi) { select({item: +pi.dataset.pickitem}); return; }
   const al = e.target.closest('[data-al]'); if (al) { alignItem(al.dataset.al); return; }
   const gr = e.target.closest('[data-grid]'); if (gr) { const [k, v] = [gr.dataset.grid.slice(0, 4), +gr.dataset.grid.slice(4)], g = cabGrid(curItem()); setGrid(k, g[k] + v); return; }
