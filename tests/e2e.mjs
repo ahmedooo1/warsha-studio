@@ -214,6 +214,9 @@ try {
     document.querySelector('[data-rc-ends]')?.click(); const rc = w.cfg.items[tv].rc; out.ends = rc && ['tl', 'tr', 'dl', 'dr'].every(k => rc.c.includes(k)) && rc.r >= 22;
     out.shaped = w.rcStats.cut; out.note = w.cutList().shaping.some(x => x.msg.includes('أسفل يسار'));
     document.querySelector('[data-rck="cut"]')?.click(); out.cut = w.cfg.items[tv].rc?.k === 'cut' && w.cutList().shaping.some(x => x.msg.includes('مائل'));
+    // a TV unit with a vase on top: the curve follows the unit itself, the vase stays, the workshop radius is half the height
+    { const items = w.cfg.items.filter(it => it.t !== 'cab'); items.push({t: 'tvbase', w: 220, x: 220, z: 22, r: 0, o: {s: 'flaps', f: true}, rc: {r: 56, c: ['tl', 'tr', 'dl', 'dr']}}); w.set({...w.cfg, items, itemsAuto: false});
+      out.unitHidden = w.rcStats.hidden; out.unitNote = w.cutList().shaping.some(x => / 22 /.test(x.msg)); }
     w.openDemo(6); const n0 = w.cfg.items.length;
     document.querySelector('[data-tab="free"]').click(); document.querySelector('[data-g="tv"]')?.click();
     const keys = [...document.querySelectorAll('.ugrid.pal [data-pal]')].map(b => b.dataset.pal); out.models = keys.length;
@@ -222,6 +225,7 @@ try {
     w.openDemo(6); return out; });
   ok(tvm.ends && tvm.shaped > 0 && tvm.note, `طرفان مدوّران من الأمام ( ___ ) بنصف قطر نصف الارتفاع (${tvm.shaped} لوحاً أعيد رسمه)`);
   ok(tvm.cut, 'الزوايا تصير مائلة بدل القوس، مع ملاحظة القص');
+  ok(tvm.unitHidden === 0 && tvm.unitNote, 'الزهرية فوق الطاولة تبقى، ونصف القطر في ورقة الورشة لا يزيد عن نصف الارتفاع (22 سم)');
   ok(tvm.models >= 15 && tvm.placed >= 13 && tvm.round, `مكتبة طاولات التلفزيون: ${tvm.models} موديلاً، وُضع منها ${tvm.placed}`);
   console.log('وضع العرض');
   await page.evaluate(() => window.__wr.setPresent(true)); await page.waitForTimeout(300);

@@ -3657,14 +3657,18 @@ function polyAt(P, axis, v){
 }
 const inPoly = (P, x, y) => P.every((A, i) => { const B = P[(i + 1) % P.length]; return (B[0] - A[0]) * (y - A[1]) - (B[1] - A[1]) * (x - A[0]) >= -1e-6; });
 let rcStats = {pieces: 0, cut: 0, hidden: 0};
-function shapeCorners(root, rc){
+// The piece's outline is the hull of its wood, stone and melamine boards, without the decor (vases, books, plants);
+// span: its own bottom and top when known (custom pieces), so nothing standing on it changes the curve.
+function shapeCorners(root, rc, span = null){
   const list = rc?.c || [], rad = (rc?.r || 0) / 100; if (rad <= 0 || !list.length) return;
   root.updateMatrixWorld(true);
   const inv = root.matrixWorld.clone().invert(), toRoot = m => new THREE.Matrix4().multiplyMatrices(inv, m.matrixWorld);
   const meshes = []; root.traverse(m => { if (m.isMesh && !m.userData.skip && m.visible && m.geometry) meshes.push(m); });
   if (!meshes.length) return;
   const info = meshes.map(m => { if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); const T = toRoot(m); return {m, T, b: m.geometry.boundingBox.clone().applyMatrix4(T)}; });
-  const H = new THREE.Box3(); info.forEach(x => H.union(x.b));
+  const H = new THREE.Box3();
+  info.forEach(x => { if (isMetric(x.m.material)) H.union(x.b); }); if (H.isEmpty()) info.forEach(x => H.union(x.b));
+  if (span) { H.min.y = span.y0; H.max.y = span.y1; }
   const W = H.max.x - H.min.x, D = H.max.z - H.min.z, Ht = H.max.y - H.min.y, has = k => list.includes(k);
   const rp = Math.min(rad, W / 2, D / 2), rf = Math.min(rad, W / 2, Ht / 2);
   // plan (x, z): corners 00 = back left, 10 = back right, 11 = front right, 01 = front left (front is +z)
@@ -3678,8 +3682,29 @@ function shapeCorners(root, rc){
     // a board turned at an angle inside the piece cannot be redrawn as a straight prism: it is kept or removed whole
     const e = T.elements, aligned = [0, 4, 8].every(k => { const v = [Math.abs(e[k]), Math.abs(e[k + 1]), Math.abs(e[k + 2])], n = Math.hypot(...v); return Math.max(...v) > n * .999; });
     const boxy = aligned && (m.geometry.type === 'BoxGeometry' || m.geometry.type === 'RoundedBoxGeometry'), slabby = aligned && !!m.userData.slab && !Array.isArray(m.material);
+    // a board turned only about the vertical (the slanted ends of a TV unit): shaped from the front in its own plane
+    const yUp = Math.abs(e[5]) > .999 * Math.hypot(e[4], e[5], e[6]);
+    if (!aligned && yUp && S && m.geometry.type === 'BoxGeometry' && !Array.isArray(m.material)) {
+      const lb = m.geometry.boundingBox, ax = (lb.max.x - lb.min.x) >= (lb.max.z - lb.min.z) ? 'x' : 'z', mid = lb.getCenter(new THREE.Vector3());
+      const P0 = mid.clone().applyMatrix4(T), P1 = mid.clone().add(new THREE.Vector3(ax === 'x' ? 1 : 0, 0, ax === 'z' ? 1 : 0)).applyMatrix4(T), k = P1.x - P0.x;
+      const u0 = ax === 'x' ? lb.min.x : lb.min.z, u1 = ax === 'x' ? lb.max.x : lb.max.z, yl = y => (y - e[13]) / e[5];
+      let face = [[u0, lb.min.y], [u1, lb.min.y], [u1, lb.max.y], [u0, lb.max.y]], cut = null;
+      if (Math.abs(k) > 1e-3) { let Sl = S.map(([x, y]) => [(x - P0.x) / k + (ax === 'x' ? mid.x : mid.z), yl(y)]); if ((k < 0) !== (e[5] < 0)) Sl = Sl.reverse(); cut = clipPoly(face, Sl); }
+      else { const iv = polyAt(S, 1, P0.x); if (iv) { const a0 = Math.max(lb.min.y, Math.min(yl(iv[0]), yl(iv[1]))), a1 = Math.min(lb.max.y, Math.max(yl(iv[0]), yl(iv[1]))); cut = a1 > a0 ? [[u0, a0], [u1, a0], [u1, a1], [u0, a1]] : []; } }
+      if (cut && polyArea(cut) < polyArea(face) - 1e-7) {
+        if (cut.length < 3 || polyArea(cut) < polyArea(face) * .34) { m.visible = false; hidden.add(m); continue; }
+        const sh = new THREE.Shape(); cut.forEach(([u, v], i) => i ? sh.lineTo(u, v) : sh.moveTo(u, v));
+        let g;
+        if (ax === 'x') { g = new THREE.ExtrudeGeometry(sh, {depth: lb.max.z - lb.min.z, bevelEnabled: false, curveSegments: 1}); g.translate(0, 0, lb.min.z); }
+        else { g = new THREE.ExtrudeGeometry(sh, {depth: lb.max.x - lb.min.x, bevelEnabled: false, curveSegments: 1}); g.rotateY(-Math.PI / 2); g.translate(lb.max.x, 0, 0); }
+        g.computeVertexNormals(); if (isMetric(m.material)) boxUV(g, 1, R(), R(), grainFor(dx, dy, dz)); else boxUV(g, 1.1, R(), R());
+        m.geometry.dispose(); m.geometry = g; rcStats.cut++;
+      }
+      continue;
+    }
     if ((!boxy && !slabby) || Array.isArray(m.material)) {   // handles, legs, decor, glass: kept or removed whole
-      if ((F && !inPoly(F, cx, cz)) || (S && !inPoly(S, cx, cy))) { m.visible = false; hidden.add(m); }
+      // what stands on top of the piece (a vase, books) stays where it is
+      if (b.min.y < H.max.y - .005 && ((F && !inPoly(F, cx, cz)) || (S && !inPoly(S, cx, cy)))) { m.visible = false; hidden.add(m); }
       continue;
     }
     // the board's outline in its own plane, in the piece's frame
@@ -3722,10 +3747,10 @@ function shapeCorners(root, rc){
 }
 function applyCorners(){
   rcStats = {pieces: 0, cut: 0, hidden: 0};
-  (cfg.items || []).forEach((it, i) => { if (it.rc) { const g = itemGroup(i); if (g) { shapeCorners(g, it.rc); const b = objBox(g); itemBoxes[i] = {x0: b.min.x * 100, x1: b.max.x * 100, y0: b.min.y * 100, y1: b.max.y * 100, z0: b.min.z * 100, z1: b.max.z * 100}; } } });
+  (cfg.items || []).forEach((it, i) => { if (it.rc) { const g = itemGroup(i); if (g) { shapeCorners(g, it.rc, CUST[it.t] && it.t !== 'panel' ? {y0: 0, y1: itemH(it) / 100} : null); const b = objBox(g); itemBoxes[i] = {x0: b.min.x * 100, x1: b.max.x * 100, y0: b.min.y * 100, y1: b.max.y * 100, z0: b.min.z * 100, z1: b.max.z * 100}; } } });
   world.traverse(o => { const m = o.userData.mod; if (!m) return; const u = cfg.units?.[m.run]?.[m.lvl]?.[m.i]; if (u?.rc) shapeCorners(o, u.rc); });
 }
-const rcCount = c => (c.items || []).reduce((s, it) => s + (it.rc?.c.length || 0), 0) + Object.values(c.units || {}).reduce((s, r) => s + [...(r.b || []), ...(r.u || [])].reduce((t, u) => t + (u.rc?.c.length || 0), 0), 0);
+const rcCount = c => (c.items || []).reduce((s, it) => s + (it.rc?.c.length || 0), 0) + Object.values(c.units || {}).reduce((s, r) => s + [...(r.b || []), ...(r.u || []), ...(r.t || [])].reduce((t, u) => t + (u.rc?.c.length || 0), 0), 0);
 function rcNote(rc){ return I18N.f(rc.k === 'cut' ? 'rcNoteCut' : 'rcNote', {c: rc.c.map(k => I18N.t(RC_CORNERS[k])).join(I18N.lang === 'ar' ? '، ' : ', '), r: rc.r}); }
 // panel controls: the corners laid out as they are, from above and from the front
 function cornersUI(rc){
@@ -4155,7 +4180,10 @@ function cutList(c){
   }
   (c.items || []).forEach((it, i) => {
     const code = 'P' + (i + 1), W = it.w * 10, o = iopts(it), f = it.o?.col || fid;
-    noteRC(it.rc, code);
+    // the radius the workshop cuts: never more than half the piece's height or width (the 3D does the same)
+    noteRC(it.rc && it.t !== 'panel' && (CUST[it.t] || isUnitItem(it)) ? (rc => { const hh = CUST[it.t] ? itemH(it) : (q => q[1] - q[0])(unitBox(it, c.height, Math.min(c.height - 4, 230)));
+      const fc = rc.c.some(k => ['tl', 'tr', 'dl', 'dr'].includes(k)) ? Math.min(hh, it.w) / 2 : Infinity, pc = rc.c.some(k => ['fl', 'fr', 'bl', 'br'].includes(k)) ? Math.min(it.w, itemDepth(it)) / 2 : Infinity;
+      return {...rc, r: Math.min(rc.r, Math.floor(Math.min(fc, pc)))}; })(it.rc) : it.rc, code);
     if (isUnitItem(it)) {
       const T = UNIT[it.t];
       if (T.lvl === 'b') { if (T.deco || T.gap) return; plinth = 0; cutBase(it, code, f); if (plinth) add(code, 'وزرة أمامية', plinth, 100, T, 1, F(f), 1, 0); }
@@ -4890,7 +4918,9 @@ document.addEventListener('change', e => { if (e.target.id !== 'rcR' || !sel) re
 document.addEventListener('click', e => { const b = e.target.closest('[data-rck]'); if (!b || !sel) return; const k = b.dataset.rck;
   setRC(rc => rc?.c?.length ? {r: rc.r, c: rc.c, ...(k === 'cut' ? {k} : {})} : null); });
 document.addEventListener('click', e => { if (!e.target.closest('[data-rc-ends]') || !sel) return;
-  const hb = sel.item !== undefined ? (b => b ? b.y1 - b.y0 : 0)(itemBoxes[sel.item]) : (s => s ? (s.y1 - s.y0) * 100 : 0)(selBounds());
+  // the height of the piece itself, never what stands on it or the shadow under it
+  const it = sel.item !== undefined ? cfg.items[sel.item] : null;
+  const hb = it ? (CUST[it.t] ? itemH(it) : isUnitItem(it) ? (b => b[1] - b[0])(unitBox(it, cfg.height, Math.min(cfg.height - 4, 230))) : (b => b ? b.y1 - b.y0 : 0)(itemBoxes[sel.item])) : (s => s ? (s.y1 - s.y0) * 100 : 0)(selBounds());
   if (!hb) return; const r = Math.min(150, Math.ceil(hb / 2));
   setRC(rc => ({r, c: [...new Set([...(rc?.c || []).filter(k => !['tl', 'tr', 'dl', 'dr'].includes(k)), 'tl', 'tr', 'dl', 'dr'])], ...(rc?.k === 'cut' ? {k: 'cut'} : {})})); });
 document.addEventListener('change', e => { if (e.target.id === 'noClash') { noClash = e.target.checked; lsSet('wr_noclash', noClash); toast(I18N.t(noClash ? 'منع التداخل' : 'التداخل مسموح، ويظهر بالأحمر')); } });
