@@ -1451,7 +1451,9 @@ function outside(){
 /* ================= materials ================= */
 const MC = {};
 let envI = .75;
-function std(key, opts, Ctor = THREE.MeshStandardMaterial){ if (MC[key]) return MC[key]; const m = new Ctor(opts); m.envMapIntensity = envI; return MC[key] = m; }
+// what is set on a piece to dress it (books, vases, jars, plants) is marked, so it never counts as part of the piece
+const DECOR_MAT = /^(book|cloth|jar|ceramic|pot|leaf|bigpot)/;
+function std(key, opts, Ctor = THREE.MeshStandardMaterial){ if (MC[key]) return MC[key]; const m = new Ctor(opts); m.envMapIntensity = envI; if (DECOR_MAT.test(key)) m.userData.decor = true; return MC[key] = m; }
 // the same, with a photo texture set attached the first time
 function stdP(key, id, o, opts, Ctor){ const fresh = !MC[key], m = std(key, opts, Ctor); if (fresh) pbr(m, id, o); return m; }
 const WOOD_DRAWN = {oak: 'oak', oaklight: 'oak', walnut: 'walnut', wenge: 'walnut'};
@@ -3657,7 +3659,7 @@ function polyAt(P, axis, v){
 }
 const inPoly = (P, x, y) => P.every((A, i) => { const B = P[(i + 1) % P.length]; return (B[0] - A[0]) * (y - A[1]) - (B[1] - A[1]) * (x - A[0]) >= -1e-6; });
 let rcStats = {pieces: 0, cut: 0, hidden: 0};
-// The piece's outline is the hull of its wood, stone and melamine boards, without the decor (vases, books, plants);
+// The piece's outline is the hull of its boards, fronts and handles, without the decor (vases, books, plants);
 // span: its own bottom and top when known (custom pieces), so nothing standing on it changes the curve.
 function shapeCorners(root, rc, span = null){
   const list = rc?.c || [], rad = (rc?.r || 0) / 100; if (rad <= 0 || !list.length) return;
@@ -3667,7 +3669,7 @@ function shapeCorners(root, rc, span = null){
   if (!meshes.length) return;
   const info = meshes.map(m => { if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); const T = toRoot(m); return {m, T, b: m.geometry.boundingBox.clone().applyMatrix4(T)}; });
   const H = new THREE.Box3();
-  info.forEach(x => { if (isMetric(x.m.material)) H.union(x.b); }); if (H.isEmpty()) info.forEach(x => H.union(x.b));
+  info.forEach(x => { if (!x.m.material?.userData?.decor) H.union(x.b); }); if (H.isEmpty()) info.forEach(x => H.union(x.b));
   if (span) { H.min.y = span.y0; H.max.y = span.y1; }
   const W = H.max.x - H.min.x, D = H.max.z - H.min.z, Ht = H.max.y - H.min.y, has = k => list.includes(k);
   const rp = Math.min(rad, W / 2, D / 2), rf = Math.min(rad, W / 2, Ht / 2);
