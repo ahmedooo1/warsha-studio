@@ -943,6 +943,12 @@ function autoItems(c){
       break; }
     case 'entry': it.push({t: 'plant', w: 50, x: A - 40, z: Math.max(90, D - 40), r: 0}); break;
   }
+  // nothing placed automatically sticks out of the floor (an L room has no right wall, but the floor still ends there)
+  for (const x of it) {
+    const q = x.r % 180 !== 0, d = itemDepth(x); if (x.t === 'rug' && x.w > A - 10) x.w = A - 10;
+    const fw = q ? d : x.w, fd = q ? x.w : d;
+    x.x = Math.round(clamp(x.x, fw / 2 + 1, Math.max(fw / 2 + 1, A - fw / 2 - 1))); x.z = Math.round(clamp(x.z, fd / 2, Math.max(fd / 2, D - fd / 2 - 1)));
+  }
   return it;
 }
 function sanitizeUnits(u){
@@ -3330,8 +3336,26 @@ function showClashes(list){
   clashGroup.userData.list = list; dirty = true;
 }
 function refreshClashes(){ lastClashes = findClashes(); clashKeys = new Set(lastClashes.map(clashKey)); showClashes(lastClashes); }
+// after any rebuild, whatever moved them (an edit, a new width, a smaller room, an import), the pieces come back inside the
+// room: floor, walls and ceiling. A piece bigger than the room is set against the back left corner and listed in the check.
+function keepInside(){
+  const items = cfg.items || []; if (!items.length || !frame.W || cfg.itemsAuto) return false;   // automatic furniture is placed inside by autoItems
+  scene.updateMatrixWorld(true);
+  const A = frame.W * 100, D = frame.D * 100, H = frame.H * 100, T = .5, L = JSON.parse(JSON.stringify(items)); let moved = false;
+  items.forEach((it, i) => {
+    const g = itemGroup(i); if (!g) return; const b = cmBox(objBox(g));
+    const dx = b.x0 < -T ? Math.ceil(-b.x0) : b.x1 > A + T ? Math.max(Math.floor(A - b.x1), Math.ceil(-b.x0)) : 0;
+    const dz = b.z0 < -T ? Math.ceil(-b.z0) : b.z1 > D + T ? Math.max(Math.floor(D - b.z1), Math.ceil(-b.z0)) : 0;
+    let dy = 0; if (b.y1 > H + T && (it.y || 0) > 0) dy = Math.max(Math.floor(H - b.y1), -(it.y || 0)); if (b.y0 < -T) dy = Math.ceil(-b.y0);
+    if (dx || dz || dy) { L[i].x += dx; L[i].z += dz; if (dy) L[i].y = (L[i].y || 0) + dy; moved = true; }
+  });
+  if (!moved) return false;
+  cfg = {...cfg, items: sanitizeItems(L, cfg)}; buildScene();
+  toast(I18N.t('القطعة تبقى داخل حدود الغرفة'));
+  return true;
+}
 const buildScene = build;
-build = function(){ buildScene(); refreshClashes(); };
+build = function(){ buildScene(); keepInside(); refreshClashes(); };
 // after a change to the pieces: a new clash is undone (prevention on) or reported (off); old ones are left to the user
 function guardClash(before, keys0){
   const fresh = lastClashes.filter(c => !keys0.has(clashKey(c)));
@@ -3388,7 +3412,12 @@ function poseAt(it, x, z, r, lb, obs, free = !snapOn){
     }
     if (Math.abs(dx) < 8 && !lockX) x += dx; if (Math.abs(dz) < 8 && !lockZ) z += dz;
   }
-  x = Math.round(clamp(x, -60, A + 60)); z = Math.round(clamp(z, -60, D + 150));
+  // the room is the limit: the whole piece, turned as it is, stays on the floor and between the walls
+  { const t0 = -r * Math.PI / 180, c0 = Math.cos(t0), s0 = Math.sin(t0), cx = [], cz = [];
+    for (const [px, pz] of [[lb.x0, lb.z0], [lb.x1, lb.z0], [lb.x0, lb.z1], [lb.x1, lb.z1]]) { cx.push(px * c0 + pz * s0); cz.push(-px * s0 + pz * c0); }
+    const [x0, x1, z0, z1] = [Math.min(...cx), Math.max(...cx), Math.min(...cz), Math.max(...cz)];
+    x = Math.ceil(-x0) > Math.floor(A - x1) ? Math.ceil(-x0) : clamp(Math.round(x), Math.ceil(-x0), Math.floor(A - x1));
+    z = Math.ceil(-z0) > Math.floor(D - z1) ? Math.ceil(-z0) : clamp(Math.round(z), Math.ceil(-z0), Math.floor(D - z1)); }
   // stacking
   const base = it.y || 0, th = -r * Math.PI / 180, cs = Math.cos(th), sn = Math.sin(th);
   const pts = [[lb.x0, lb.z0], [lb.x1, lb.z0], [lb.x0, lb.z1], [lb.x1, lb.z1]].map(([px, pz]) => [x + px * cs + pz * sn, z - px * sn + pz * cs]);

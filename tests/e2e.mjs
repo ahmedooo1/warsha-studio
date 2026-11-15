@@ -148,6 +148,15 @@ try {
   ok(cl.blocked, 'منع التداخل: نقل خزانة داخل أخرى لا يُطبّق');
   ok(cl.shown > 0 && cl.issue, `حين يُسمح بالتداخل يُكشف بعمقه (${cl.shown} سم) ويظهر في فحص التصميم`);
   ok(cl.settle > 0, `القطعة المتداخلة تجد أقرب مكان فارغ (${cl.settle} سم)`);
+  console.log('حدود الغرفة');
+  const bd = await page.evaluate(() => { const w = window.__wr, out = {demos: []}, outside = () => w.boxes.filter(b => b.x0 < -.6 || b.x1 > w.cfg.wallA + .6 || b.z0 < -.6).length;
+    for (let d = 0; d < 7; d++) { w.openDemo(d); out.demos.push(outside()); }
+    w.openDemo(6); w.select({item: 0}); w.setItemField('x', -300); out.left = w.boxes[0].x0;
+    w.select({item: 0}); w.setItemField('z', 2000); out.front = w.boxes[0].z1 - w.cfg.wallB;
+    w.openDemo(6); w.set({...w.cfg, wallA: 300}); out.shrink = outside(); w.openDemo(6); return out; });
+  ok(bd.demos.every(n => n === 0), 'لا قطعة خارج الأرضية في المشاريع السبعة');
+  ok(bd.left >= -.6 && bd.front <= .6, `قطعة دُفعت خارج الجدار أو الأرضية رجعت إلى الداخل (${Math.round(bd.left)}، ${Math.round(bd.front)})`);
+  ok(bd.shrink === 0, 'تصغير الغرفة يُبقي القطع داخلها');
   console.log('وضع العرض');
   await page.evaluate(() => window.__wr.setPresent(true)); await page.waitForTimeout(300);
   ok(await page.evaluate(() => getComputedStyle(document.querySelector('#panel')).display === 'none' && getComputedStyle(document.querySelector('.bar')).display === 'none'), 'الأدوات مخفية في وضع العرض');
