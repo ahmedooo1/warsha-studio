@@ -302,6 +302,11 @@ body.present .pres-exit{display:inline-flex;position:absolute;top:16px;inset-inl
 body.present .pres-exit kbd{font-family:var(--f-num);font-size:11px;background:rgba(255,255,255,.18);border-radius:4px;padding:1px 5px}
 @media (max-width: 760px){ body.present .pres-exit kbd{display:none} body.present .pres-brand{top:10px;inset-inline-start:10px;padding:8px 12px} body.present .pres-exit{top:10px;inset-inline-end:10px} }
 .stage.eve{background:radial-gradient(circle at 50% 40%,#262A30,#0B0D10)}
+.photo-pill{position:absolute;top:12px;inset-inline-end:12px;z-index:3;display:flex;align-items:center;gap:8px;background:rgba(18,21,25,.84);color:#EEF1F3;border-radius:999px;padding:6px 12px 6px 10px;font-size:12.5px;backdrop-filter:blur(8px);pointer-events:none}
+.photo-pill[hidden]{display:none}
+.photo-pill b{font-family:var(--f-num);font-weight:500;font-size:12px;opacity:.8}
+.photo-pill i{display:block;width:54px;height:3px;border-radius:2px;background:rgba(255,255,255,.18);overflow:hidden}
+.photo-pill i::after{content:"";display:block;height:100%;width:var(--p,0%);background:#F4B400;transition:width .2s}
 .pres-views,.pres-info,.pres-vars{display:none}
 body.present .pres-views{display:flex;position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:4;gap:2px;align-items:center;background:rgba(18,21,25,.82);backdrop-filter:blur(10px);border-radius:14px;padding:5px;max-width:calc(100% - 24px);overflow-x:auto;box-shadow:0 12px 34px rgba(0,0,0,.28)}
 body.present .pres-views button{border:0;background:none;color:#E9ECEE;font-size:13.5px;padding:9px 12px;border-radius:10px;white-space:nowrap}
@@ -383,7 +388,8 @@ body.present .pres-vars:not([hidden]){display:flex;position:absolute;bottom:84px
     <div class="tag" id="tag"></div>
     <div class="pres-brand" id="presBrand"></div>
     <button type="button" class="pres-exit" id="presExit" aria-label="إنهاء العرض">إنهاء العرض <kbd>Esc</kbd></button>
-    <nav class="pres-views" aria-label="زوايا العرض"><button type="button" data-pv="angle">زاوية</button><button type="button" data-pv="front">أمامي</button><button type="button" data-pv="eye">داخلي</button><button type="button" data-pv="corner">من الركن</button><button type="button" data-pv="top">مخطط</button><i></i><button type="button" data-pv="tour">جولة</button><button type="button" data-pv="open">فتح الأبواب</button><button type="button" data-pv="light">نهار / مساء</button><button type="button" data-pv="info">المواد والسعر</button><button type="button" data-pv="shot">صورة 4K</button></nav>
+    <nav class="pres-views" aria-label="زوايا العرض"><button type="button" data-pv="angle">زاوية</button><button type="button" data-pv="front">أمامي</button><button type="button" data-pv="eye">داخلي</button><button type="button" data-pv="corner">من الركن</button><button type="button" data-pv="top">مخطط</button><i></i><button type="button" data-pv="tour">جولة</button><button type="button" data-pv="open">فتح الأبواب</button><button type="button" data-pv="light">نهار / مساء</button><button type="button" data-pv="photo">تصوير واقعي</button><button type="button" data-pv="info">المواد والسعر</button><button type="button" data-pv="shot">صورة 4K</button></nav>
+    <div class="photo-pill" id="photoPill" hidden role="status"><span id="photoTxt">تصوير واقعي</span><i id="photoBar"></i><b id="photoN"></b></div>
     <aside class="pres-info" id="presInfo" hidden></aside>
     <div class="pres-vars" id="presVars" hidden></div>
     <div class="hud">
@@ -405,6 +411,7 @@ body.present .pres-vars:not([hidden]){display:flex;position:absolute;bottom:84px
         <button id="snapBtn" aria-pressed="true" title="التصاق القطع بالجدران وببعضها"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v9a6 6 0 0 0 12 0V3"/><path d="M6 7h4M14 7h4"/></svg><span class="lbl">التصاق</span></button>
         <button id="openBtn" aria-pressed="false" title="فتح أبواب وجوارير الخزائن المخصصة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h9v16H4z"/><path d="M13 4l7 3v14l-7-1"/></svg><span class="lbl">فتح</span></button>
         <button id="qualityBtn" title="جودة العرض"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg><span class="lbl" id="qualityLbl">عادية</span></button>
+        <button id="photoBtn" aria-pressed="false" title="تصوير واقعي: ظلال ناعمة وصورة أنقى حين تتوقف الكاميرا"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span class="lbl">تصوير</span></button>
         <button id="tourBtn" aria-pressed="false" title="جولة حول التصميم"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 4 0 0 0 18 0"/><path d="M17 9l4 3-4 3"/><circle cx="12" cy="8" r="2.5"/></svg><span class="lbl">جولة</span></button>
       </div>
     </div>
@@ -506,6 +513,7 @@ body.present .pres-vars:not([hidden]){display:flex;position:absolute;bottom:84px
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/environments/RoomEnvironment.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/RGBELoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/lights/RectAreaLightUniformsLib.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/shaders/CopyShader.js"></script>
@@ -545,10 +553,13 @@ const FRONTS = [
   {id:'clay', name:'طيني', color:'#9A5C43'},
   {id:'oak', name:'سنديان', wood:'oak'},
   {id:'walnut', name:'جوز', wood:'walnut'},
+  {id:'oaklight', name:'سنديان فاتح', wood:'oaklight'},
+  {id:'wenge', name:'خشب داكن', wood:'wenge'},
 ];
 const TOPS = [
   {id:'marble', name:'رخام كرارا'}, {id:'quartz', name:'كوارتز رمادي'}, {id:'granite', name:'جرانيت أسود'},
   {id:'concrete', name:'إسمنت مصقول'}, {id:'oakTop', name:'خشب سنديان'},
+  {id:'calacatta', name:'رخام أبيض'}, {id:'nero', name:'رخام أسود'},
 ];
 const HANDLES = [
   {id:'bar', name:'قضيب ستيل', color:'#C8CCCF'}, {id:'black', name:'قضيب أسود', color:'#1E1F21'},
@@ -560,6 +571,7 @@ const SPLASH = [
 ];
 const FLOORS = [
   {id:'oakF', name:'باركيه سنديان'}, {id:'tile', name:'بلاط رمادي'}, {id:'terrazzo', name:'تيرازو'}, {id:'cement', name:'إسمنت'},
+  {id:'herring', name:'باركيه سنبلة'},
 ];
 const WALLS = [
   {id:'white', name:'أبيض', color:'#ECEDEB'}, {id:'mist', name:'رمادي فاتح', color:'#CDD1CF'},
@@ -1054,6 +1066,7 @@ const texDefs = {
   weave(){ return pixels(128, 128, (u, v, x, y) => { const a = (x >> 2) % 2 === (y >> 2) % 2, k = a ? 180 + (x % 4) * 15 : 120 + (y % 4) * 15; return [k, k, k]; }); },
   rug(){ const f = makeNoise(101); return pixels(256, 256, (u, v) => { const k = 215 + (f(u, v, 48, 48, 2) - .5) * 40; return [k, k, k]; }); },
 };
+Object.assign(texDefs, {oaklight: texDefs.oak, wenge: texDefs.walnut, calacatta: texDefs.marble, nero: texDefs.granite, herring: texDefs.oakF});
 function texCanvas(id){ return TEX[id] || (TEX[id] = texDefs[id]()); }
 const TCACHE = {};
 function texture(id, {srgb = true, rot = 0} = {}){
@@ -1078,7 +1091,8 @@ renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1;
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+// filtered PCF: the radius below softens shadow edges (PCFSoft ignores it)
+renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.shadowMap.autoUpdate = false;
 const mobile = matchMedia('(max-width: 860px)').matches;
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, mobile ? 1.75 : 2));
@@ -1111,7 +1125,7 @@ function buildComposer(){
   ssao = new THREE.SSAOPass(scene, camera, 2, 2);
   ssao.beautyRenderTarget.dispose(); ssao.beautyRenderTarget = rt();
   // radius in metres for a room; depth limits are fractions of the camera range (80 m)
-  ssao.kernelRadius = .5; ssao.minDistance = .00002; ssao.maxDistance = .012;
+  ssao.kernelRadius = .5; ssao.minDistance = .00008; ssao.maxDistance = .012;
   composer.addPass(ssao);
   // HDR to screen: the tone mapping and sRGB conversion the renderer would do on its own
   composer.addPass(new THREE.ShaderPass({uniforms: {tDiffuse: {value: null}},
@@ -1128,11 +1142,67 @@ function applyQuality(){
   document.querySelectorAll('[data-q]').forEach(b => b.setAttribute('aria-pressed', b.dataset.q === quality));
   renderer.shadowMap.needsUpdate = true;
 }
-function setQuality(q){ if (!QUALITY[q]) return; quality = q; lsSet('wr_quality', q); applyQuality(); resize(); dirty = true; }
+function setQuality(q){ if (!QUALITY[q]) return; quality = q; lsSet('wr_quality', q); applyQuality(); refreshTextures(); resize(); dirty = true; }
+
+/* ================= photo render: the same scene, averaged over many slightly different frames ================= */
+// Each frame moves the sun and the fill light to another point of a small area (shadows get a real penumbra:
+// sharp where an object touches, soft further away), shifts the camera by less than a pixel (clean edges) and
+// adds ambient occlusion. The frames are summed in a floating-point buffer and shown as their average.
+// It is not path tracing: indirect light comes from the HDR environment, not from bounces in the room.
+// The design is never touched: same geometry, same sizes; only light positions and the camera offset vary.
+const PHOTO_N = 64;
+let photoN = 0, photoAcc = null, photoSmp = null, photoAdd = null, photoShow = null, photoQuad = null, photoIdle = 0, photoBusy = false;
+const halton = (i, b) => { let f = 1, r = 0; while (i > 0) { f /= b; r += f * (i % b); i = Math.floor(i / b); } return r; };
+function photoTargets(w, h){
+  if (photoAcc && photoAcc.width === w && photoAcc.height === h) return;
+  photoAcc?.dispose(); photoSmp?.dispose();
+  photoAcc = new THREE.WebGLRenderTarget(w, h, {type: THREE.HalfFloatType});
+  photoSmp = new THREE.WebGLRenderTarget(w, h, {type: THREE.HalfFloatType});
+  if (photoQuad) return;
+  const vs = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }';
+  photoAdd = new THREE.ShaderMaterial({uniforms: {t: {value: null}}, vertexShader: vs, fragmentShader: 'uniform sampler2D t; varying vec2 vUv; void main(){ gl_FragColor = texture2D(t, vUv); }',
+    blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneFactor, depthTest: false, depthWrite: false, toneMapped: false});
+  photoShow = new THREE.ShaderMaterial({uniforms: {t: {value: null}, k: {value: 1}}, vertexShader: vs,
+    // average of the frames, with the light fall-off of a camera lens toward the corners (about 10 %)
+    fragmentShader: 'uniform sampler2D t; uniform float k; varying vec2 vUv; void main(){ vec2 q = vUv - .5; gl_FragColor = texture2D(t, vUv) * k; gl_FragColor.rgb *= 1.0 - .38 * dot(q, q);\n#include <tonemapping_fragment>\n#include <encodings_fragment>\n}', depthTest: false, depthWrite: false});
+  photoQuad = new THREE.FullScreenQuad(photoAdd);
+}
+function photoClear(){ const c = renderer.getClearColor(new THREE.Color()), a = renderer.getClearAlpha(); renderer.setRenderTarget(photoAcc); renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.setClearColor(c, a); renderer.setRenderTarget(null); photoN = 0; }
+// a light as a small disc across its direction: Halton points cover the disc evenly, frame after frame
+function jitterLight(l, p0, rad, a, b){
+  const d = l.target.position.clone().sub(p0).normalize(), u = new THREE.Vector3(0, 1, 0).cross(d).normalize(), v = d.clone().cross(u), r = Math.sqrt(a) * rad, t = b * Math.PI * 2;
+  l.position.copy(p0).addScaledVector(u, Math.cos(t) * r).addScaledVector(v, Math.sin(t) * r);
+}
+function photoSample(w, h){
+  const i = photoN + 1, sp = sun.position.clone(), kp = key.position.clone(), r0 = [sun.shadow.radius, key.shadow.radius];
+  jitterLight(sun, sp, .4, halton(i, 2), halton(i, 3)); jitterLight(key, kp, 1.8, halton(i, 5), halton(i, 7));
+  sun.shadow.radius = key.shadow.radius = 1.2;   // the penumbra now comes from the moving light, not from blur
+  renderer.shadowMap.needsUpdate = true;
+  camera.setViewOffset(w, h, halton(i, 2) - .5, halton(i, 3) - .5, w, h);
+  // a new ambient-occlusion noise each frame, so its grain averages out instead of printing on flat panels
+  const nd = ssao.noiseTexture.image.data, rr = rng(i * 7919 + 13); for (let k = 0; k < nd.length; k++) nd[k] = rr() * 2 - 1; ssao.noiseTexture.needsUpdate = true;
+  const auto = renderer.autoClear;
+  ssao.render(renderer, photoSmp);
+  renderer.autoClear = false; photoQuad.material = photoAdd; photoAdd.uniforms.t.value = photoSmp.texture; renderer.setRenderTarget(photoAcc); photoQuad.render(renderer);
+  renderer.autoClear = auto; renderer.setRenderTarget(null);
+  sun.position.copy(sp); key.position.copy(kp); [sun.shadow.radius, key.shadow.radius] = r0; camera.clearViewOffset(); renderer.shadowMap.needsUpdate = true;
+  photoN = i;
+}
+function photoDisplay(){ photoQuad.material = photoShow; photoShow.uniforms.t.value = photoAcc.texture; photoShow.uniforms.k.value = 1 / Math.max(1, photoN); renderer.setRenderTarget(null); photoQuad.render(renderer); }
+function photoPill(){
+  const p = $('#photoPill'); p.hidden = !photoOn; if (!photoOn) return;
+  const done = photoN >= PHOTO_N; $('#photoTxt').textContent = I18N.t(done ? 'الصورة جاهزة' : 'تصوير واقعي');
+  $('#photoN').textContent = done ? '' : `${photoN}/${PHOTO_N}`; $('#photoBar').style.setProperty('--p', Math.round(photoN / PHOTO_N * 100) + '%');
+}
+function setPhoto(on){
+  photoOn = !!on; if (photoOn) buildComposer();
+  refreshTextures(); resize(); photoN = 0; dirty = true;
+  $('#photoBtn')?.setAttribute('aria-pressed', photoOn); $$('.pres-views [data-pv="photo"]').forEach(b => b.setAttribute('aria-pressed', photoOn)); photoPill();
+}
 
 const hemi = new THREE.HemisphereLight(0xEAF0FF, 0x6B5A48, .4); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xFFE6C4, 3); sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -.0004; sun.shadow.normalBias = .02;
+sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -.0004; sun.shadow.normalBias = .02; sun.shadow.radius = 3;
 scene.add(sun, sun.target);
 const key = new THREE.DirectionalLight(0xF3F6FF, 1.1); key.castShadow = true;
 key.shadow.mapSize.set(mobile ? 1024 : 2048, mobile ? 1024 : 2048); key.shadow.bias = -.0005; key.shadow.normalBias = .025; key.shadow.radius = 4;
@@ -1145,69 +1215,186 @@ let dims = [];        // dimension specs
 let stats = {};       // cut list
 let frame = {};       // bounds for camera
 
+/* ================= photo textures: real CC0 materials (assets/tex, sources and licences in assets/tex/SOURCES.md) ================= */
+// Albedo, normal and roughness pictures, mapped in metres so a plank, a joint or a vein keeps its real size.
+// Until a set arrives, or if it cannot (page opened as a file, no network), the drawn texture stays: nothing waits, nothing breaks.
+const TEX_DIR = 'assets/tex/', HDR_DIR = 'assets/hdri/';
+// [real size of one picture in metres, sizes shipped: 1 = 512 px, 2 = up to 1k, 3 = up to 2k]
+const TEX_SETS = {
+  oak: [.9, 2], oaklight: [.9, 2], oaktop: [.9, 2], walnut: [1, 3], wenge: [1, 3],
+  floor_oak: [1.5, 3], floor_herring: [1.3, 3], floor_tile: [1.2, 2], cement: [2, 2], terrazzo: [1, 3],
+  carrara: [1.5, 2], quartz: [1.5, 3], calacatta: [1.5, 3], nero: [1.5, 3], travertine: [1.6, 3],
+  plaster: [2.5, 2], fabric: [.3, 2], brushed: [.4, 2], melamine: [.25, 1],
+};
+// catalogue id -> texture set (swatches and materials)
+const SET_OF = {oak: 'oak', oaklight: 'oaklight', walnut: 'walnut', wenge: 'wenge', marble: 'carrara', quartz: 'quartz', calacatta: 'calacatta', nero: 'nero',
+  concrete: 'cement', oakTop: 'oaktop', oakF: 'floor_oak', herring: 'floor_herring', tile: 'floor_tile', terrazzo: 'terrazzo', cement: 'cement'};
+let photoOn = false, texBusy = 0, texFailed = 0, photoReset = () => { photoN = 0; };
+const PSETS = {}, PTEX = {}, pbrMats = new Set();
+// Performance: 512 px pictures, Standard: 1k, Ultra and photo renders: 2k where the source allows it
+const texTier = () => photoOn || quality === 'ultra' ? 3 : quality === 'standard' ? 2 : 1;
+const texTag = id => ['512', '1k', '2k'][Math.min(TEX_SETS[id][1], texTier()) - 1];
+// a picture the browser refuses to hand to WebGL (file:// pages) would stop the renderer: test it first
+function readable(img){ try { const c = document.createElement('canvas'); c.width = c.height = 1; const x = c.getContext('2d'); x.drawImage(img, 0, 0, 1, 1); x.getImageData(0, 0, 1, 1); return true; } catch { return false; } }
+function loadSet(id, tag){
+  const k = id + '@' + tag; if (PSETS[k]) return PSETS[k];
+  const set = PSETS[k] = {id, tag, done: false, failed: false, img: {}, wait: []};
+  const parts = id === 'melamine' ? ['normal', 'rough'] : ['albedo', 'normal', 'rough'];
+  let left = parts.length; texBusy++;
+  const one = () => { if (--left) return; texBusy--; if (set.failed) texFailed++; set.done = true; const w = set.wait; set.wait = []; w.forEach(f => f(set)); };
+  for (const p of parts) { const img = new Image();
+    img.onload = () => { if (readable(img)) set.img[p] = img; else set.failed = true; one(); };
+    img.onerror = () => { set.failed = true; one(); };
+    img.src = TEX_DIR + id + '/' + p + '_' + tag + '.jpg'; }
+  return set;
+}
+function setTex(set, part){
+  const k = set.id + '@' + set.tag + ':' + part; if (PTEX[k]) return PTEX[k];
+  const t = new THREE.Texture(set.img[part]), s = 1 / TEX_SETS[set.id][0];
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = maxAniso; t.repeat.set(s, s);
+  if (part === 'albedo') t.encoding = THREE.sRGBEncoding; t.needsUpdate = true; t.userData.key = k;
+  return PTEX[k] = t;
+}
+// o: rough = roughness multiplier, ns = normal strength, albedo: false keeps the plain colour, macro = slow tone drift against visible repeats
+function pbr(m, id, o = {}){ m.userData.metric = true; m.userData.pbr = id; m.userData.pbrO = o; pbrMats.add(m); if (o.macro) macro(m, o.macro); attachSet(m); return m; }
+function attachSet(m){
+  const id = m.userData.pbr, tag = texTag(id), set = loadSet(id, tag);
+  const apply = s => {
+    if (s.failed || m.userData.pbrTag === tag || texTag(id) !== tag) return;
+    const o = m.userData.pbrO;
+    if (s.img.albedo && o.albedo !== false) m.map = setTex(s, 'albedo');
+    m.normalMap = setTex(s, 'normal'); const ns = o.ns ?? 1; m.normalScale.set(ns, ns);
+    m.roughnessMap = setTex(s, 'rough'); m.roughness = o.rough ?? 1;
+    m.userData.pbrTag = tag; m.needsUpdate = true; dropUnused(); dirty = true; photoReset();
+  };
+  set.done ? apply(set) : set.wait.push(apply);
+}
+function dropUnused(){
+  const used = new Set(); for (const m of pbrMats) for (const t of [m.map, m.normalMap, m.roughnessMap]) if (t?.userData.key) used.add(t.userData.key);
+  for (const [k, t] of Object.entries(PTEX)) if (!used.has(k)) { t.dispose(); delete PTEX[k]; }
+}
+function refreshTextures(){ for (const m of pbrMats) attachSet(m); }
+function texReady(){ return new Promise(res => { const chk = () => texBusy ? setTimeout(chk, 40) : res(); chk(); }); }
+function texStats(){ let bytes = 0, n = 0; for (const t of Object.values(PTEX)) { const im = t.image; if (!im) continue; n++; bytes += im.width * im.height * 4 * 4 / 3; } return {textures: n, mb: Math.round(bytes / 1048576), failed: texFailed, gl: renderer.info.memory.textures}; }
+// slow light/dark drift over a few metres, so a floor or a wall does not show the same picture twice
+let macroTex = null;
+function macro(m, k){
+  if (!macroTex) { const f = makeNoise(303); macroTex = new THREE.CanvasTexture(pixels(256, 256, (u, v) => { const n = f(u, v, 3, 3, 4) * 255; return [n, n, n]; })); macroTex.wrapS = macroTex.wrapT = THREE.RepeatWrapping; }
+  m.onBeforeCompile = sh => { sh.uniforms.macroMap = {value: macroTex}; sh.uniforms.macroK = {value: k};
+    sh.fragmentShader = 'uniform sampler2D macroMap; uniform float macroK;\n' + sh.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\n#ifdef USE_UV\n diffuseColor.rgb *= 1.0 + macroK * (texture2D(macroMap, vUv * .43 + vec2(.37, .11)).r * 2.0 - 1.0);\n#endif'); };
+  m.customProgramCacheKey = () => 'macro' + k;
+}
+// swatches show the real picture, with the drawn one underneath in case it cannot load
+const swReal = id => SET_OF[id] ? `url(${TEX_DIR}${SET_OF[id]}/albedo_512.jpg),` : '';
+
+/* ================= HDR light: a real interior for reflections, a real outside behind the windows (Poly Haven, CC0) ================= */
+let envReady = false;
+const hdrLoader = THREE.RGBELoader ? new THREE.RGBELoader().setDataType(THREE.HalfFloatType) : null, HDR = {};
+function loadHDR(name, cb){
+  if (!hdrLoader) return;
+  const h = HDR[name] || (HDR[name] = {tex: null, wait: [], go: true});
+  if (h.tex) return cb(h.tex);
+  h.wait.push(cb); if (!h.go) return; h.go = false;
+  hdrLoader.load(HDR_DIR + name, t => { h.tex = t; const w = h.wait; h.wait = []; w.forEach(f => f(t)); }, undefined, () => { h.wait = []; });
+}
+// the generated studio room stays until the photographed one arrives
+loadHDR('lebombo_1k.hdr', t => { t.mapping = THREE.EquirectangularReflectionMapping; const old = scene.environment; scene.environment = pmrem.fromEquirectangular(t).texture; old?.dispose(); t.dispose(); envReady = true; applyLight(); dirty = true; photoReset(); });
+// windows: the view is looked up by direction in a 360 degree photo, so it moves with the camera like a real outside
+let portalMat = null;
+function portal(){
+  if (portalMat) return portalMat;
+  portalMat = new THREE.ShaderMaterial({uniforms: {tEq: {value: null}, gain: {value: 1}},
+    vertexShader: 'varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }',
+    fragmentShader: '#include <common>\nuniform sampler2D tEq; uniform float gain; varying vec3 vW;\nvoid main(){ vec3 d = normalize(vW - cameraPosition); vec2 e = vec2(atan(d.z, d.x) * RECIPROCAL_PI2 + .5, .5 - asin(clamp(d.y, -1., 1.)) * RECIPROCAL_PI); gl_FragColor = vec4(texture2D(tEq, e).rgb * gain, 1.0);\n#include <tonemapping_fragment>\n#include <encodings_fragment>\n}'});
+  return portalMat;
+}
+function outside(){
+  const eve = cfg.light === 'evening', name = eve ? 'dikhololo_night_1k.hdr' : 'rooitou_park_1k.hdr';
+  loadHDR(name, t => { if ((cfg.light === 'evening') !== eve) return; const m = portal(); m.uniforms.tEq.value = t; m.uniforms.gain.value = eve ? .5 : 1.6;
+    world.traverse(o => { if (o.userData.sky) o.material = m; }); dirty = true; photoReset(); });
+}
+
 /* ================= materials ================= */
 const MC = {};
 let envI = .75;
 function std(key, opts, Ctor = THREE.MeshStandardMaterial){ if (MC[key]) return MC[key]; const m = new Ctor(opts); m.envMapIntensity = envI; return MC[key] = m; }
+// the same, with a photo texture set attached the first time
+function stdP(key, id, o, opts, Ctor){ const fresh = !MC[key], m = std(key, opts, Ctor); if (fresh) pbr(m, id, o); return m; }
+const WOOD_DRAWN = {oak: 'oak', oaklight: 'oak', walnut: 'walnut', wenge: 'walnut'};
 function col(h){ return new THREE.Color(h); }
 function frontMat(id, finish){
   const f = frontDef(id), gloss = finish === 'gloss';
-  if (f.wood) return std('f-' + id + finish, {map: texture(f.wood), roughness: gloss ? .3 : .62}, gloss ? THREE.MeshPhysicalMaterial : THREE.MeshStandardMaterial);
-  if (gloss) { const m = std('f-' + id + finish, {color: col(f.color), roughness: .2, clearcoat: 1, clearcoatRoughness: .06}, THREE.MeshPhysicalMaterial); return m; }
-  return std('f-' + id + finish, {color: col(f.color), roughness: .52});
+  // wood: real veneer; varnished gloss gets a clear coat over it. Colours: melamine with a fine orange-peel relief
+  if (f.wood) return stdP('f-' + id + finish, f.wood, {rough: gloss ? .5 : 1.05, ns: .7, macro: .05}, gloss ? {map: texture(WOOD_DRAWN[f.wood]), roughness: .3, clearcoat: .8, clearcoatRoughness: .08} : {map: texture(WOOD_DRAWN[f.wood]), roughness: .62}, gloss ? THREE.MeshPhysicalMaterial : THREE.MeshStandardMaterial);
+  if (gloss) return stdP('f-' + id + finish, 'melamine', {ns: .06, rough: .36}, {color: col(f.color), roughness: .2, clearcoat: 1, clearcoatRoughness: .05}, THREE.MeshPhysicalMaterial);
+  return stdP('f-' + id + finish, 'melamine', {ns: .3, rough: 1.05}, {color: col(f.color), roughness: .52});
 }
-function carcassMat(id){ const f = frontDef(id); return std('c-' + id, {color: f.wood ? col(f.wood === 'oak' ? '#8C6A45' : '#3C2A1E') : col(f.color).multiplyScalar(.72), roughness: .7}); }
+const CARCASS_WOOD = {oak: '#8C6A45', oaklight: '#B09373', walnut: '#4A3326', wenge: '#2A1B14'};
+function carcassMat(id){ const f = frontDef(id); return std('c-' + id, {color: f.wood ? col(CARCASS_WOOD[f.wood]) : col(f.color).multiplyScalar(.72), roughness: .7}); }
 function topMat(id){
-  if (id === 'marble') return std('t-marble', {map: texture('marble'), roughness: .16}, THREE.MeshPhysicalMaterial);
-  if (id === 'quartz') return std('t-quartz', {map: texture('quartz'), roughness: .25});
+  // polished stone: low roughness from the picture plus a thin clear coat for the sharp reflection
+  if (id === 'marble') return stdP('t-marble', 'carrara', {rough: .9, ns: .5, macro: .04}, {map: texture('marble'), roughness: .16, clearcoat: .45, clearcoatRoughness: .12}, THREE.MeshPhysicalMaterial);
+  if (id === 'calacatta') return stdP('t-calacatta', 'calacatta', {rough: .9, ns: .5, macro: .03}, {map: texture('calacatta'), roughness: .16, clearcoat: .45, clearcoatRoughness: .12}, THREE.MeshPhysicalMaterial);
+  if (id === 'nero') return stdP('t-nero', 'nero', {rough: .8, ns: .5}, {map: texture('nero'), roughness: .12, clearcoat: .6, clearcoatRoughness: .08}, THREE.MeshPhysicalMaterial);
+  if (id === 'quartz') return stdP('t-quartz', 'quartz', {rough: 1, ns: .4}, {map: texture('quartz'), roughness: .25, clearcoat: .3, clearcoatRoughness: .2}, THREE.MeshPhysicalMaterial);
   if (id === 'granite') return std('t-granite', {map: texture('granite'), roughness: .12, clearcoat: .6}, THREE.MeshPhysicalMaterial);
-  if (id === 'concrete') return std('t-concrete', {map: texture('concrete'), roughness: .55});
-  return std('t-oak', {map: texture('oakTop'), roughness: .5});
+  if (id === 'concrete') return stdP('t-concrete', 'cement', {rough: .85, ns: .6, macro: .06}, {map: texture('concrete'), roughness: .55});
+  return stdP('t-oak', 'oaktop', {rough: .9, ns: .7}, {map: texture('oakTop'), roughness: .5});
 }
 function handleMat(id){
-  if (id === 'black') return std('h-black', {color: col('#1C1D1F'), metalness: .5, roughness: .38});
-  if (id === 'brass' || id === 'knob') return std('h-brass', {color: col('#C49A5C'), metalness: 1, roughness: .28});
-  if (id === 'gola') return std('h-gola', {color: col('#2B2D30'), metalness: .6, roughness: .4});
-  return std('h-steel', {color: col('#D2D5D8'), metalness: 1, roughness: .3});
+  if (id === 'black') return stdP('h-black', 'brushed', {albedo: false, rough: 1, ns: .5}, {color: col('#1C1D1F'), metalness: .5, roughness: .38});
+  if (id === 'brass' || id === 'knob') return stdP('h-brass', 'brushed', {albedo: false, rough: .75, ns: .5}, {color: col('#C49A5C'), metalness: 1, roughness: .28});
+  if (id === 'gola') return stdP('h-gola', 'brushed', {albedo: false, rough: .9}, {color: col('#2B2D30'), metalness: .6, roughness: .4});
+  return stdP('h-steel', 'brushed', {albedo: false, rough: .7, ns: .5}, {color: col('#D2D5D8'), metalness: 1, roughness: .3});
 }
-function wallMat(id){ const w = byId(WALLS, id); return std('w-' + id, {color: col(w.color), map: texture('plaster', {srgb: true}), roughness: .93}); }
-function floorMat(id){ return std('fl-' + id, {map: texture(id), roughness: id === 'tile' ? .28 : id === 'terrazzo' ? .3 : id === 'cement' ? .6 : .48}); }
+function wallMat(id){ const w = byId(WALLS, id); return stdP('w-' + id, 'plaster', {ns: .45, rough: 1, macro: .05}, {color: col(w.color), map: texture('plaster', {srgb: true}), roughness: .93}); }
+function floorMat(id){ return stdP('fl-' + id, SET_OF[id], {rough: id === 'terrazzo' ? .75 : 1, ns: id === 'tile' ? 1 : .8, macro: .09}, {map: texture(id), roughness: id === 'tile' ? .28 : id === 'terrazzo' ? .3 : id === 'cement' ? .6 : .48}); }
 function splashMat(id, top){
   if (id === 'top') return topMat(top);
   const c = {zelW:'#F3F2EE', zelG:'#2F6A52', zelB:'#2F5D86'}[id];
   return std('s-' + id, {color: col(c), map: texture('zel'), bumpMap: texture('zelBump', {srgb: false}), bumpScale: .006, roughness: .1, clearcoat: .5}, THREE.MeshPhysicalMaterial);
 }
-function fabricMat(id){ const f = byId(FABRICS, id); return std('fab-' + id, {color: col(f.color), bumpMap: texture('weave', {srgb: false}), bumpScale: .0015, roughness: .95, sheen: id === 'velvet' ? 1 : .4, sheenColor: col('#ffffff'), sheenRoughness: .6}, THREE.MeshPhysicalMaterial); }
+function fabricMat(id){ const f = byId(FABRICS, id); return stdP('fab-' + id, 'fabric', {rough: 1.1, ns: .8}, {color: col(f.color), bumpMap: texture('weave', {srgb: false}), bumpScale: .0015, roughness: .95, sheen: id === 'velvet' ? 1 : .4, sheenColor: col('#ffffff'), sheenRoughness: .6}, THREE.MeshPhysicalMaterial); }
 const M = {
-  get steel(){ return std('steel', {color: col('#DADDE0'), metalness: .9, roughness: .26}); },
+  get steel(){ return stdP('steel', 'brushed', {albedo: false, rough: .65, ns: .4}, {color: col('#DADDE0'), metalness: .9, roughness: .26}); },
   get glass(){ return std('blackglass', {color: col('#0B0C0D'), roughness: .06, clearcoat: 1}, THREE.MeshPhysicalMaterial); },
   get frame(){ return std('winframe', {color: col('#2A2C2E'), metalness: .3, roughness: .45}); },
   get pane(){ return std('pane', {color: col('#ffffff'), roughness: 0, transparent: true, opacity: .12, depthWrite: false}); },
   get dark(){ return std('dark', {color: col('#1A1B1C'), roughness: .6}); },
-  get white(){ return std('linenwhite', {color: col('#F1F1EE'), bumpMap: texture('weave', {srgb: false}), bumpScale: .001, roughness: .95}); },
-  get duvet(){ return std('duvet', {color: col('#E3E4E2'), bumpMap: texture('weave', {srgb: false}), bumpScale: .001, roughness: .95}); },
-  get rug(){ return std('rug', {color: col('#7E868D'), map: texture('rug'), roughness: 1}); },
+  get white(){ return stdP('linenwhite', 'fabric', {rough: 1.1, ns: .6}, {color: col('#F1F1EE'), bumpMap: texture('weave', {srgb: false}), bumpScale: .001, roughness: .95}); },
+  get duvet(){ return stdP('duvet', 'fabric', {rough: 1.1, ns: .6}, {color: col('#E3E4E2'), bumpMap: texture('weave', {srgb: false}), bumpScale: .001, roughness: .95}); },
+  get rug(){ return stdP('rug', 'fabric', {rough: 1.2, ns: 1.2}, {color: col('#7E868D'), map: texture('rug'), roughness: 1}); },
   get slab(){ return std('slab', {color: col('#2E3236'), roughness: .8}); },
   get mirror(){ const m = std('mirror', {color: col('#C9D5DA'), metalness: .35, roughness: .06}, THREE.MeshPhysicalMaterial); m.clearcoat = 1; m.clearcoatRoughness = .02; m.userData.envMul = 2.5; return m; },
   get pot(){ return std('pot', {color: col('#C9C6BE'), roughness: .8}); },
   get leaf(){ return std('leaf', {color: col('#3E6A3A'), roughness: .6}); },
-  get board(){ return std('board', {map: texture('oakTop'), roughness: .55}); },
+  get board(){ return stdP('board', 'oaktop', {rough: 1}, {map: texture('oakTop'), roughness: .55}); },
   get doorglass(){ return std('doorglass', {color: col('#DCE7EA'), roughness: .05, transparent: true, opacity: .22, depthWrite: false}); },
 };
 function glow(key, color, onI){ if (MC[key]) return MC[key]; const m = new THREE.MeshStandardMaterial({color: col('#ffffff'), emissive: col(color), emissiveIntensity: 0, roughness: .5}); m.userData.onI = onI; MC[key] = m; glowMats.push(m); return m; }
 
 /* ================= geometry helpers ================= */
-function boxUV(g, tile, ou = 0, ov = 0){
+// grain: which axis the picture's height follows ('x', 'y', 'z'), per face; null keeps the plain projection.
+// Photo textures have the wood grain up the picture, so a door gets 'y' and a drawer front or a shelf 'x', as in the cut list.
+function boxUV(g, tile, ou = 0, ov = 0, grain = null){
   const p = g.attributes.position, n = g.attributes.normal; let uv = g.attributes.uv;
   if (!uv) { uv = new THREE.BufferAttribute(new Float32Array(p.count * 2), 2); g.setAttribute('uv', uv); }
   for (let i = 0; i < p.count; i++) {
-    const ax = Math.abs(n.getX(i)), ay = Math.abs(n.getY(i)), az = Math.abs(n.getZ(i)); let u, v;
-    if (ax >= ay && ax >= az) { u = p.getZ(i) * (n.getX(i) > 0 ? -1 : 1); v = p.getY(i); }
-    else if (ay >= az) { u = p.getX(i); v = p.getZ(i) * (n.getY(i) > 0 ? -1 : 1); }
-    else { u = p.getX(i) * (n.getZ(i) > 0 ? 1 : -1); v = p.getY(i); }
+    const ax = Math.abs(n.getX(i)), ay = Math.abs(n.getY(i)), az = Math.abs(n.getZ(i)); let u, v, face;
+    if (ax >= ay && ax >= az) { u = p.getZ(i) * (n.getX(i) > 0 ? -1 : 1); v = p.getY(i); face = 'x'; }
+    else if (ay >= az) { u = p.getX(i); v = p.getZ(i) * (n.getY(i) > 0 ? -1 : 1); face = 'y'; }
+    else { u = p.getX(i) * (n.getZ(i) > 0 ? 1 : -1); v = p.getY(i); face = 'z'; }
+    // the default v axis is y on side and front faces, z on top faces; turn the picture when the grain wants the other axis
+    if (grain && grain[face] && grain[face] !== (face === 'y' ? 'z' : 'y')) [u, v] = [v, -u];
     uv.setXY(i, u / tile + ou, v / tile + ov);
   }
   uv.needsUpdate = true; return g;
+}
+const isMetric = mat => Array.isArray(mat) ? mat.some(x => x?.userData?.metric) : !!mat?.userData?.metric;
+// grain per face for a board w x h x d: explicit along 'x'/'y'/'z' when it lies in that face, otherwise the longer side
+function grainFor(w, h, d, want){
+  const pick = (a, la, b, lb) => want === a ? a : want === b ? b : la >= lb ? a : b;
+  return {x: pick('z', d, 'y', h), y: pick('x', w, 'z', d), z: pick('x', w, 'y', h)};
 }
 let R = rng(1234);
 function box(parent, mat, x0, x1, y0, y1, z0, z1, o = {}){
@@ -1215,7 +1402,9 @@ function box(parent, mat, x0, x1, y0, y1, z0, z1, o = {}){
   if (w < 1e-4 || h < 1e-4 || d < 1e-4) return null;
   const r = Math.min(o.r ?? 0, w / 2 - 1e-4, h / 2 - 1e-4, d / 2 - 1e-4);
   const g = r > .0008 ? new THREE.RoundedBoxGeometry(w, h, d, o.seg ?? 2, r) : new THREE.BoxGeometry(w, h, d);
-  boxUV(g, o.tile ?? 1, o.ou ?? R(), o.ov ?? R());
+  // photo materials are mapped in metres (the texture carries its real size), drawn ones keep their tile
+  if (isMetric(mat)) boxUV(g, 1, o.ou ?? R() * 3, o.ov ?? R() * 3, grainFor(w, h, d, o.grain));
+  else boxUV(g, o.tile ?? 1, o.ou ?? R(), o.ov ?? R());
   const m = new THREE.Mesh(g, mat); m.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
   m.castShadow = o.cast ?? true; m.receiveShadow = o.recv ?? true; parent.add(m); return m;
 }
@@ -1253,7 +1442,9 @@ let runGroups = {};
 function modGroup(g, run, lvl, i){ const m = new THREE.Group(); m.userData.mod = {run, lvl, i}; g.add(m); return m; }
 function frontPanel(parent, c, x0, x1, y0, y1, z, opts = {}){
   const mat = opts.mat || frontMat(opts.fid || c.front, c.finish), wood = frontDef(opts.fid || c.front).wood;
-  return box(parent, mat, x0 + G, x1 - G, y0 + G, y1 - G, z, z + FT, {r: .0025, tile: wood ? 1.1 : 1});
+  // grain as in the cut list: up the door, across a drawer front (a drawer pivot or a low, wide face)
+  const drawer = parent.userData?.drawer || (y1 - y0 <= .32 && x1 - x0 > y1 - y0);
+  return box(parent, mat, x0 + G, x1 - G, y0 + G, y1 - G, z, z + FT, {r: .0025, tile: wood ? 1.1 : 1, grain: drawer ? 'x' : 'y'});
 }
 // open carcass built from boards; returns the top surface height of the bottom board and of each shelf
 function openBox(p, c, a, b, y0, y1, depth, n, fid = c.front){
@@ -1298,7 +1489,7 @@ function microFront(parent, x0, x1, y0, y1, fz){
 // standard modules open too: a door turns on its hinge, a drawer slides out with its box, a flap lifts
 function doorPivot(parent, hx, y, z, sign){ const pv = new THREE.Group(); pv.position.set(hx, y, z); parent.add(pv); anims.push({o: pv, k: 'door', a: sign}); return pv; }
 function flapPivot(parent, y, z){ const pv = new THREE.Group(); pv.position.set(0, y, z); parent.add(pv); anims.push({o: pv, k: 'flap'}); return pv; }
-function drawerPivot(parent, dz){ const pv = new THREE.Group(); parent.add(pv); anims.push({o: pv, k: 'drawer', dz}); return pv; }
+function drawerPivot(parent, dz){ const pv = new THREE.Group(); pv.userData.drawer = true; parent.add(pv); anims.push({o: pv, k: 'drawer', dz}); return pv; }
 function drawerBox(p, x0, x1, y0, y1, z, dd){
   const bm = std('drawerbox', {color: col('#E4E1DA'), roughness: .7}), bh = Math.max(.04, Math.min(.2, (y1 - y0) * .7));
   box(p, bm, x0 + .03, x1 - .03, y0 + .02, y0 + .032, z - dd, z, {cast: false});
@@ -1396,7 +1587,7 @@ function worktop(parent, c, s0, s1, holes = [], depth = .62){
   B(p, s1, y0, y1, 0, depth);
 }
 function sink(parent, c, cx, w = .8){
-  const hw = Math.min(.36, w / 2 - .06), h0 = cx - hw, h1 = cx + hw, d0 = .12, d1 = .52, depth = .2, y = .86, st = std('sinksteel', {color: col('#BFC3C6'), metalness: 1, roughness: .38, side: THREE.DoubleSide});
+  const hw = Math.min(.36, w / 2 - .06), h0 = cx - hw, h1 = cx + hw, d0 = .12, d1 = .52, depth = .2, y = .86, st = stdP('sinksteel', 'brushed', {albedo: false, rough: .9, ns: .4}, {color: col('#BFC3C6'), metalness: 1, roughness: .38, side: THREE.DoubleSide});
   const mk = (ww, h, x, yy, z, rx, ry) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(ww, h), st); m.position.set(x, yy, z); m.rotation.set(rx, ry, 0); m.receiveShadow = true; parent.add(m); };
   mk(h1 - h0, d1 - d0, cx, y - depth, (d0 + d1) / 2, -Math.PI / 2, 0);
   mk(h1 - h0, depth, cx, y - depth / 2, d0, 0, 0); mk(h1 - h0, depth, cx, y - depth / 2, d1, 0, Math.PI);
@@ -1434,7 +1625,7 @@ function plant(parent, x, z, y = .9){
 function wallWithHoles(W, H, t, holes = []){
   const s = new THREE.Shape(); s.moveTo(0, 0); s.lineTo(W, 0); s.lineTo(W, H); s.lineTo(0, H); s.lineTo(0, 0);
   for (const hole of holes) { const h = new THREE.Path(); h.moveTo(hole.x0, hole.y0); h.lineTo(hole.x0, hole.y1); h.lineTo(hole.x1, hole.y1); h.lineTo(hole.x1, hole.y0); h.lineTo(hole.x0, hole.y0); s.holes.push(h); }
-  const g = new THREE.ExtrudeGeometry(s, {depth: t, bevelEnabled: false}); g.computeVertexNormals(); return boxUV(g, 2.2);
+  const g = new THREE.ExtrudeGeometry(s, {depth: t, bevelEnabled: false}); g.computeVertexNormals(); return boxUV(g, 1, R() * 3, R() * 3);
 }
 function windowIn(parent, hole, t){
   // parent frame: wall local, x along wall, y up, z: 0 = interior face, -t = exterior
@@ -1445,7 +1636,7 @@ function windowIn(parent, hole, t){
   box(parent, F, (x0 + x1) / 2 - .025, (x0 + x1) / 2 + .025, y0, y1, z - .025, z + .025);
   const p = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, y1 - y0), M.pane); p.position.set((x0 + x1) / 2, (y0 + y1) / 2, z); p.userData.skip = true; parent.add(p);
   box(parent, std('sill', {color: col('#E9EAE8'), roughness: .4}), x0 - .04, x1 + .04, y0 - .03, y0, -t, .04, {r: .004});
-  const sky = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0 + .2, y1 - y0 + .2), skyMat()); sky.position.set((x0 + x1) / 2, (y0 + y1) / 2, -t - .04); sky.userData.skip = true; parent.add(sky);
+  const sky = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0 + .2, y1 - y0 + .2), portalMat?.uniforms.tEq.value ? portalMat : skyMat()); sky.position.set((x0 + x1) / 2, (y0 + y1) / 2, -t - .04); sky.userData.skip = true; sky.userData.sky = true; parent.add(sky);
 }
 let skyMats = {};
 function skyMat(){
@@ -1461,19 +1652,21 @@ function skyMat(){
 function shell(c, o){
   // o: {W, D, H, back:{holes}, left:{len, holes (z coordinates)}, right:{len}|null}
   const t = .12, wm = wallMat(c.wall), fm = floorMat(c.floor);
-  box(world, [M.slab, M.slab, fm, M.slab, M.slab, M.slab], -t, o.W + (o.right ? t : 0), -.08, 0, -t, o.D, {tile: 1.6, cast: false});
+  box(world, [M.slab, M.slab, fm, M.slab, M.slab, M.slab], -t, o.W + (o.right ? t : 0), -.08, 0, -t, o.D, {tile: 1.6, cast: false, grain: 'x'});
   // ceiling seen only from inside (one-sided, facing down), so the views from above stay open; recessed downlights glow in the evening
   { const cm = std('ceiling', {color: col('#F3F3F1'), roughness: .95, emissive: col('#ECEAE4'), emissiveIntensity: .5}), cg = new THREE.Mesh(new THREE.PlaneGeometry(o.W + (o.right ? t : 0), o.D), cm);
     cg.rotation.x = Math.PI / 2; cg.position.set((o.W + (o.right ? t : 0)) / 2, o.H, o.D / 2); cg.userData.skip = true; world.add(cg);
     const dl = glow('downlight', '#FFE7C4', 6), nx = Math.max(1, Math.round(o.W / 1.3)), nz = Math.max(1, Math.round(o.D / 1.4));
     for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) { const m = new THREE.Mesh(new THREE.CircleGeometry(.045, 24), dl); m.rotation.x = Math.PI / 2; m.position.set((i + .5) * o.W / nx, o.H - .002, (j + .5) * o.D / nz); m.userData.skip = true; world.add(m);
-      const ring = new THREE.Mesh(new THREE.RingGeometry(.045, .06, 24), XM.metalBlack || cm); ring.rotation.x = Math.PI / 2; ring.position.set(m.position.x, o.H - .0015, m.position.z); ring.userData.skip = true; world.add(ring); }
+      const ring = new THREE.Mesh(new THREE.RingGeometry(.045, .06, 24), XM.metalBlack || cm); ring.rotation.x = Math.PI / 2; ring.position.set(m.position.x, o.H - .0015, m.position.z); ring.userData.skip = true; world.add(ring);
+      // in the evening each downlight throws a soft cone: pools of light on the floor, scallops on the walls (at most 6, no shadows)
+      if (i * nz + j < 6) { const sp = new THREE.SpotLight(0xFFD9AE, 0, 0, .78, .9, 2); sp.position.set(m.position.x, o.H - .01, m.position.z); sp.target.position.set(m.position.x, 0, m.position.z); sp.userData = {day: 0, eve: 2.4}; world.add(sp, sp.target); dynLights.push(sp); } }
     // the downlights' light: one soft panel over the whole room, on in the evening only
     // walls the room does not have (front, and right in L and I rooms) exist only from inside, facing in: views from outside see through them
-    const gw = (w, h, x, z, ry) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), wm); m.position.set(x, h / 2, z); m.rotation.y = ry; m.receiveShadow = true; m.userData.skip = true; world.add(m); };
+    const gw = (w, h, x, z, ry) => { const pg = new THREE.PlaneGeometry(w, h), uv = pg.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w, uv.getY(i) * h); const m = new THREE.Mesh(pg, wm); m.position.set(x, h / 2, z); m.rotation.y = ry; m.receiveShadow = true; m.userData.skip = true; world.add(m); };
     gw(o.W + (o.right ? t : 0), o.H, (o.W + (o.right ? t : 0)) / 2, o.D, Math.PI);
     if (!o.right) gw(o.D, o.H, o.W, o.D / 2, -Math.PI / 2);
-    const fill = new THREE.RectAreaLight(0xFFE0BC, 0, o.W * .8, o.D * .8); fill.position.set(o.W / 2, o.H - .01, o.D / 2); fill.rotation.x = -Math.PI / 2; fill.userData = {day: 0, eve: 1.4}; world.add(fill); dynLights.push(fill); }
+    const fill = new THREE.RectAreaLight(0xFFE0BC, 0, o.W * .8, o.D * .8); fill.position.set(o.W / 2, o.H - .01, o.D / 2); fill.rotation.x = -Math.PI / 2; fill.userData = {day: 0, eve: .45}; world.add(fill); dynLights.push(fill); }
   const back = new THREE.Group(); world.add(back);
   const bh = o.back.holes || [];
   const bw = new THREE.Mesh(wallWithHoles(o.W + t, o.H, t, bh.map(h => shift(h, t))), [wm, wm]); bw.position.set(-t, 0, -t); bw.castShadow = bw.receiveShadow = true; back.add(bw);
@@ -1502,13 +1695,13 @@ function split(s0, s1, target = .6, min = .3){ const len = s1 - s0; if (len < mi
 function subtract(range, cuts){ let segs = [range]; for (const [a, b] of cuts) { const next = []; for (const [s, e] of segs) { if (b <= s || a >= e) next.push([s, e]); else { if (a > s) next.push([s, a]); if (b < e) next.push([b, e]); } } segs = next; } return segs; }
 
 /* ================= more materials ================= */
-function accentMat(){ const a = cfg.accent; if (a === 'same') return frontMat(cfg.front, cfg.finish); if (a === 'black') return std('acc-black', {color: col('#1E1F21'), roughness: .45}); return std('acc-' + a, {map: texture(a), roughness: .48}); }
+function accentMat(){ const a = cfg.accent; if (a === 'same') return frontMat(cfg.front, cfg.finish); if (a === 'black') return stdP('acc-black', 'melamine', {ns: .3, rough: .9}, {color: col('#1E1F21'), roughness: .45}); return stdP('acc-' + a, a, {rough: 1, ns: .7}, {map: texture(a), roughness: .48}); }
 const XM = {
   get ceramic(){ return std('ceramic', {color: col('#F3F3F1'), roughness: .12}, THREE.MeshPhysicalMaterial); },
   get metalBlack(){ return std('metalblack', {color: col('#1C1D1F'), metalness: .6, roughness: .35}); },
   get panelDark(){ return std('paneldark', {color: col('#1A1B1D'), roughness: .8}); },
-  get stone(){ return std('stonepanel', {color: col('#8C8B86'), map: texture('concrete'), roughness: .85}); },
-  get marbleWall(){ return std('marblewall', {map: texture('marble'), roughness: .2}, THREE.MeshPhysicalMaterial); },
+  get stone(){ return stdP('stonepanel', 'travertine', {rough: 1, ns: 1}, {color: col('#8C8B86'), map: texture('concrete'), roughness: .85}); },
+  get marbleWall(){ return stdP('marblewall', 'calacatta', {rough: .9, ns: .5}, {map: texture('marble'), roughness: .2, clearcoat: .4, clearcoatRoughness: .12}, THREE.MeshPhysicalMaterial); },
   get showerGlass(){ return std('showerglass', {color: col('#E6EEF0'), roughness: .03, transparent: true, opacity: .2, depthWrite: false}); },
   get white(){ return std('paintwhite', {color: col('#EDEEEC'), roughness: .5}); },
   get cushion(){ return fabricMat(cfg.fabric); },
@@ -2216,13 +2409,13 @@ function buildRoom(c){
       cyl(world, M.dark, .003, H - 1.62, x, (H + 1.62) / 2, z, {cast: false});
       const sh = new THREE.Mesh(new THREE.SphereGeometry(.16, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), std('shade', {color: col('#1C1D1F'), roughness: .4, metalness: .4, side: THREE.DoubleSide})); sh.position.set(x, 1.56, z); sh.castShadow = true; world.add(sh);
       const bulb = new THREE.Mesh(new THREE.SphereGeometry(.04, 16, 12), glow('bulb', '#FFC98A', 30)); bulb.position.set(x, 1.55, z); world.add(bulb);
-      const pl = new THREE.PointLight(0xFFC98A, 0, 6, 2); pl.position.set(x, 1.5, z); pl.userData = {day: 0, eve: 18}; world.add(pl); dynLights.push(pl); }
+      const pl = new THREE.PointLight(0xFFC98A, 0, 6, 2); pl.position.set(x, 1.5, z); pl.userData = {day: 0, eve: 9}; world.add(pl); dynLights.push(pl); }
   }
   const itemGroups = (c.items || []).map((it, i) => buildItem(it, i));
   mergeFreeTops(c); st.top += freeSt.top; st.wt.push(...freeSt.wt);
   itemBoxes = itemGroups.map(g => { const b = objBox(g); return {x0: b.min.x * 100, x1: b.max.x * 100, y0: b.min.y * 100, y1: b.max.y * 100, z0: b.min.z * 100, z1: b.max.z * 100}; });
   // ceiling light for rooms without their own lamps, so evening is never pitch dark
-  if (!K) { const pl = new THREE.PointLight(0xFFE2BC, 0, 9, 2); pl.position.set(A / 2, H - .3, D / 2); pl.userData = {day: 0, eve: 9}; world.add(pl); dynLights.push(pl); }
+  if (!K) { const pl = new THREE.PointLight(0xFFE2BC, 0, 9, 2); pl.position.set(A / 2, H - .3, D / 2); pl.userData = {day: 0, eve: 3.5}; world.add(pl); dynLights.push(pl); }
   const holesOf = (list, len) => mergeRanges(list.map(w => [w.a, w.b])).map(([a, b]) => { const w = list.find(x => x.a >= a - 1e-3 && x.b <= b + 1e-3) || list[0]; return {x0: Math.max(.05, a + .05), x1: Math.min(len - .05, b - .05), y0: w.y0, y1: w.y1}; }).filter(h => h.x1 - h.x0 > .2);
   const backHoles = holesOf(wins.A, A), leftHoles = hasB ? holesOf(wins.B, B).map(h => ({...h, x0: B - h.x1, x1: B - h.x0})).filter(h => h.x0 > .04 && h.x1 < D - .04) : [];
   const rightHoles = hasC ? holesOf(wins.C, Cw).filter(h => h.x1 < Cw - .04) : [];
@@ -2259,13 +2452,17 @@ function build(){
 }
 function applyLight(){
   const eve = cfg.light === 'evening';
-  sun.intensity = eve ? 0 : 3.4; key.intensity = eve ? .35 : 1.15; key.color.set(eve ? 0xFFDDB8 : 0xF2F5FF);
-  hemi.intensity = eve ? .12 : .45;
-  envI = eve ? .22 : .75; for (const m of Object.values(MC)) if ('envMapIntensity' in m) m.envMapIntensity = envI * (m.userData.envMul || 1);
+  // the HDR interior gives the indirect light; the hemisphere only lifts what it cannot reach
+  const hdr = envReady;
+  sun.intensity = eve ? 0 : 3.4; key.intensity = eve ? (hdr ? .12 : .3) : (hdr ? .45 : 1.15); key.color.set(eve ? 0xFFDDB8 : 0xF2F5FF);
+  hemi.intensity = eve ? (hdr ? .05 : .1) : (hdr ? .12 : .45);
+  envI = eve ? (hdr ? .1 : .22) : (hdr ? .58 : .75); for (const m of Object.values(MC)) if ('envMapIntensity' in m) m.envMapIntensity = envI * (m.userData.envMul || 1);
   for (const l of dynLights) l.intensity = eve ? l.userData.eve : l.userData.day;
   for (const m of glowMats) m.emissiveIntensity = eve ? m.userData.onI : (m.userData.dayI ?? (m.userData.onI > 10 ? .6 : .05));
   if (skyMats.m) { skyMats.m.map = eve ? skyMats.eve : skyMats.day; skyMats.m.color.setScalar(eve ? .7 : 1.25); skyMats.m.needsUpdate = true; }
-  renderer.toneMappingExposure = eve ? 1.15 : 1.0;
+  if (portalMat) { portalMat.uniforms.tEq.value = null; world.traverse(o => { if (o.userData.sky) o.material = skyMat(); }); }
+  outside();
+  renderer.toneMappingExposure = eve ? (hdr ? .9 : 1.15) : (hdr ? .92 : 1.0);
   stageEl.classList.toggle('eve', eve);
   if (MC.ceiling) MC.ceiling.emissiveIntensity = eve ? .08 : .5;
   $('#lightBtn').setAttribute('aria-pressed', eve);
@@ -2348,10 +2545,17 @@ function startTour(){ const off = camera.position.clone().sub(controls.target); 
 function stopTour(){ if (!tourOn) return; tourOn = false; $('#tourBtn').setAttribute('aria-pressed', false); }
 function loop(){
   requestAnimationFrame(loop);
+  if (photoBusy) return;
   if (openV !== openT) { openV = openT > openV ? Math.min(openT, openV + .022) : Math.max(openT, openV - .03); applyAnims(); dirty = true; renderer.shadowMap.needsUpdate = openV === openT; }
   if (tourOn && tour0) { tourT += .0065; const sp = tour0.s.clone(); sp.theta = clamp(tour0.s.theta + Math.sin(tourT) * .62, controls.minAzimuthAngle, controls.maxAzimuthAngle); sp.phi = clamp(tour0.s.phi + Math.sin(tourT * .7) * .08, .2, controls.maxPolarAngle); camera.position.copy(new THREE.Vector3().setFromSpherical(sp).add(controls.target)); dirty = true; }
   if (tween) { tween.t = Math.min(1, tween.t + .045); const e = 1 - Math.pow(1 - tween.t, 3); camera.position.lerpVectors(tween.p0, tween.p1, e); controls.target.lerpVectors(tween.q0, tween.q1, e); if (tween.t >= 1) tween = null; dirty = true; }
   const moved = controls.update();
+  if (photoOn) {
+    // photo mode: a normal frame while anything moves, then frames are added one by one once the view is still
+    if (dirty || moved) { dirty = false; photoN = 0; photoIdle = performance.now(); renderNow(); drawDims(dctx, dimCv.width, dimCv.height, dimCv.width / W); photoPill(); return; }
+    if (photoN < PHOTO_N && performance.now() - photoIdle > 160) { const s = renderer.getDrawingBufferSize(new THREE.Vector2()); if (!photoN) { photoTargets(s.x, s.y); photoClear(); } photoSample(s.x, s.y); photoDisplay(); photoPill(); }
+    return;
+  }
   if (!dirty && !moved) return;
   dirty = false; renderNow();
   const pr = dimCv.width / W; drawDims(dctx, dimCv.width, dimCv.height, pr);
@@ -3156,7 +3360,7 @@ function meas(k, label){ const [a, b] = LIMITS[k]; const max = k === 'wardrobeW'
 function tog(k, label, sub){ return `<div class="sw-row"><label for="t-${k}">${label}${sub ? `<small>${sub}</small>` : ''}</label><span class="toggle"><input type="checkbox" id="t-${k}" data-tog="${k}" ${cfg[k] ? 'checked' : ''}><i></i></span></div>`; }
 function swatches(k, list, val, fn){ return `<div class="sw" data-key="${k}">${list.map(x => `<button type="button" data-val="${x.id}" aria-pressed="${val === x.id}"><i style="${fn(x)}"></i>${x.name}</button>`).join('')}</div>`; }
 const sURL = {};
-const swBg = id => `background-image:url(${sURL[id] || (sURL[id] = swatchURL(id))})`;
+const swBg = id => `background-image:${swReal(id)}url(${sURL[id] || (sURL[id] = swatchURL(id))});background-size:cover`;
 const frontSw = f => f.wood ? swBg(f.wood) : `background:${f.color}`;
 const ROOM_ICON = {
   kitchen:'<path d="M3 10h18v10H3zM3 10V5h18v5M8 14h3M14 14h3"/>', bedroom:'<path d="M3 18V8M3 14h18v4M21 18v-6a3 3 0 0 0-3-3h-7v5"/><circle cx="7" cy="11" r="2"/>',
@@ -3200,7 +3404,7 @@ function renderMat(){
     <div class="grp"><h3>الأرضية</h3>${swatches('floor', FLOORS, c.floor, f => swBg(f.id))}</div>
     <div class="grp"><h3>لون الجدران</h3>${swatches('wall', WALLS, c.wall, w => `background:${w.color}`)}</div>`;
 }
-function frontColorCss(id){ const f = frontDef(id); return f.wood ? (f.wood === 'oak' ? '#B88A57' : '#5E3D28') : f.color; }
+function frontColorCss(id){ const f = frontDef(id); return f.wood ? ({oak: '#B88A57', oaklight: '#CDB08A', walnut: '#7A5238', wenge: '#3A251A'})[f.wood] : f.color; }
 
 /* prices: per viewer */
 const PRICE_CAT = {
@@ -3919,6 +4123,7 @@ $('#openBtn').onclick = () => setOpen(!openT);
 $('#tourBtn').onclick = () => tourOn ? stopTour() : startTour();
 const Q_NAMES = {performance: 'أداء', standard: 'عادية', ultra: 'فائقة'};
 function syncQualityBtn(){ $('#qualityLbl').textContent = I18N.t(Q_NAMES[quality]); $('#qualityBtn').title = I18N.t('جودة العرض') + ': ' + I18N.t(Q_NAMES[quality]); $('#qualityBtn').setAttribute('aria-pressed', quality === 'ultra'); }
+$('#photoBtn').onclick = () => { setPhoto(!photoOn); toast(I18N.t(photoOn ? 'تصوير واقعي: ظلال ناعمة وصورة أنقى حين تتوقف الكاميرا' : 'تصوير')); };
 $('#qualityBtn').onclick = () => { const order = ['performance', 'standard', 'ultra']; setQuality(order[(order.indexOf(quality) + 1) % 3]); syncQualityBtn(); toast(I18N.t('جودة العرض') + ': ' + I18N.t(Q_NAMES[quality])); };
 // drag a piece from the library straight into the room: it is made where the pointer enters and follows it
 let palDrag = null;
@@ -4125,17 +4330,18 @@ $('.pres-views').addEventListener('click', e => {
   else if (v === 'open') { setOpen(!openT); b.setAttribute('aria-pressed', !!openT); }
   else if (v === 'light') { set('light', cfg.light === 'evening' ? 'day' : 'evening'); }
   else if (v === 'info') { presInfo(); $('#presInfo').hidden = !$('#presInfo').hidden; b.setAttribute('aria-pressed', !$('#presInfo').hidden); }
-  else if (v === 'shot') { toast(I18N.t('نجهّز الصورة…')); setTimeout(() => { shotRes = '3840'; $$('#shotRes [data-res]').forEach(x => x.setAttribute('aria-pressed', x.dataset.res === '3840')); showShot(makeShot('3840')); }, 30); }
+  else if (v === 'photo') setPhoto(!photoOn);
+  else if (v === 'shot') { toast(I18N.t('نجهّز الصورة…')); setTimeout(async () => { shotRes = '3840'; $$('#shotRes [data-res]').forEach(x => x.setAttribute('aria-pressed', x.dataset.res === '3840')); showShot(await makeShot('3840')); }, 30); }
 });
 $('#presVars').addEventListener('click', e => { const b = e.target.closest('[data-pvar]'); if (!b) return; const d = store.list.find(x => x.id === b.dataset.pvar); if (!d) return; cfg = sanitize(d.cfg, DEFAULT); setClient({id: d.id, name: d.name, phone: d.phone || '', note: d.note || ''}); resetHistory(); renderAll(); build(); presInfo(); presVariants(); });
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.body.classList.contains('present')) setTimeout(() => { resize(); dirty = true; }, 60); });
 
 /* ================= snapshot / export ================= */
-function snapshot(w, h, withFooter, withDims = withFooter){
+function snapshot(w, h, withFooter, withDims = withFooter, painted = false){
   const pr = renderer.getPixelRatio(), size = new THREE.Vector2(); renderer.getSize(size);
   renderer.setPixelRatio(1); renderer.setSize(w, h, false); sizeComposer(w, h, 1); camera.aspect = w / h; camera.updateProjectionMatrix();
   if (selHelper) selHelper.visible = false;
-  renderNow();
+  if (painted) photoDisplay(); else renderNow();
   if (selHelper) selHelper.visible = true;
   const foot = withFooter ? Math.round(h * .13) : 0, out = document.createElement('canvas'); out.width = w; out.height = h + foot;
   const x = out.getContext('2d'), dark = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme !== 'light' || document.documentElement.dataset.theme === 'dark';
@@ -4155,22 +4361,42 @@ function snapshot(w, h, withFooter, withDims = withFooter){
   }
   return out;
 }
+// a photo render at any size: the frames are accumulated at that size, a few at a time so the page stays alive
+async function photoShot(w, h, n, withFooter = true, withDims = withFooter, onStep){
+  const was = photoOn, pr = renderer.getPixelRatio(), size = renderer.getSize(new THREE.Vector2());
+  photoOn = true; buildComposer(); refreshTextures(); await texReady();
+  photoBusy = true;
+  try {
+    renderer.setPixelRatio(1); renderer.setSize(w, h, false); sizeComposer(w, h, 1); camera.aspect = w / h; camera.updateProjectionMatrix();
+    if (selHelper) selHelper.visible = false;
+    photoTargets(w, h); photoClear();
+    for (let i = 0; i < n; i++) { photoSample(w, h); if (i % 4 === 3) { onStep?.(i + 1, n); await new Promise(r => setTimeout(r, 0)); } }
+    if (selHelper) selHelper.visible = true;
+    renderer.setPixelRatio(pr); renderer.setSize(size.x, size.y, false);
+    return snapshot(w, h, withFooter, withDims, true);
+  } finally {
+    photoBusy = false; photoOn = was; if (!was) refreshTextures(); photoN = 0; resize(); dirty = true;
+  }
+}
 let shotBlob = null;
 // final images: any resolution, drawn in Ultra quality whatever the screen is; the design itself is not touched
 let shotRes = '1600';
-function makeShot(res){
+// final images are photo renders, at any resolution, whatever the screen and the quality level; the design is not touched
+async function makeShot(res){
   const ar = clamp(W / Hh, .7, 1.8), q0 = quality, big = res !== '1600';
   const size = res === 'a4' ? [3508, 2480] : res === '3840' ? [3840, 2160] : res === '1920' ? [1920, 1080] : null;
-  if (big && quality !== 'ultra') { quality = 'ultra'; applyQuality(); }
+  if (quality !== 'ultra') { quality = 'ultra'; applyQuality(); }
   let cv;
   const tries = size ? [size, [Math.round(size[0] * .75), Math.round(size[1] * .75)], [1920, Math.round(1920 * size[1] / size[0])]] : [1600, 1200, 900].map(w => [w, Math.round(w / ar)]);
-  for (const [w, h] of tries) { cv = snapshot(w, h, true); const px = cv.getContext('2d').getImageData(w / 2 | 0, h / 2 | 0, 1, 1).data; if (px[0] + px[1] + px[2] > 0) break; }
-  if (quality !== q0) { quality = q0; applyQuality(); resize(); }
+  const step = (i, n) => { $('#shotHint').textContent = `${I18N.t('نرسم الصورة')} ${i}/${n}`; };
+  try {
+    for (const [w, h] of tries) { cv = await photoShot(w, h, big ? 32 : 48, true, true, step); const px = cv.getContext('2d').getImageData(w / 2 | 0, h / 2 | 0, 1, 1).data; if (px[0] + px[1] + px[2] > 0) break; }
+  } finally { if (quality !== q0) { quality = q0; applyQuality(); refreshTextures(); resize(); } }
   return cv;
 }
-$('#shotRes').addEventListener('click', e => { const b = e.target.closest('[data-res]'); if (!b) return; shotRes = b.dataset.res; $$('#shotRes [data-res]').forEach(x => x.setAttribute('aria-pressed', x === b)); $('#shotHint').textContent = I18N.t('نجهّز الصورة…'); setTimeout(() => showShot(makeShot(shotRes)), 30); });
+$('#shotRes').addEventListener('click', e => { const b = e.target.closest('[data-res]'); if (!b) return; shotRes = b.dataset.res; $$('#shotRes [data-res]').forEach(x => x.setAttribute('aria-pressed', x === b)); $('#shotHint').textContent = I18N.t('نجهّز الصورة…'); setTimeout(async () => showShot(await makeShot(shotRes)), 30); });
 function showShot(cv){ cv.toBlob(b => { shotBlob = b; $('#shot').src = URL.createObjectURL(b); $('#exportSheet').hidden = false; $('#shotHint').textContent = `${cv.width} × ${cv.height}، ` + I18N.t('احفظ الصورة وأرسلها للزبون عبر واتساب.'); }, 'image/jpeg', .92); }
-$('#exportBtn').onclick = () => { showShot(makeShot(shotRes)); };
+$('#exportBtn').onclick = async () => { $('#exportSheet').hidden = false; $('#shotHint').textContent = I18N.t('نجهّز الصورة…'); showShot(await makeShot(shotRes)); };
 $('#docSave').onclick = async () => { if (!docFile) return; const r = await saveFile(docFile.name, docFile.blob); if (r === 'saved') toast('حُفظ الملف'); else if (r !== 'declined') $('#docHint').textContent = 'تعذّر حفظ الملف هنا.'; };
 $('#shotSave').onclick = async () => {
   const r = await saveFile((current ? current.name : 'تصميم') + '، ورشة العرض.jpg', shotBlob);
@@ -4270,7 +4496,7 @@ $('#langSel').onchange = e => { I18N.setLang(e.target.value); setClient(current)
 // warm the remaining swatch textures in idle time so the material tab opens instantly
 const idle = window.requestIdleCallback || (f => setTimeout(f, 200));
 ['walnut','quartz','granite','concrete','oakTop','tile','terrazzo','cement'].forEach((id, i) => idle(() => texCanvas(id)));
-window.__wr = {openNow: v => { openT = openV = v; applyAnims(); renderer.shadowMap.needsUpdate = true; dirty = true; }, setQuality, get quality(){ return quality; }, dirty: () => { dirty = true; }, setCam, openDemo, DEMOS, exportFile, importFile, setPresent, get fab(){ return fab; }, set fab(v){ fab = WarshaFab.sanitizeFab(v); }, store, setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
+window.__wr = {texReady, texStats, setPhoto, get photoN(){ return photoN; }, photoShot: async (w, h, n) => (await photoShot(w, h, n, false, false)), makeShot, get envReady(){ return envReady; }, openNow: v => { openT = openV = v; applyAnims(); renderer.shadowMap.needsUpdate = true; dirty = true; }, setQuality, get quality(){ return quality; }, dirty: () => { dirty = true; }, setCam, openDemo, DEMOS, exportFile, importFile, setPresent, get fab(){ return fab; }, set fab(v){ fab = WarshaFab.sanitizeFab(v); }, store, setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
 })();
 </script>
 

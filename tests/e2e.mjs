@@ -2,6 +2,7 @@
 // Needs: npm i (three@0.147.0 and playwright). Run: npm run test:e2e
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
+import {openApp} from './serve.mjs';
 import path from 'node:path';
 const require = createRequire(import.meta.url);
 const {chromium} = require('playwright');
@@ -14,13 +15,7 @@ async function open(browser, viewport) {
   const page = await browser.newPage({viewport});
   const errors = [];
   page.on('pageerror', e => errors.push(String(e)));
-  await page.route('**/*', r => {
-    const u = r.request().url();
-    if (u.includes('three@0.147.0/')) return r.fulfill({path: path.join(threeDir, u.split('three@0.147.0/')[1])});
-    if (u.startsWith('file://')) return r.continue();
-    return r.abort();
-  });
-  await page.goto('file://' + path.join(root, 'index.html'));
+  await openApp(page, root, threeDir);
   await page.waitForFunction(() => window.__wr, null, {timeout: 120000});
   await page.waitForTimeout(1500);
   await page.evaluate(() => window.__wr.setQuality('performance'));
@@ -123,6 +118,21 @@ try {
   ok(same, 'الجودة لا تغيّر قائمة التقطيع ولا السعر');
   const shot = await page.evaluate(() => { const c = window.__wr.snap(3840, 2160); return [c.width, c.height]; });
   ok(shot[0] === 3840 && shot[1] >= 2160, `صورة 4K ${shot.join('×')}`);
+  console.log('الخامات الحقيقية والتصوير الواقعي');
+  // the design is never touched by rendering: same parts, sizes, grain and price at every level and in photo mode
+  const ref = await page.evaluate(() => { const w = window.__wr, sig = () => JSON.stringify([w.cutList().grouped.map(g => [g.kind, g.L, g.W, g.th, g.qty, g.grain]), Math.round(w.sale().total)]), out = [];
+    for (let d = 0; d < 7; d++) { w.openDemo(d); const s = []; for (const q of ['performance', 'standard', 'ultra']) { w.setQuality(q); s.push(sig()); } w.setPhoto(true); s.push(sig()); w.setPhoto(false); out.push(s.every(x => x === s[0])); }
+    w.setQuality('performance'); return out; });
+  ok(ref.every(Boolean), `القائمة والمقاسات والسعر متطابقة في المستويات الثلاثة ووضع التصوير (${ref.filter(Boolean).length}/7 مشاريع)`);
+  await page.evaluate(() => { const w = window.__wr; w.openDemo(0); w.setQuality('standard'); }); await page.evaluate(() => window.__wr.texReady());
+  const tx = await page.evaluate(() => window.__wr.texStats());
+  ok(tx.textures > 0 && tx.failed === 0, `الخامات الحقيقية محمّلة (${tx.textures} صورة، نحو ${tx.mb} م.ب في ذاكرة الرسم)`);
+  ok(await page.evaluate(() => window.__wr.envReady), 'بيئة الإضاءة HDR محمّلة');
+  const gr = await page.evaluate(() => { const w = window.__wr; w.set({...w.cfg, front: 'wenge', worktop: 'nero', floor: 'herring'}); const cl = w.cutList(), mine = cl.grouped.filter(x => x.mat === 'front:wenge'), d = mine.filter(x => x.kind === 'باب'), r = mine.filter(x => x.kind === 'واجهة جارور'); return {ok: mine.every(x => x.grain), n: d.length + r.length}; });
+  ok(gr.n > 0 && gr.ok, 'الخشب الداكن الجديد له اتجاه عرق في قائمة التقطيع');
+  const ph = await page.evaluate(async () => { const w = window.__wr; w.openDemo(0); const cv = await w.photoShot(480, 300, 3); const px = cv.getContext('2d').getImageData(240, 150, 1, 1).data; return {w: cv.width, lit: px[0] + px[1] + px[2] > 0}; });
+  ok(ph.w === 480 && ph.lit, 'التصوير الواقعي ينتج صورة');
+  await page.evaluate(() => window.__wr.setQuality('performance'));
   console.log('وضع العرض');
   await page.evaluate(() => window.__wr.setPresent(true)); await page.waitForTimeout(300);
   ok(await page.evaluate(() => getComputedStyle(document.querySelector('#panel')).display === 'none' && getComputedStyle(document.querySelector('.bar')).display === 'none'), 'الأدوات مخفية في وضع العرض');
@@ -131,6 +141,12 @@ try {
   ok(errors.length === 0, 'لا أخطاء في الصفحة' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
   await page.close();
 
+  console.log('فتح الصفحة كملف (بلا خادم)');
+  { const fp = await browser.newPage({viewport: {width: 1000, height: 700}}), ferr = []; fp.on('pageerror', e => ferr.push(String(e)));
+    await openApp(fp, root, threeDir, true); await fp.waitForFunction(() => window.__wr, null, {timeout: 120000}); await fp.waitForTimeout(1500);
+    const fb = await fp.evaluate(async () => { const w = window.__wr; w.setQuality('performance'); w.openDemo(0); await w.texReady(); const cv = w.snap(400, 250); const px = cv.getContext('2d').getImageData(200, 125, 1, 1).data; return {failed: w.texStats().failed, lit: px[0] + px[1] + px[2] > 0}; });
+    ok(fb.lit && ferr.length === 0, `الخامات المرسومة تبقى إن لم تُحمّل الصور، بلا خطأ (${fb.failed} مجموعة لم تُحمّل)` + (ferr.length ? ': ' + ferr[0] : ''));
+    await fp.close(); }
   console.log('الهاتف');
   const m = await open(browser, {width: 390, height: 844});
   await m.page.evaluate(() => window.__wr.openDemo(6)); await m.page.waitForTimeout(800);

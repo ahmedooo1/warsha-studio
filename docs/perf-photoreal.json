@@ -1,0 +1,138 @@
+[
+ {
+  "level": "performance",
+  "demo": 1,
+  "frameMs": 4135,
+  "photoMsPerFrame": null,
+  "tex": {
+   "textures": 19,
+   "mb": 25,
+   "failed": 0,
+   "gl": 35
+  },
+  "heapMB": 21,
+  "calls": 356,
+  "triangles": 26930,
+  "geometries": 380,
+  "downloadMB": 5.2
+ },
+ {
+  "level": "performance",
+  "demo": 6,
+  "frameMs": 3802,
+  "photoMsPerFrame": null,
+  "tex": {
+   "textures": 22,
+   "mb": 29,
+   "failed": 0,
+   "gl": 37
+  },
+  "heapMB": 20,
+  "calls": 264,
+  "triangles": 13100,
+  "geometries": 292,
+  "downloadMB": 5.6
+ },
+ {
+  "level": "standard",
+  "demo": 1,
+  "frameMs": 4319,
+  "photoMsPerFrame": null,
+  "tex": {
+   "textures": 19,
+   "mb": 93,
+   "failed": 0,
+   "gl": 38
+  },
+  "heapMB": 20,
+  "calls": 356,
+  "triangles": 26930,
+  "geometries": 380,
+  "downloadMB": 5
+ },
+ {
+  "level": "standard",
+  "demo": 6,
+  "frameMs": 4102,
+  "photoMsPerFrame": null,
+  "tex": {
+   "textures": 22,
+   "mb": 109,
+   "failed": 0,
+   "gl": 43
+  },
+  "heapMB": 20,
+  "calls": 264,
+  "triangles": 13100,
+  "geometries": 292,
+  "downloadMB": 6.6
+ },
+ {
+  "level": "ultra",
+  "demo": 1,
+  "frameMs": 5705,
+  "photoMsPerFrame": null,
+  "tex": {
+   "textures": 19,
+   "mb": 189,
+   "failed": 0,
+   "gl": 39
+  },
+  "heapMB": 21,
+  "calls": 1,
+  "triangles": 1,
+  "geometries": 381,
+  "downloadMB": 7.6
+ },
+ {
+  "level": "ultra",
+  "demo": 6,
+  "frameMs": 5650,
+  "photoMsPerFrame": null,
+  "tex": {
+   "textures": 22,
+   "mb": 205,
+   "failed": 0,
+   "gl": 44
+  },
+  "heapMB": 20,
+  "calls": 1,
+  "triangles": 1,
+  "geometries": 293,
+  "downloadMB": 10.1
+ },
+ {
+  "level": "photo",
+  "demo": 1,
+  "frameMs": 6294,
+  "photoMsPerFrame": 5584,
+  "tex": {
+   "textures": 19,
+   "mb": 189,
+   "failed": 0,
+   "gl": 41
+  },
+  "heapMB": 22,
+  "calls": 1,
+  "triangles": 1,
+  "geometries": 381,
+  "downloadMB": 7.6
+ },
+ {
+  "level": "photo",
+  "demo": 6,
+  "frameMs": 5835,
+  "photoMsPerFrame": 5268,
+  "tex": {
+   "textures": 22,
+   "mb": 205,
+   "failed": 0,
+   "gl": 46
+  },
+  "heapMB": 21,
+  "calls": 1,
+  "triangles": 1,
+  "geometries": 293,
+  "downloadMB": 10.1
+ }
+]
