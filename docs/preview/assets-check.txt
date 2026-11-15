@@ -1,0 +1,23 @@
+✓ oak            512/1k     6 files
+✓ oaklight       512/1k     6 files
+✓ oaktop         512/1k     6 files
+✓ walnut         512/1k/2k  9 files
+✓ wenge          512/1k/2k  9 files
+✓ floor_oak      512/1k/2k  9 files
+✓ floor_herring  512/1k/2k  9 files
+✓ cement         512/1k     6 files
+✓ floor_tile     512/1k     6 files
+✓ terrazzo       512/1k/2k  9 files
+✓ carrara        512/1k     6 files
+✓ quartz         512/1k/2k  9 files
+✓ calacatta      512/1k/2k  9 files
+✓ nero           512/1k/2k  9 files
+✓ travertine     512/1k/2k  9 files
+✓ plaster        512/1k     6 files
+✓ fabric         512/1k     6 files
+✓ brushed        512/1k     6 files
+✓ melamine       512        2 files
+✓ dikhololo_night_1k.hdr       1024x512
+✓ lebombo_1k.hdr               1024x512
+✓ rooitou_park_1k.hdr          1024x512
+19 texture sets, 137 images, 3 HDR: all OK

@@ -133,6 +133,21 @@ try {
   const ph = await page.evaluate(async () => { const w = window.__wr; w.openDemo(0); const cv = await w.photoShot(480, 300, 3); const px = cv.getContext('2d').getImageData(240, 150, 1, 1).data; return {w: cv.width, lit: px[0] + px[1] + px[2] > 0}; });
   ok(ph.w === 480 && ph.lit, 'التصوير الواقعي ينتج صورة');
   await page.evaluate(() => window.__wr.setQuality('performance'));
+  console.log('تداخل القطع');
+  const cl = await page.evaluate(() => { const w = window.__wr, out = {demos: []};
+    for (let d = 0; d < 7; d++) { w.openDemo(d); out.demos.push(w.clashes.length); }
+    w.openDemo(6); const a = 0, b = 1, before = JSON.stringify(w.cfg.items[a]);
+    w.noClash = true; w.select({item: a}); w.setItemField('x', w.cfg.items[b].x);
+    out.blocked = JSON.stringify(w.cfg.items[a]) === before && w.clashes.length === 0;
+    w.noClash = false; w.select({item: a}); w.setItemField('x', w.cfg.items[b].x);
+    out.shown = w.clashes.find(c => c.a === a && c.b === b)?.depth || 0;
+    out.issue = w.checkIssues().some(x => x.i === a && x.with === b);
+    w.noClash = true; const st = w.settle(a); out.settle = st && !st.back ? st.s : -1;
+    w.openDemo(6); return out; });
+  ok(cl.demos.every(n => n === 0), `لا تداخل كاذب في المشاريع السبعة (${cl.demos.join('، ')})`);
+  ok(cl.blocked, 'منع التداخل: نقل خزانة داخل أخرى لا يُطبّق');
+  ok(cl.shown > 0 && cl.issue, `حين يُسمح بالتداخل يُكشف بعمقه (${cl.shown} سم) ويظهر في فحص التصميم`);
+  ok(cl.settle > 0, `القطعة المتداخلة تجد أقرب مكان فارغ (${cl.settle} سم)`);
   console.log('وضع العرض');
   await page.evaluate(() => window.__wr.setPresent(true)); await page.waitForTimeout(300);
   ok(await page.evaluate(() => getComputedStyle(document.querySelector('#panel')).display === 'none' && getComputedStyle(document.querySelector('.bar')).display === 'none'), 'الأدوات مخفية في وضع العرض');
