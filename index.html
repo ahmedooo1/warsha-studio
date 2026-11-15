@@ -250,6 +250,7 @@ svg.uv .over .lb{fill:var(--bad)}
 .qbar button[aria-pressed="true"]{background:var(--tape);color:var(--tape-ink)}
 .qbar button.del{color:#FF9C8C}
 .qbar svg{width:19px;height:19px}
+.qbar{transition:opacity .18s} .qbar.away{opacity:0;pointer-events:none}
 .qbar i{width:1px;height:22px;background:rgba(255,255,255,.2);margin-inline:3px;flex:none}
 .sect{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:10px}
 .sect h4{margin:0;font-size:14px;font-weight:600;display:flex;gap:8px;align-items:baseline}
@@ -436,6 +437,8 @@ body.present .pres-vars:not([hidden]){display:flex;position:absolute;bottom:84px
       <button type="button" data-open title="فتح الأبواب والجوارير"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h9v16H4z"/><path d="M13 4l7 3v14l-7-1"/></svg></button>
       <button type="button" data-it="dup" title="نسخ (Ctrl+D)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg></button>
       <button type="button" data-it="del" class="del" title="حذف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
+      <i></i>
+      <button type="button" data-it="close" title="إغلاق"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <div class="veil" id="veil"><p>نجهّز الورشة…</p></div>
   </section>
@@ -626,11 +629,32 @@ const LIMITS = { wallA:[150,700], wallB:[150,600], wallC:[150,600], height:[220,
 
 /* ================= units (pieces fixed on a wall) ================= */
 // widths in cm. lvl b = standing on the floor (incl. tall columns), u = hung on the wall
+// tall columns: height = the chosen height, at most 4 cm under the ceiling (230 cm by default, as before).
+// Top cabinet left unset = everything above 2.06 m (the old fixed split), so a taller column grows the top cabinet
+// and leaves the fridge niche alone; once set it is kept, between 12 cm and what leaves 1.30 m below it.
+const tallHt = (o, Hc = cfg.height) => Math.min(+o.h || 230, Hc - 4);
+const tcAuto = o => { const Ht = tallHt(o); return Ht - 206 > 12 ? Ht - 206 : 0; };
+// warnings under the options of a tall column (sizes the carpenter must check, nothing is changed silently)
+function tallNote(m){
+  if (!['fridge', 'pantry', 'oventall'].includes(m.t)) return '';
+  const o = optsOf(m), td = tallOf(m), out = [];
+  if (+o.h > td.Ht) out.push(['', I18N.f('tallCeil', {v: td.Ht})]);
+  if (m.o?.tc !== undefined && +m.o.tc > 0 && td.tc < +m.o.tc) out.push([' bad', I18N.f('tcLimit', {v: td.tc})]);
+  if (m.t === 'fridge' && o.s !== 'free' && td.t2 - 12 < 178) out.push([' bad', I18N.f('fridgeNiche', {v: td.t2 - 12})]);
+  return out.map(([k, x]) => `<p class="ucap${k}" data-notr>${x}</p>`).join('');
+}
+function tallOf(m, Hc = cfg.height){
+  const o = optsOf(m), Ht = tallHt(o, Hc), has = (UNIT[m.t]?.opts || []).some(d => d.k === 'tc');
+  let tc = has ? Math.round(+o.tc || 0) : 0;
+  if (tc > 0) tc = Math.min(Math.max(tc, 12), Ht - 130);
+  return {Ht, t2: tc > 0 ? Ht - tc : Ht, tc: Math.max(0, tc)};
+}
 const opt = {
   seg: (k, n, vals, def) => ({k, n, type: 'seg', vals, def}),
   bool: (k, n, def) => ({k, n, type: 'bool', def}),
   num: (k, n, min, max, def, step = 5) => ({k, n, type: 'num', min, max, def, step}),
 };
+const TOP_OPTS = [opt.seg('d', 'العمق', {35:'35 سم', 56:'56 سم'}, '35'), opt.bool('fill', 'حتى السقف', true), {...opt.num('h', 'الارتفاع', 15, 120, 40, 1), if: v => !v.fill}];
 const UNIT = {
   door:    {n:'خزانة بباب', s:'باب', w:60, min:20, max:120, lvl:'b', cat:'base', counter:true, d:60},
   drawers: {n:'جوارير', s:'جوارير', w:60, min:30, max:120, lvl:'b', cat:'base', counter:true, d:60, opts:[opt.seg('n', 'عدد الجوارير', {2:'2', 3:'3', 4:'4'}, '3')]},
@@ -639,9 +663,9 @@ const UNIT = {
   dw:      {n:'جلاية', s:'جلاية', w:60, min:45, max:60, lvl:'b', cat:'base', counter:true, d:60},
   bopen:   {n:'رفوف مفتوحة', s:'مفتوح', w:40, min:15, max:90, lvl:'b', cat:'base', counter:true, d:60, opts:[opt.seg('n', 'الرفوف', {1:'1', 2:'2'}, '1')]},
   washer:  {n:'غسالة تحت السطح', s:'غسالة', w:60, min:60, max:65, lvl:'b', cat:'base', counter:true, d:60},
-  fridge:  {n:'عمود ثلاجة', s:'ثلاجة', w:60, min:55, max:95, lvl:'b', cat:'tall', tall:true, d:60, opts:[opt.seg('s', 'الثلاجة', {built:'مدمجة', free:'مستقلة ستيل'}, 'built')]},
-  pantry:  {n:'خزانة مؤن طويلة', s:'مؤن', w:60, min:30, max:120, lvl:'b', cat:'tall', tall:true, d:60},
-  oventall:{n:'عمود فرن ومايكرويف', s:'فرن عمودي', w:60, min:60, max:90, lvl:'b', cat:'tall', tall:true, d:60},
+  fridge:  {n:'عمود ثلاجة', s:'ثلاجة', w:60, min:55, max:95, lvl:'b', cat:'tall', tall:true, d:60, opts:[opt.seg('s', 'الثلاجة', {built:'مدمجة', free:'مستقلة ستيل'}, 'built'), opt.num('h', 'ارتفاع العمود', 180, 300, 230, 1), {...opt.num('tc', 'ارتفاع الخزانة العلوية', 0, 90, 24, 1), auto: tcAuto, if: v => v.s !== 'free'}]},
+  pantry:  {n:'خزانة مؤن طويلة', s:'مؤن', w:60, min:30, max:120, lvl:'b', cat:'tall', tall:true, d:60, opts:[opt.num('h', 'ارتفاع العمود', 180, 300, 230, 1), {...opt.num('tc', 'ارتفاع الخزانة العلوية', 0, 90, 24, 1), auto: tcAuto, if: v => v.s !== 'free'}]},
+  oventall:{n:'عمود فرن ومايكرويف', s:'فرن عمودي', w:60, min:60, max:90, lvl:'b', cat:'tall', tall:true, d:60, opts:[opt.num('h', 'ارتفاع العمود', 180, 300, 230, 1)]},
   wcol:    {n:'عمود غسالة ونشافة', s:'غسالة ونشافة', w:70, min:65, max:90, lvl:'b', cat:'tall', tall:true, d:62},
   wdoor:   {n:'باب تعليق', s:'باب', w:50, min:30, max:120, lvl:'b', cat:'ward', tall:true, d:60},
   wmirror: {n:'باب مرآة', s:'مرآة', w:50, min:30, max:120, lvl:'b', cat:'ward', tall:true, d:60},
@@ -673,24 +697,35 @@ const UNIT = {
   hooks:   {n:'علاقة معاطف', s:'علاقة', w:80, min:30, max:240, lvl:'u', cat:'hooks', d:6},
   window:  {n:'نافذة', s:'نافذة', w:100, min:50, max:300, lvl:'u', cat:null, d:0, deco:true, opts:[opt.num('y', 'ارتفاع الحافة', 20, 150, 90), opt.bool('c', 'ستائر', true)]},
   ugap:    {n:'فراغ', s:'فراغ', w:30, min:5, max:400, lvl:'u', cat:null, gap:true, d:0},
+  // top row: cabinets above the wall cabinets, up to the ceiling; they also pass over the tall columns
+  tdoor:   {n:'خزانة فوق العلوية', s:'بباب', w:60, min:20, max:120, lvl:'t', cat:'toprow', d:35, opts:TOP_OPTS},
+  tlift:   {n:'قلاب فوق العلوية', s:'قلاب', w:80, min:30, max:120, lvl:'t', cat:'toprow', d:35, opts:TOP_OPTS},
+  topen:   {n:'رف مفتوح فوق العلوية', s:'مفتوح', w:60, min:20, max:120, lvl:'t', cat:'toprow', d:35, opts:TOP_OPTS},
+  tgap:    {n:'فراغ', s:'فراغ', w:60, min:5, max:400, lvl:'t', cat:null, gap:true, d:0},
 };
-const ALL_B = Object.keys(UNIT).filter(t => UNIT[t].lvl === 'b'), ALL_U = Object.keys(UNIT).filter(t => UNIT[t].lvl === 'u');
+const ALL_B = Object.keys(UNIT).filter(t => UNIT[t].lvl === 'b'), ALL_U = Object.keys(UNIT).filter(t => UNIT[t].lvl === 'u'), ALL_T = Object.keys(UNIT).filter(t => UNIT[t].lvl === 't');
+// the three heights of a wall: on the floor, on the wall, and the top row above
+const LV = {b: 'pb', u: 'pu', t: 'pt'}, atLvl = (L, lvl) => (L && L[LV[lvl]]) || [], GAP_T = {b: 'bgap', u: 'ugap', t: 'tgap'};
+const unitDepth = m => UNIT[m.t]?.lvl === 't' ? +optsOf(m).d : (UNIT[m.t]?.d || 4);
 const ROOM_UNITS = {
-  kitchen:  {b:['door','drawers','sink','cook','dw','bopen','fridge','pantry','oventall','washer','rdoor','bgap'], u:['udoor','glass','lift','uopen','hood','shelf','window','ugap']},
-  laundry:  {b:['door','drawers','sink','washer','wcol','pantry','bopen','rdoor','bgap'], u:['udoor','uopen','shelf','hooks','window','ugap']},
-  bedroom:  {b:['wdoor','wmirror','wdrawer','wopen','bookcase','desk','sideboard','rdoor','bgap'], u:['frame','shelf','tv','mirror','window','ugap']},
-  dressing: {b:['wdoor','wmirror','wdrawer','wopen','shoe','bench','rdoor','bgap'], u:['shelf','mirror','frame','window','ugap']},
-  kids:     {b:['wdoor','wdrawer','wopen','desk','bookcase','bench','rdoor','bgap'], u:['shelf','udoor','uopen','frame','window','ugap']},
-  living:   {b:['tvbase','bookcase','vitrine','sideboard','bench','rdoor','bgap'], u:['clad','tv','shelf','uopen','udoor','frame','mirror','window','ugap']},
-  dining:   {b:['sideboard','vitrine','bookcase','rdoor','bgap'], u:['mirror','frame','shelf','glass','uopen','window','ugap']},
-  office:   {b:['desk','bookcase','wdoor','wopen','sideboard','rdoor','bgap'], u:['shelf','uopen','udoor','glass','frame','window','ugap']},
-  bathroom: {b:['vanity','btall','washer','rdoor','bgap'], u:['mcab','mirror','shelf','window','ugap']},
-  entry:    {b:['shoe','bench','coat','wdoor','rdoor','bgap'], u:['hooks','mirror','shelf','frame','window','ugap']},
-  free:     {b:ALL_B, u:ALL_U},
+  kitchen:  {b:['door','drawers','sink','cook','dw','bopen','fridge','pantry','oventall','washer','rdoor','bgap'], u:['udoor','glass','lift','uopen','hood','shelf','window','ugap'], t:['tdoor','tlift','topen','tgap']},
+  laundry:  {b:['door','drawers','sink','washer','wcol','pantry','bopen','rdoor','bgap'], u:['udoor','uopen','shelf','hooks','window','ugap'], t:['tdoor','tlift','topen','tgap']},
+  bedroom:  {b:['wdoor','wmirror','wdrawer','wopen','bookcase','desk','sideboard','rdoor','bgap'], u:['frame','shelf','tv','mirror','window','ugap'], t:['tdoor','tlift','topen','tgap']},
+  dressing: {b:['wdoor','wmirror','wdrawer','wopen','shoe','bench','rdoor','bgap'], u:['shelf','mirror','frame','window','ugap'], t:['tdoor','tlift','topen','tgap']},
+  kids:     {b:['wdoor','wdrawer','wopen','desk','bookcase','bench','rdoor','bgap'], u:['shelf','udoor','uopen','frame','window','ugap'], t:['tdoor','tlift','topen','tgap']},
+  living:   {b:['tvbase','bookcase','vitrine','sideboard','bench','rdoor','bgap'], u:['clad','tv','shelf','uopen','udoor','frame','mirror','window','ugap'], t:['tdoor','tlift','topen','tgap']},
+  dining:   {b:['sideboard','vitrine','bookcase','rdoor','bgap'], u:['mirror','frame','shelf','glass','uopen','window','ugap'], t:['tdoor','tlift','topen','tgap']},
+  office:   {b:['desk','bookcase','wdoor','wopen','sideboard','rdoor','bgap'], u:['shelf','uopen','udoor','glass','frame','window','ugap'], t:['tdoor','tlift','topen','tgap']},
+  bathroom: {b:['vanity','btall','washer','rdoor','bgap'], u:['mcab','mirror','shelf','window','ugap'], t:['tdoor','tlift','topen','tgap']},
+  entry:    {b:['shoe','bench','coat','wdoor','rdoor','bgap'], u:['hooks','mirror','shelf','frame','window','ugap'], t:['tdoor','tlift','topen','tgap']},
+  free:     {b:ALL_B, u:ALL_U, t:ALL_T},
 };
 const COUNTER = Object.keys(UNIT).filter(t => UNIT[t].counter);
 const palFor = (run, lvl, room = cfg.room) => (ROOM_UNITS[room] || ROOM_UNITS.free)[lvl];
-const optsOf = m => { const o = {}; for (const d of UNIT[m.t]?.opts || []) o[d.k] = m.o && m.o[d.k] !== undefined ? m.o[d.k] : d.def; return o; };
+const optVals = (defs, m) => { const o = {}; for (const d of defs || []) o[d.k] = m.o && m.o[d.k] !== undefined ? m.o[d.k] : d.auto ? d.auto(o) : d.def; return o; };
+// what a setter writes back: the options as shown, except a value worked out from the others that was never chosen
+const optKeep = (defs, m) => { const o = optVals(defs, m); for (const d of defs || []) if (d.auto && m.o?.[d.k] === undefined) delete o[d.k]; return o; };
+const optsOf = m => optVals(UNIT[m.t]?.opts, m);
 
 /* ================= freestanding items ================= */
 const ITEM = {
@@ -737,7 +772,7 @@ const isUnitItem = it => !!UNIT[it.t] && !ITEM[it.t];
 const CUST = {cab: {h: [10, 300, 85], d: [10, 100, 45]}, bar: {h: [70, 120, 90], d: [30, 140, 90]}, panel: {h: [2, 300, 80], d: [1, 20, 2]}};
 const CELLS = {door:'باب', doorL:'باب مفصلة يسار', doorR:'باب مفصلة يمين', double:'بابان', drawer:'جارور', flap:'قلاب', glass:'زجاج', open:'مفتوح', panel:'لوح ثابت'};
 const CELL_S = {door:'باب', doorL:'مفصلة يسار', doorR:'مفصلة يمين', double:'بابان', drawer:'جارور', flap:'قلاب', glass:'زجاج', open:'مفتوح', panel:'ثابت'};
-const iopts = it => { const o = {}; for (const d of DEF(it.t)?.opts || []) o[d.k] = it.o && it.o[d.k] !== undefined ? it.o[d.k] : d.def; return o; };
+const iopts = it => optVals(DEF(it.t)?.opts, it);
 const itemH = it => CUST[it.t] ? (it.h ?? CUST[it.t].h[2]) : null;
 const itemDepth = it => it.t === 'rug' ? +iopts(it).d : CUST[it.t] ? (it.t === 'panel' && iopts(it).or === 'h' ? itemH(it) : (it.d ?? CUST[it.t].d[2])) : (DEF(it.t)?.d || 40);
 // grid of a custom cabinet: columns, rows and what fills every cell (row 0 is the top row)
@@ -759,20 +794,22 @@ const footprint = it => { const w = it.w, d = itemDepth(it) + (it.t === 'bed' ? 
 /* ================= geometry of the walls ================= */
 function maxDepth(list){ return Math.max(0, ...(list || []).filter(m => UNIT[m.t] && !UNIT[m.t].gap && !UNIT[m.t].deco).map(m => UNIT[m.t].d)); }
 // usable ranges along each wall, cm, left to right as seen from inside the room. B is filled from the back corner.
+// The four walls of the room always take units. The layout (I, L, U) only says which walls the automatic
+// arrangement fills, where the kitchen corners go and whether the right wall has its own length (U).
+// A: main wall, back. B: left, filled from the front towards the back corner. C: right, from the back corner
+// to the front. D: front wall, from the right corner to the left one, and it gives way at both corners.
+const RUN_IDS = ['A', 'B', 'C', 'D'];
+const layoutWalls = c => c.layout === 'U' ? ['A', 'B', 'C'] : c.layout === 'L' ? ['A', 'B'] : ['A'];
+const roomDepth = c => Math.max(c.wallB, c.layout === 'U' ? c.wallC : 0, c.room === 'kitchen' && c.island && c.wallA >= 280 ? 375 : 0);
+const rightLen = c => c.layout === 'U' ? c.wallC : roomDepth(c);
 function runsOf(c){
-  const A = c.wallA, B = c.wallB, Cw = c.wallC, hasB = c.layout !== 'I', hasC = c.layout === 'U';
-  const names = c.room === 'bedroom' ? {A:'جدار السرير', B:'جدار الخزانة', C:'الجدار الأيمن'} : {A:'الجدار الرئيسي', B:'الجدار الأيسر', C:'الجدار الأيمن'};
-  if (c.room === 'kitchen') {
-    const r = [{id:'A', name:names.A, b:[hasB ? 60 : 0, hasC ? A - 60 : A], u:[0, A]}];
-    if (hasB) r.push({id:'B', name:names.B, b:[0, B - 60], u:[0, B - 35], end:true});
-    if (hasC) r.push({id:'C', name:names.C, b:[60, Cw], u:[35, Cw]});
-    return r;
-  }
-  const U = c.units || {}, rb = maxDepth(U.A?.b), ru = maxDepth(U.A?.u);
-  const r = [{id:'A', name:names.A, b:[0, A], u:[0, A]}];
-  if (hasB) r.push({id:'B', name:names.B, b:[0, B - rb], u:[0, B - ru], end:true});
-  if (hasC) r.push({id:'C', name:names.C, b:[rb, Cw], u:[ru, Cw]});
-  return r;
+  const A = c.wallA, B = c.wallB, Cw = rightLen(c), hasB = c.layout !== 'I', hasC = c.layout === 'U', K = c.room === 'kitchen';
+  const names = c.room === 'bedroom' ? {A:'جدار السرير', B:'جدار الخزانة', C:'الجدار الأيمن', D:'الجدار الأمامي'} : {A:'الجدار الرئيسي', B:'الجدار الأيسر', C:'الجدار الأيمن', D:'الجدار الأمامي'};
+  const U = c.units || {}, side = L => { const d = maxDepth(L); return d && K ? d + 2 : d; };
+  const front = {id:'D', name:names.D, len: A, b:[side(U.C?.b), A - side(U.B?.b)], u:[maxDepth(U.C?.u), A - maxDepth(U.B?.u)]};
+  if (K) return [{id:'A', name:names.A, len: A, b:[hasB ? 60 : 0, hasC ? A - 60 : A], u:[0, A]}, {id:'B', name:names.B, len: B, b:[0, B - 60], u:[0, B - 35], end:true}, {id:'C', name:names.C, len: Cw, b:[60, Cw], u:[35, Cw]}, front];
+  const rb = maxDepth(U.A?.b), ru = maxDepth(U.A?.u);
+  return [{id:'A', name:names.A, len: A, b:[0, A], u:[0, A]}, {id:'B', name:names.B, len: B, b:[0, B - rb], u:[0, B - ru], end:true}, {id:'C', name:names.C, len: Cw, b:[rb, Cw], u:[ru, Cw]}, front];
 }
 function placeList(list, range, talls = [], end = false){
   const go = (L, rg, tl) => { let p = rg[0]; return L.map(m => { let mv = true; while (mv) { mv = false; for (const [a, b] of tl) if (p < b - .5 && p + m.w > a + .5) { p = b; mv = true; } } const s0 = p; p += m.w; return {s0, s1: p, fit: p <= rg[1] + .5}; }); };
@@ -782,10 +819,23 @@ function placeList(list, range, talls = [], end = false){
   return list.map((m, i) => { const q = pos[n - 1 - i]; return {...m, i, s0: M(q.s1), s1: M(q.s0), fit: q.fit}; });
 }
 function layoutRun(c, r){
-  const U = c.units?.[r.id] || {b: [], u: []};
+  const U = c.units?.[r.id] || {b: [], u: [], t: []};
   const pb = placeList(U.b || [], r.b, [], r.end), talls = pb.filter(m => m.fit && UNIT[m.t].tall).map(m => [m.s0, m.s1]);
   const pu = r.u ? placeList(U.u || [], r.u, talls, r.end) : [];
-  return {U, pb, pu, talls};
+  const hoods = pu.filter(m => m.fit && m.t === 'hood').map(m => [m.s0, m.s1]);
+  return {U, pb, pu, talls, hoods, pt: r.u ? topRow(c, r, U.t || [], pb, pu, hoods) : []};
+}
+// The top row sits on whatever is under it: the wall cabinets (2.17 m), a tall column or a window, the highest of
+// them along its width, and goes up to 2 cm under the ceiling, or to the height chosen. It steps round the hoods.
+function topRow(c, r, list, pb, pu, hoods){
+  const Hc = c.height, Ht = Math.min(Hc - 4, 230);
+  return placeList(list, r.u, hoods, r.end).map(m => {
+    if (!m.fit || UNIT[m.t].gap) return m;
+    const o = optsOf(m); let y0 = 217;
+    for (const q of [...pb, ...pu]) { if (!q.fit || UNIT[q.t].gap || q.s1 <= m.s0 + .5 || q.s0 >= m.s1 - .5) continue; y0 = Math.max(y0, unitBox(q, Hc, Ht)[1]); }
+    const y1 = o.fill ? Hc - 2 : Math.min(Hc - 2, y0 + (+o.h));
+    return y1 - y0 < 12 ? {...m, fit: false, ty0: y0, ty1: y0, low: true} : {...m, ty0: y0, ty1: y1};
+  });
 }
 function overlapLen(talls, r){ return talls.reduce((s, [a, b]) => s + Math.max(0, Math.min(b, r[1]) - Math.max(a, r[0])), 0); }
 function mergeRanges(list){ const s = [...list].sort((a, b) => a[0] - b[0]), out = []; for (const [a, b] of s) { const l = out[out.length - 1]; if (l && a <= l[1] + 1e-3) l[1] = Math.max(l[1], b); else out.push([a, b]); } return out; }
@@ -806,12 +856,12 @@ function compose(range, talls, fixed, filler){
   }
   return out;
 }
-const gapFill = lvl => len => [{t: lvl === 'u' ? 'ugap' : 'bgap', w: Math.min(len, 400)}].concat(len > 400 ? [{t: lvl === 'u' ? 'ugap' : 'bgap', w: len - 400}] : []);
+const gapFill = lvl => len => [{t: GAP_T[lvl], w: Math.min(len, 400)}].concat(len > 400 ? [{t: GAP_T[lvl], w: len - 400}] : []);
 function frontCount(t, w, o = {}){ // [doors, drawers]
   const two = w > 64;
   switch (t) {
-    case 'door': case 'sink': case 'udoor': case 'glass': return [two ? 2 : 1, 0];
-    case 'dw': case 'lift': return [1, 0];
+    case 'door': case 'sink': case 'udoor': case 'glass': case 'tdoor': return [two ? 2 : 1, 0];
+    case 'dw': case 'lift': case 'tlift': return [1, 0];
     case 'drawers': return [0, +o.n || 3];
     case 'cook': return [0, 1];
     case 'fridge': return o.s === 'free' ? [0, 0] : [3, 0];
@@ -838,6 +888,7 @@ function frontCount(t, w, o = {}){ // [doors, drawers]
 function autoKitchen(c, u){
   const hasB = c.layout !== 'I', hasC = c.layout === 'U', tallId = c.tall ? (hasC ? 'B' : 'A') : null, cookId = hasB ? 'B' : 'A';
   for (const r of runsOf(c)) {
+    if (!layoutWalls(c).includes(r.id)) continue;
     let [b0, b1] = r.b; const atStart = r.id === 'B';
     if (r.id === tallId) { if (atStart) b0 += 60; else b1 -= 60; }
     const ws = splitCm(b1 - b0, 60, 30), n = ws.length;
@@ -857,7 +908,7 @@ function autoKitchen(c, u){
   }
 }
 function autoUnits(c){
-  const u = {A: {b: [], u: []}, B: {b: [], u: []}, C: {b: [], u: []}};
+  const u = {A: {b: [], u: [], t: []}, B: {b: [], u: [], t: []}, C: {b: [], u: [], t: []}, D: {b: [], u: [], t: []}};
   const A = c.wallA, B = c.wallB, hasB = c.layout !== 'I', hasC = c.layout === 'U';
   const center = (list, total) => { const used = list.reduce((s, m) => s + m.w, 0), g = Math.floor((total - used) / 2); return g >= 5 ? [{t: 'bgap', w: g}, ...list, {t: 'bgap', w: total - used - g}] : list; };
   const wardrobe = (len, mirror) => { const ws = splitCm(len, 50, 30), n = ws.length, mir = mirror ? (n >= 4 ? [Math.floor(n / 2) - 1, Math.floor(n / 2)] : [n - 1]) : []; return ws.map((w, i) => ({t: mir.includes(i) ? 'wmirror' : 'wdoor', w})); };
@@ -972,7 +1023,7 @@ function sanitizeUnits(u){
   const cleanO = (t, o) => { if (!o || typeof o !== 'object') return undefined; const out = {}; for (const d of UNIT[t].opts || []) { const v = o[d.k]; if (v === undefined) continue; if (d.type === 'bool') out[d.k] = !!v; else if (d.type === 'num') { const n = Number(v); if (isFinite(n)) out[d.k] = Math.round(clamp(n, d.min, d.max)); } else if (String(v) in d.vals) out[d.k] = String(v); } return Object.keys(out).length ? out : undefined; };
   const clean = (arr, allowed) => Array.isArray(arr) ? arr.slice(0, 40).map(x => { if (!x || typeof x !== 'object' || !allowed.includes(x.t)) return null; const m = {t: x.t, w: Math.round(clamp(Number(x.w) || UNIT[x.t].w, UNIT[x.t].min, UNIT[x.t].max))}; const o = cleanO(x.t, x.o); if (o) m.o = o; const rc = cleanRC(x.rc); if (rc) m.rc = rc; return m; }).filter(Boolean) : [];
   const out = {};
-  for (const r of ['A', 'B', 'C']) out[r] = {b: clean(u[r]?.b, ALL_B), u: clean(u[r]?.u, ALL_U)};
+  for (const r of RUN_IDS) out[r] = {b: clean(u[r]?.b, ALL_B), u: clean(u[r]?.u, ALL_U), t: clean(u[r]?.t, ALL_T)};
   if (u.W?.b && !out.B.b.length) out.B.b = clean(u.W.b, ALL_B);   // designs saved before the room system
   return out;
 }
@@ -1598,6 +1649,17 @@ function baseModule(parent, c, x0, x1, type, idx, o = {}){
       frontPanel(pv, c, a - hx, b - hx, plinth, ftop, 0); handle(pv, c.handle, (right ? b - .045 : a + .045) - hx, ftop - .12, FT, true, .16); }
   }
 }
+// a cabinet of the top row: carcass, then doors, a flap or open shelves, handles at the bottom edge
+function topModule(parent, c, x0, x1, y0, y1, d, idx, t){
+  const w = x1 - x0, h = y1 - y0, fid = c.upperFront === 'same' ? c.front : c.upperFront;
+  if (t === 'topen') { openBox(parent, c, x0, x1, y0, y1, d + FT, h > .45 ? 1 : 0, fid); return; }
+  box(parent, carcassMat(fid), x0, x1, y0, y1, 0, d);
+  if (t === 'tlift') { const pv = flapPivot(parent, y1, d); cabinetInside(parent, c, x0, x1, y0, y1, d, fid); frontPanel(pv, c, x0, x1, y0 - y1, 0, 0, {fid}); handle(pv, c.handle, (x0 + x1) / 2, y0 + .04 - y1, FT, false, Math.min(.4, w * .5)); return; }
+  const doors = w > .64 ? 2 : 1;
+  for (let i = 0; i < doors; i++) { const a = x0 + (w / doors) * i, b = a + w / doors, right = doors === 2 ? i === 0 : idx % 2 === 0, hx = right ? a : b, pv = doorPivot(parent, hx, 0, d, right ? -1 : 1);
+    cabinetInside(parent, c, a, b, y0, y1, d, fid);
+    frontPanel(pv, c, a - hx, b - hx, y0, y1, 0, {fid}); handle(pv, c.handle, (right ? b - .045 : a + .045) - hx, y0 + Math.min(.08, h * .3), FT, true, Math.min(.12, h * .4)); }
+}
 function upperModule(parent, c, x0, x1, y0, idx, t = 'udoor'){
   const w = x1 - x0, h = .72, d = .35, fid = c.upperFront === 'same' ? c.front : c.upperFront;
   if (t === 'uopen') { const ys = openBox(parent, c, x0, x1, y0, y0 + h, d + FT, 1, fid); shelfDecor(parent, x0, x1, ys, d, 'kitchen'); }
@@ -1627,8 +1689,8 @@ function upperModule(parent, c, x0, x1, y0, idx, t = 'udoor'){
   box(parent, glow('led', '#FFD59A', 3.2), x0 + .02, x1 - .02, y0 - .006, y0 - .002, .05, .07, {cast: false, recv: false});
   ao(parent, w, .16, .32, (x0 + x1) / 2, y0 - .08, .013, 0, 0);
 }
-function tallModule(parent, c, x0, x1, Ht, kind = 'fridge', idx = 0){
-  const plinth = .1, fz = .56, w = x1 - x0, top = Math.min(Ht, 2.06), t2 = Ht - top > .12 ? top : Ht;
+function tallModule(parent, c, x0, x1, Ht, kind = 'fridge', idx = 0, t2 = Ht - Math.min(Ht, 2.06) > .12 ? Math.min(Ht, 2.06) : Ht){
+  const plinth = .1, fz = .56, w = x1 - x0;
   box(parent, carcassMat(c.front), x0, x1, plinth, Ht, 0, fz);
   box(parent, carcassMat(c.front), x0 + .002, x1 - .002, 0, plinth, 0, fz - .06, {cast: false});
   const doors = (y0, y1, hy, len, n = 1) => { for (let i = 0; i < n; i++) { const a = x0 + w / n * i, b = a + w / n; frontPanel(parent, c, a, b, y0, y1, fz); const right = n === 2 ? i === 0 : idx % 2 === 0; handle(parent, c.handle, right ? b - .045 : a + .045, hy, fz + FT, true, len); } };
@@ -1730,8 +1792,14 @@ function shell(c, o){
     // the downlights' light: one soft panel over the whole room, on in the evening only
     // walls the room does not have (front, and right in L and I rooms) exist only from inside, facing in: views from outside see through them
     const gw = (w, h, x, z, ry) => { const pg = new THREE.PlaneGeometry(w, h), uv = pg.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w, uv.getY(i) * h); const m = new THREE.Mesh(pg, wm); m.position.set(x, h / 2, z); m.rotation.y = ry; m.receiveShadow = true; m.userData.skip = true; world.add(m); };
-    gw(o.W + (o.right ? t : 0), o.H, (o.W + (o.right ? t : 0)) / 2, o.D, Math.PI);
-    if (!o.right) gw(o.D, o.H, o.W, o.D / 2, -Math.PI / 2);
+    // a window on one of these walls cuts the same one-sided wall, in the frame of its run
+    const gwh = (len, ox, oz, ry, holes) => { const g = new THREE.Group(); g.position.set(ox, 0, oz); g.rotation.y = ry; world.add(g);
+      const m = new THREE.Mesh(new THREE.ShapeGeometry((() => { const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(len, 0); sh.lineTo(len, o.H); sh.lineTo(0, o.H); sh.lineTo(0, 0); for (const q of holes) { const hp = new THREE.Path(); hp.moveTo(q.x0, q.y0); hp.lineTo(q.x0, q.y1); hp.lineTo(q.x1, q.y1); hp.lineTo(q.x1, q.y0); hp.lineTo(q.x0, q.y0); sh.holes.push(hp); } return sh; })()), wm);
+      m.receiveShadow = true; m.userData.skip = true; g.add(m); for (const q of holes) windowIn(g, q, t); };
+    const fh = o.open?.front || [], rh = o.open?.right || [];
+    if (fh.length) gwh(o.W + (o.right ? t : 0), o.W + (o.right ? t : 0), o.D, Math.PI, fh.map(q => ({...q, x0: q.x0 + (o.right ? t : 0), x1: q.x1 + (o.right ? t : 0)})));
+    else gw(o.W + (o.right ? t : 0), o.H, (o.W + (o.right ? t : 0)) / 2, o.D, Math.PI);
+    if (!o.right) { if (rh.length) gwh(o.D, o.W, 0, -Math.PI / 2, rh); else gw(o.D, o.H, o.W, o.D / 2, -Math.PI / 2); }
     const fill = new THREE.RectAreaLight(0xFFE0BC, 0, o.W * .8, o.D * .8); fill.position.set(o.W / 2, o.H - .01, o.D / 2); fill.rotation.x = -Math.PI / 2; fill.userData = {day: 0, eve: .45}; world.add(fill); dynLights.push(fill); }
   const back = new THREE.Group(); world.add(back);
   const bh = o.back.holes || [];
@@ -1936,8 +2004,8 @@ function laundryColumn(p, c, a, b, H){
   washerBox(p, a + .03, b - .03, .02, .88, d - .04); washerBox(p, a + .03, b - .03, .93, 1.78, d - .04);
   box(p, carcassMat(c.front), a + .02, b - .02, 1.82, Ht, 0, d - FT); frontPanel(p, c, a + .02, b - .02, 1.82, Ht, d - FT); handle(p, c.handle, (a + b) / 2, 1.88, d, false, Math.min(.3, w * .5));
 }
-function freeFridge(p, c, a, b, H){
-  const w = b - a, Ht = Math.min(H - .04, 2.3), sm = std('fridgesteel', {color: col('#C9CDD0'), metalness: .85, roughness: .3});
+function freeFridge(p, c, a, b, H, Ht = Math.min(H - .04, 2.3)){
+  const w = b - a, sm = std('fridgesteel', {color: col('#C9CDD0'), metalness: .85, roughness: .3});
   box(p, sm, a + .02, b - .02, .02, 1.85, .02, .64, {r: .02});
   box(p, std('fridgegap', {color: col('#2A2C2E'), roughness: .6}), a + .025, b - .025, 1.18, 1.19, .6, .645, {cast: false});
   for (const [y0, y1] of [[.25, .95], [1.3, 1.75]]) box(p, M.steel, b - .07, b - .055, y0, y1, .64, .68, {r: .006});
@@ -2266,8 +2334,7 @@ function unitItem(g, c, it, i){
     freeCounters.push({it, i, c, holes}); return;
   }
   switch (it.t) {
-    case 'fridge': if (o.s === 'free') freeFridge(p, c, a, b, H); else tallModule(p, c, a, b, Ht, 'fridge', i); break;
-    case 'pantry': case 'oventall': tallModule(p, c, a, b, Ht, it.t, i); break;
+    case 'fridge': case 'pantry': case 'oventall': { const td = tallOf(it); if (o.s === 'free') freeFridge(p, c, a, b, H, td.Ht / 100); else tallModule(p, c, a, b, td.Ht / 100, it.t, i, td.t2 / 100); break; }
     case 'wcol': laundryColumn(p, c, a, b, H); break;
     case 'wdoor': case 'wmirror': case 'wdrawer': case 'wopen': box(p, carcassMat(c.front), a + .002, b - .002, 0, .08, 0, .53, {cast: false}); wardrobeSection(p, c, a, b, .08, H, .58, it.t, i); break;
     case 'bookcase': bookcaseUnit(p, c, a, b, it, H); break;
@@ -2309,7 +2376,7 @@ function mergeFreeTops(c){
       const holes = sg.items.flatMap(m => m.holes.map(([h0, h1, d0, d1]) => [h0 + m.s0 - sg.s0, h1 + m.s0 - sg.s0, d0, d1]));
       worktop(g, gr.c, 0, len, holes); freeSt.top += len * .62; freeSt.wt.push([Math.round(len * 1000), 620]);
       // backsplash when the counter stands against a wall
-      const r = Math.round(((-gr.th * 180 / Math.PI) % 360 + 360) % 360), onWall = gr.y < .02 && ((r === 0 && Math.abs(gr.back) < .03) || (r === 270 && Math.abs(gr.back) < .03) || (r === 90 && hasC && Math.abs(gr.back + A) < .03));
+      const r = Math.round(((-gr.th * 180 / Math.PI) % 360 + 360) % 360), onWall = gr.y < .02 && ((r === 0 && Math.abs(gr.back) < .03) || (r === 270 && Math.abs(gr.back) < .03) || (r === 90 && Math.abs(gr.back + A) < .03) || (r === 180 && Math.abs(gr.back + roomDepth(c) / 100) < .03));
       if (sp && onWall) box(g, sp, 0, len, .9, 1.45, 0, spT, {tile: 1, cast: false});
     }
   }
@@ -2355,15 +2422,12 @@ function wardrobeSection(p, c, a, b, plinth, Hw, fz, t, idx){
 function buildRoom(c){
   const K = c.room === 'kitchen', A = c.wallA / 100, B = c.wallB / 100, Cw = c.wallC / 100, H = c.height / 100, L = c.layout;
   const hasB = L !== 'I', hasC = L === 'U';
-  let D = Math.max(B, hasC ? Cw : 0);
+  const D = roomDepth(c) / 100, Cl = rightLen(c) / 100;
   const islandOK = K && c.island && A >= 2.8;
-  if (islandOK) D = Math.max(D, 3.75);
   const Ht = Math.min(H - .04, 2.3);
-  runGroups = {A: run(0, 0, 0)};
-  if (hasB) runGroups.B = run(0, B, Math.PI / 2);
-  if (hasC) runGroups.C = run(A, 0, -Math.PI / 2);
+  runGroups = {A: run(0, 0, 0), B: run(0, B, Math.PI / 2), C: run(A, 0, -Math.PI / 2), D: run(A, D, Math.PI)};
   const st = {top: 0, wt: [], island: 0};
-  const wins = {A: [], B: [], C: []};
+  const wins = {A: [], B: [], C: [], D: []};
   const sp = c.splash !== 'paint' ? splashMat(c.splash, c.worktop) : null, spT = c.splash === 'top' ? .02 : .012;
   for (const r of runsOf(c)) {
     const g = runGroups[r.id], {pb, pu} = layoutRun(c, r);
@@ -2386,8 +2450,7 @@ function buildRoom(c){
         continue;
       }
       switch (m.t) {
-        case 'fridge': if (o.s === 'free') freeFridge(mg, c, a, b, H); else tallModule(mg, c, a, b, Ht, 'fridge', m.i); aoFloor(g, a, b, .5); break;
-        case 'pantry': case 'oventall': tallModule(mg, c, a, b, Ht, m.t, m.i); aoFloor(g, a, b, .5); break;
+        case 'fridge': case 'pantry': case 'oventall': { const td = tallOf(m, c.height); if (m.t === 'fridge' && o.s === 'free') freeFridge(mg, c, a, b, H, td.Ht / 100); else tallModule(mg, c, a, b, td.Ht / 100, m.t, m.i, td.t2 / 100); aoFloor(g, a, b, .5); break; }
         case 'wcol': laundryColumn(mg, c, a, b, H); aoFloor(g, a, b, .52); break;
         case 'wdoor': case 'wmirror': case 'wdrawer': case 'wopen': box(mg, carcassMat(c.front), a + .002, b - .002, 0, .08, 0, .53, {cast: false}); wardrobeSection(mg, c, a, b, .08, H, .58, m.t, m.i); aoFloor(g, a, b, .52); break;
         case 'bookcase': bookcaseUnit(mg, c, a, b, m, H); aoFloor(g, a, b, .3); break;
@@ -2408,7 +2471,7 @@ function buildRoom(c){
       if (pb.some(m => m.fit) && rest > 0 && rest <= 10) {
         const a = (r.end ? r.b[0] : lastEnd) / 100, b = (r.end ? lastEnd : r.b[1]) / 100;
         box(g, carcassMat(c.front), a, b, 0, .1, 0, .5, {cast: false});
-        if (lastTall) box(g, frontMat(c.front, c.finish), a, b, .1, Ht, .02, .575, {tile: 1.1});
+        if (lastTall) box(g, frontMat(c.front, c.finish), a, b, .1, ['fridge', 'pantry', 'oventall'].includes(edge.t) ? tallOf(edge, c.height).Ht / 100 : Ht, .02, .575, {tile: 1.1});
         else { box(g, frontMat(c.front, c.finish), a, b, .1, .86, .02, .575, {tile: 1.1}); counters.push([a, b]); }
       }
     }
@@ -2449,6 +2512,10 @@ function buildRoom(c){
         case 'hooks': hooksUnit(mg, c, a, b); break;
       }
     }
+    for (const m of layoutRun(c, r).pt) {
+      if (!m.fit || UNIT[m.t].gap) continue;
+      topModule(modGroup(g, r.id, 't', m.i), c, m.s0 / 100, m.s1 / 100, m.ty0 / 100, m.ty1 / 100, unitDepth(m) / 100, m.i, m.t);
+    }
     for (const [a, b] of mergeRanges(leds)) if (b - a > .3) { const l = new THREE.RectAreaLight(0xFFD6A0, 0, b - a - .05, .06); l.position.set((a + b) / 2, 1.44, .12); l.rotation.x = -Math.PI / 2; l.userData = {day: 0, eve: 9}; g.add(l); dynLights.push(l); }
     if (K && r.id === 'A') {
       const cand = pb.filter(m => m.fit && (m.t === 'door' || m.t === 'drawers'));
@@ -2483,9 +2550,9 @@ function buildRoom(c){
   // ceiling light for rooms without their own lamps, so evening is never pitch dark
   if (!K) { const pl = new THREE.PointLight(0xFFE2BC, 0, 9, 2); pl.position.set(A / 2, H - .3, D / 2); pl.userData = {day: 0, eve: 3.5}; world.add(pl); dynLights.push(pl); }
   const holesOf = (list, len) => mergeRanges(list.map(w => [w.a, w.b])).map(([a, b]) => { const w = list.find(x => x.a >= a - 1e-3 && x.b <= b + 1e-3) || list[0]; return {x0: Math.max(.05, a + .05), x1: Math.min(len - .05, b - .05), y0: w.y0, y1: w.y1}; }).filter(h => h.x1 - h.x0 > .2);
-  const backHoles = holesOf(wins.A, A), leftHoles = hasB ? holesOf(wins.B, B).map(h => ({...h, x0: B - h.x1, x1: B - h.x0})).filter(h => h.x0 > .04 && h.x1 < D - .04) : [];
-  const rightHoles = hasC ? holesOf(wins.C, Cw).filter(h => h.x1 < Cw - .04) : [];
-  shell(c, {W: A, D, H, back: {holes: backHoles}, left: {len: D, holes: leftHoles}, right: hasC ? {len: Cw, holes: rightHoles} : null});
+  const backHoles = holesOf(wins.A, A), leftHoles = holesOf(wins.B, B).map(h => ({...h, x0: B - h.x1, x1: B - h.x0})).filter(h => h.x0 > .04 && h.x1 < D - .04);
+  const rightHoles = holesOf(wins.C, Cl).filter(h => h.x1 < Cl - .04), frontHoles = holesOf(wins.D, A);
+  shell(c, {W: A, D, H, back: {holes: backHoles}, left: {len: D, holes: leftHoles}, right: hasC ? {len: Cw, holes: rightHoles} : null, open: {right: hasC ? [] : rightHoles, front: frontHoles}});
   if (backHoles.length) { const wx = (backHoles[0].x0 + backHoles[0].x1) / 2; sun.position.set(wx + 1.2, H + 2.8, -3.2); sun.target.position.set(wx - .2, .4, 1.6); }
   else if (leftHoles.length) { const wz = (leftHoles[0].x0 + leftHoles[0].x1) / 2; sun.position.set(-3.6, H + 2.5, wz + .6); sun.target.position.set(1.6, 0, wz); }
   else { sun.position.set(A / 2 + 1.2, H + 2.8, -3.2); sun.target.position.set(A / 2 - .2, .4, 1.6); }
@@ -2602,6 +2669,9 @@ function resize(){
 }
 new ResizeObserver(() => { const fresh = W === 1; resize(); if (fresh) setCam(camMode, true); }).observe(stageEl);
 controls.addEventListener('change', () => { dirty = true; });
+// the piece's toolbar steps aside while the view turns, so it never sits over what you are looking at
+controls.addEventListener('start', () => $('#qbar')?.classList.add('away'));
+controls.addEventListener('end', () => $('#qbar')?.classList.remove('away'));
 let openT = 0, openV = 0, tourOn = false, tourT = 0, tour0 = null;
 const ease = v => v < .5 ? 2 * v * v : 1 - Math.pow(-2 * v + 2, 2) / 2;
 function applyAnims(){
@@ -2670,10 +2740,10 @@ function selBounds(){
   if (!sel || sel.item !== undefined) return null;
   const c = cfg, r = runsOf(c).find(x => x.id === sel.run);
   if (!r || !c.units?.[sel.run]?.[sel.lvl]?.[sel.i]) return null;
-  const {pb, pu} = layoutRun(c, r), m = (sel.lvl === 'b' ? pb : pu)[sel.i];
+  const L0 = layoutRun(c, r), m = atLvl(L0, sel.lvl)[sel.i];
   if (!m || !m.fit || !runGroups[sel.run]) return null;
   const H = c.height / 100, Hc = c.height, Ht = Math.min(Hc - 4, 230), [b0, b1] = unitBox(m, Hc, Ht);
-  return {g: runGroups[sel.run], a: m.s0 / 100, b: m.s1 / 100, y0: b0 / 100, y1: Math.min(b1 / 100, H), z1: Math.max(.04, (UNIT[m.t].d || 4) / 100 + .02), w: m.w};
+  return {g: runGroups[sel.run], a: m.s0 / 100, b: m.s1 / 100, y0: b0 / 100, y1: Math.min(b1 / 100, H), z1: Math.max(.04, unitDepth(m) / 100 + .02), w: m.w};
 }
 function itemGroup(i){ let g = null; world.traverse(o => { if (o.userData.item === i && !g) g = o; }); return g; }
 function drawSel(){
@@ -2702,7 +2772,7 @@ function unitsCtx(){
 }
 function ctxFor(id){ const c = cfg, runs = runsOf(c), r = runs.find(x => x.id === id) || runs[0], L = layoutRun(c, r); return {c, runs, r, ...L}; }
 const sumW = L => (L || []).reduce((s, m) => s + m.w, 0);
-function availOf(r, talls, lvl){ return lvl === 'b' ? r.b[1] - r.b[0] : (r.u[1] - r.u[0]) - overlapLen(talls, r.u); }
+function availOf(r, talls, lvl, hoods = []){ return lvl === 'b' ? r.b[1] - r.b[0] : lvl === 't' ? (r.u[1] - r.u[0]) - overlapLen(hoods, r.u) : (r.u[1] - r.u[0]) - overlapLen(talls, r.u); }
 function capLine(label, avail, used, kind){
   const d = avail - used;
   if (d < 0) return `<p class="ucap bad">${label}: الوحدات تزيد <b>${-d}</b> سم عن المتاح (<b>${avail}</b> سم). صغّر وحدة أو احذفها.</p>`;
@@ -2716,7 +2786,8 @@ function unitBox(m, Hc, Ht){
     case 'wdoor': case 'wmirror': case 'wdrawer': case 'wopen': case 'bookcase': return [0, Hc];
     case 'vitrine': case 'coat': return [0, Math.min(Hc - 4, 220)];
     case 'btall': return [22, Math.min(Hc - 25, 190)];
-    case 'wcol': case 'fridge': case 'pantry': case 'oventall': return [0, Ht];
+    case 'fridge': case 'pantry': case 'oventall': return [0, tallOf(m, Hc).Ht];
+    case 'wcol': return [0, Ht];
     case 'tvbase': return o.f ? [24, 69] : [0, 55];
     case 'sideboard': return [0, 83];
     case 'vanity': return o.f ? [30, 86] : [0, 86];
@@ -2735,19 +2806,21 @@ function unitBox(m, Hc, Ht){
     case 'frame': return [+o.y - (+o.h) / 2, +o.y + (+o.h) / 2];
     case 'hooks': return [166, 176];
     case 'udoor': case 'glass': case 'lift': case 'uopen': case 'ugap': return [145, 217];
+    case 'tdoor': case 'tlift': case 'topen': case 'tgap': return [m.ty0 ?? 217, m.ty1 ?? Hc - 2];
     default: return [0, 90];
   }
 }
 // front elevation of one unit, in cm, y up through Y()
 function unitShape(m, x0, x1, Y, Hc, Ht){
-  const t = m.t, o = optsOf(m), w = x1 - x0, cx = (x0 + x1) / 2, out = [];
+  const t = m.t, o = optsOf(m), w = x1 - x0, cx = (x0 + x1) / 2, out = [], TD = ['fridge', 'pantry', 'oventall'].includes(t) ? tallOf(m, Hc) : null;
+  if (TD) Ht = TD.Ht;
   const rect = (a, y0, b, y1, cls) => out.push(`<rect x="${a}" y="${Y(y1)}" width="${Math.max(0, b - a)}" height="${Math.max(0, y1 - y0)}" class="${cls}"/>`);
   const hl = (a, b, y, cls = 'ln') => out.push(`<line x1="${a}" x2="${b}" y1="${Y(y)}" y2="${Y(y)}" class="${cls}"/>`);
   const vl = (x, y0, y1, cls = 'ln') => out.push(`<line x1="${x}" x2="${x}" y1="${Y(y0)}" y2="${Y(y1)}" class="${cls}"/>`);
   const hv = (x, y, len) => vl(x, y - len / 2, y + len / 2, 'hd');
   const hh = (x, y, len) => hl(x - len / 2, x + len / 2, y, 'hd');
   const leaf = (y0, y1, hy, n, len, xa = x0, xb = x1) => { const ww = xb - xa; rect(xa, y0, xb, y1, 'f'); for (let i = 1; i < n; i++) vl(xa + ww * i / n, y0, y1); for (let i = 0; i < n; i++) { const a = xa + ww * i / n, b = a + ww / n; hv(n === 2 ? (i ? a + 4 : b - 4) : b - 4, hy, len); } };
-  const hd = Math.min(24, w * .45), tt = Math.min(206, Ht - 14), segs = k => Math.max(1, Math.round(w / k));
+  const hd = Math.min(24, w * .45), tt = TD ? TD.t2 : Math.min(206, Ht - 14), segs = k => Math.max(1, Math.round(w / k));
   if (COUNTER.includes(t) && t !== 'washer') rect(x0, 0, x1, 10, 'pl');
   switch (t) {
     case 'door': leaf(10, 86, 74, w > 64 ? 2 : 1, 10); break;
@@ -2757,8 +2830,8 @@ function unitShape(m, x0, x1, Y, Hc, Ht){
     case 'cook': rect(x0, 10, x1, 21, 'f'); hh(cx, 17, hd); rect(x0, 21, x1, 86, 'dk'); rect(x0 + 6, 30, x1 - 6, 70, 'win'); rect(cx - Math.min(28, w / 2 - 2), 90, cx + Math.min(28, w / 2 - 2), 92, 'dk'); break;
     case 'bopen': { rect(x0, 10, x1, 86, 'op'); const n = +o.n; for (let k = 1; k <= n; k++) hl(x0, x1, 10 + 76 * k / (n + 1)); break; }
     case 'washer': rect(x0 + 1, 2, x1 - 1, 84, 'f'); out.push(`<circle cx="${cx}" cy="${Y(40)}" r="${Math.min(18, w * .3)}" class="gl"/>`); hl(x0 + 3, x1 - 3, 76); break;
-    case 'fridge': rect(x0, 0, x1, 10, 'pl'); if (o.s === 'free') { rect(x0 + 2, 2, x1 - 2, 185, 'st'); hl(x0 + 2, x1 - 2, 119); vl(x1 - 7, 25, 95, 'hd'); vl(x1 - 7, 130, 175, 'hd'); if (Ht - 190 > 25) leaf(190, Ht, 196, 1, 8); } else { rect(x0, 10, x1, Ht, 'f'); hl(x0, x1, 86); hl(x0, x1, tt); hv(x0 + 4, 72, 12); hv(x0 + 4, 120, 30); hv(x0 + 4, tt + 8, 6); } break;
-    case 'pantry': { rect(x0, 0, x1, 10, 'pl'); leaf(10, Ht, 100, w > 64 ? 2 : 1, 30); hl(x0, x1, tt); break; }
+    case 'fridge': rect(x0, 0, x1, 10, 'pl'); if (o.s === 'free') { rect(x0 + 2, 2, x1 - 2, 185, 'st'); hl(x0 + 2, x1 - 2, 119); vl(x1 - 7, 25, 95, 'hd'); vl(x1 - 7, 130, 175, 'hd'); if (Ht - 190 > 25) leaf(190, Ht, 196, 1, 8); } else { rect(x0, 10, x1, Ht, 'f'); hl(x0, x1, 86); if (tt < Ht) { hl(x0, x1, tt); hv(x0 + 4, tt + 8, 6); } hv(x0 + 4, 72, 12); hv(x0 + 4, 120, 30); } break;
+    case 'pantry': { rect(x0, 0, x1, 10, 'pl'); leaf(10, Ht, 100, w > 64 ? 2 : 1, 30); if (tt < Ht) hl(x0, x1, tt); break; }
     case 'oventall': rect(x0, 0, x1, 10, 'pl'); rect(x0, 10, x1, 56, 'f'); hl(x0, x1, 33); hh(cx, 28, hd); hh(cx, 51, hd); rect(x0, 56, x1, 116, 'dk'); rect(x0 + 6, 62, x1 - 6, 100, 'win'); rect(x0, 116, x1, 152, 'dk'); rect(x0 + 4, 120, x0 + w * .66, 148, 'win'); rect(x0, 152, x1, Ht, 'f'); hv(x0 + 4, 164, 10); break;
     case 'wcol': rect(x0, 0, x1, Ht, 'op'); for (const yc of [45, 135]) { rect(x0 + 3, yc - 42, x1 - 3, yc + 42, 'f'); out.push(`<circle cx="${cx}" cy="${Y(yc)}" r="${Math.min(17, w * .27)}" class="gl"/>`); } leaf(182, Ht, 188, 1, 8); break;
     case 'wdoor': case 'wmirror': case 'wdrawer': {
@@ -2789,6 +2862,10 @@ function unitShape(m, x0, x1, Y, Hc, Ht){
     case 'hood': if (o.s === 'box') { rect(x0 + 2, 150, x1 - 2, 175, 'st'); rect(cx - 14, 175, cx + 14, Hc, 'st'); } else { out.push(`<path d="M${x0 + 1} ${Y(158)}H${x1 - 1}L${x1 - 3} ${Y(164)}H${x0 + 3}Z" class="f"/>`); rect(cx - 14, 164, cx + 14, Hc, 'f'); } break;
     case 'window': { const y0 = +o.y, y1 = Math.min(cfg.room === 'kitchen' ? 220 : 230, Hc - 25); rect(x0 + 5, y0, x1 - 5, y1, 'gl'); vl(cx, y0, y1); rect(x0 + 1, y0 - 3, x1 - 1, y0, 'f'); if (o.c) { rect(x0 - 8, 4, x0 + 6, Hc - 10, 'cu'); rect(x1 - 6, 4, x1 + 8, Hc - 10, 'cu'); } break; }
     case 'ugap': rect(x0, 145, x1, 217, 'gap'); break;
+    case 'tdoor': case 'tlift': case 'topen': case 'tgap': { const y0 = m.ty0 ?? 217, y1 = m.ty1 ?? Hc - 2;
+      if (t === 'tgap') rect(x0, y0, x1, y1, 'gap'); else if (t === 'topen') { rect(x0, y0, x1, y1, 'op'); if (y1 - y0 > 45) hl(x0, x1, (y0 + y1) / 2); }
+      else if (t === 'tlift') { rect(x0, y0, x1, y1, 'f'); hh(cx, y0 + 5, Math.min(30, w * .5)); } else leaf(y0, y1, y0 + 6, w > 64 ? 2 : 1, Math.min(8, (y1 - y0) * .4));
+      break; }
     case 'shelf': { for (let i = 0; i < +o.n; i++) { const y = +o.y + i * 38; rect(x0, y, x1, y + 4, 'acc'); for (let k = 0; k < Math.floor((w - 10) / 9); k += 2) rect(x0 + 6 + k * 4.5, y + 4, x0 + 9 + k * 4.5, y + 20 + (k % 3) * 3, 'bk'); if (o.led) hl(x0 + 2, x1 - 2, y - 1.5, 'led'); } break; }
     case 'mcab': { const n = w > 64 ? 2 : 1; rect(x0, 112, x1, 182, 'f'); for (let i = 0; i < n; i++) { const a = x0 + w * i / n, b = a + w / n; rect(a + 2, 114, b - 2, 180, 'mir'); } if (o.led) hl(x0 + 3, x1 - 3, 110.5, 'led'); break; }
     case 'mirror': rect(x0, +o.y, x1, +o.y + (+o.h), 'dk'); rect(x0 + 1.5, +o.y + 1.5, x1 - 1.5, +o.y + (+o.h) - 1.5, 'mir'); break;
@@ -2841,6 +2918,7 @@ function wallFree(c, rid){
     if (rid === 'A' && r === 0 && Math.abs(it.z - d / 2) <= 8) s = it.x;
     else if (rid === 'B' && r === 270 && Math.abs(it.x - d / 2) <= 8) s = c.wallB - it.z;
     else if (rid === 'C' && r === 90 && Math.abs(A - it.x - d / 2) <= 8) s = it.z;
+    else if (rid === 'D' && r === 180 && Math.abs(Math.round(frame.D * 100) - it.z - d / 2) <= 8) s = A - it.x;
     else return;
     out.push({i, it, s0: s - it.w / 2, s1: s + it.w / 2, off: (it.y || 0) + (it.sy || 0), y0: b ? b.y0 : 0, y1: b ? b.y1 : 90});
   });
@@ -2848,7 +2926,7 @@ function wallFree(c, rid){
 }
 function elevation(ctx, opts = {}){
   const {c, r, pb, pu} = ctx, kitchen = c.room === 'kitchen', Hc = c.height, Ht = Math.min(Hc - 4, 230);
-  const wallLen = {A: c.wallA, B: c.wallB, C: c.wallC}[r.id], frees = wallFree(c, r.id);
+  const wallLen = r.len, frees = wallFree(c, r.id);
   const xStart = Math.min(0, ...pb.map(m => m.s0), ...pu.map(m => m.s0), ...frees.map(f => f.s0)), xEnd = Math.max(wallLen, ...pb.map(m => m.s1), ...pu.map(m => m.s1), ...frees.map(f => f.s1));
   const pad = 12, vbw = xEnd - xStart + pad * 2, fs = vbw * .031, Y = y => Hc - y, o = [];
   o.push(`<defs><pattern id="hz" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" class="hl"/></pattern></defs>`);
@@ -2868,13 +2946,13 @@ function elevation(ctx, opts = {}){
   for (const [a, b] of mergeRanges(counters)) o.push(`<rect x="${a}" y="${Y(90)}" width="${b - a}" height="4" class="wt"/>`);
   const isOn = (m, l) => !opts.print && !!sel && sel.item === undefined && sel.run === r.id && sel.lvl === l && sel.i === m.i;
   const codes = {};
-  if (opts.codes) { let bi = 0, ui = 0; for (const m of pb) if (m.fit && !UNIT[m.t].gap && !UNIT[m.t].deco) codes['b' + m.i] = r.id + (++bi); for (const m of pu) if (m.fit && UNIT[m.t].cat) codes['u' + m.i] = r.id + '^' + (++ui);
+  if (opts.codes) { let bi = 0, ui = 0; for (const m of pb) if (m.fit && !UNIT[m.t].gap && !UNIT[m.t].deco) codes['b' + m.i] = r.id + (++bi); for (const m of pu) if (m.fit && UNIT[m.t].cat) codes['u' + m.i] = r.id + '^' + (++ui); let ti = 0; for (const m of ctx.pt || []) if (m.fit && UNIT[m.t].cat) codes['t' + m.i] = r.id + 'T' + (++ti);
     if (kitchen && r.id === 'A') { let k = 0; if (hasB) o.push(`<text x="30" y="${Y(48)}" class="cd" font-size="${fs}">AZ${++k}</text>`); if (hasC) o.push(`<text x="${c.wallA - 30}" y="${Y(48)}" class="cd" font-size="${fs}">AZ${++k}</text>`); } }
   const rank = ([m, l]) => isOn(m, l) ? 9 : (m.t === 'clad' || m.t === 'window') ? 0 : l === 'b' ? 1 : 2;
-  const items = [...pb.map(m => [m, 'b']), ...pu.map(m => [m, 'u'])].sort((p, q) => rank(p) - rank(q));
+  const items = [...pb.map(m => [m, 'b']), ...pu.map(m => [m, 'u']), ...(ctx.pt || []).map(m => [m, 't'])].sort((p, q) => rank(p) - rank(q));
   for (const [m, l] of items) {
     const x0 = m.s0, [b0, b1] = unitBox(m, Hc, Ht), on = isOn(m, l), f = Math.min(fs, m.w * .5);
-    const ly = l === 'u' ? (m.t === 'window' || m.t === 'clad' ? Y(b1) + f + 3 : Y(b0) + f + 2) : Hc + f + 3;
+    const ly = l !== 'b' ? (m.t === 'window' || m.t === 'clad' ? Y(b1) + f + 3 : Y(b0) + f + 2) : Hc + f + 3;
     o.push(`<g class="u${on ? ' on' : ''}${m.fit ? '' : ' over'}" data-pick="${l}:${m.i}">${unitShape(m, x0, x0 + m.w, Y, Hc, Ht)}${on ? `<rect x="${x0 - 1.5}" y="${Y(b1) - 1.5}" width="${m.w + 3}" height="${b1 - b0 + 3}" class="selr"/>` : ''}<rect x="${x0}" y="${Y(b1)}" width="${m.w}" height="${b1 - b0}" class="hit"/><text x="${x0 + m.w / 2}" y="${ly}" class="lb" font-size="${f}">${m.w}</text>${codes[l + m.i] ? `<text x="${x0 + m.w / 2}" y="${Y(Math.min(b1, Hc - 2)) + Math.min(fs, m.w * .38) + 2}" class="cd" font-size="${Math.min(fs, m.w * .38)}">${codes[l + m.i]}</text>` : ''}</g>`);
   }
   for (const f of frees) {
@@ -2888,7 +2966,7 @@ function elevation(ctx, opts = {}){
 const arrowL = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>';
 const arrowR = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>';
 function optControls(defs, vals, attr){
-  return (defs || []).map(d => {
+  return (defs || []).filter(d => !d.if || d.if(vals)).map(d => {
     const v = vals[d.k];
     if (d.type === 'bool') return `<div class="sw-row"><label for="${attr}-${d.k}">${d.n}</label><span class="toggle"><input type="checkbox" id="${attr}-${d.k}" data-${attr}="${d.k}" ${v ? 'checked' : ''}><i></i></span></div>`;
     if (d.type === 'num') return `<div class="sw-row"><label for="${attr}-${d.k}">${d.n}</label><span class="num"><input id="${attr}-${d.k}" data-${attr}="${d.k}" type="number" min="${d.min}" max="${d.max}" step="${d.step}" value="${v}"><span>سم</span></span></div>`;
@@ -2897,24 +2975,24 @@ function optControls(defs, vals, attr){
 }
 function renderUnits(){
   const pane = $('#pane-units'); if (!pane || !cfg.units) return;
-  const ctx = unitsCtx(), {c, runs, r, U, talls} = ctx;
-  const order = ['C', 'A', 'B'].filter(id => runs.some(x => x.id === id));
+  const ctx = unitsCtx(), {c, runs, r, U, talls, hoods} = ctx;
+  const order = ['C', 'A', 'B', 'D'].filter(id => runs.some(x => x.id === id));
   const isUnit = sel && sel.item === undefined, sm = isUnit && sel.run === r.id ? (U[sel.lvl] || [])[sel.i] : null;
   let h = '';
   if (order.length > 1) h += `<div class="grp"><h3>الجدار</h3><div class="choice" data-uv="run">${order.map(id => `<button type="button" data-v="${id}" aria-pressed="${view.run === id}">${runs.find(x => x.id === id).name}</button>`).join('')}</div></div>`;
   h += `<div class="grp"><h3>واجهة ${r.name} <small>اضغط على وحدة لتعديلها</small></h3><div class="elev">${elevation(ctx)}</div>
-    ${capLine('على الأرض', availOf(r, talls, 'b'), sumW(U.b), c.room === 'kitchen' ? 'base' : 'other')}${capLine('على الجدار', availOf(r, talls, 'u'), sumW(U.u), 'upper')}
+    ${capLine('على الأرض', availOf(r, talls, 'b'), sumW(U.b), c.room === 'kitchen' ? 'base' : 'other')}${capLine('على الجدار', availOf(r, talls, 'u'), sumW(U.u), 'upper')}${(U.t || []).length ? capLine('فوق العلوية', availOf(r, talls, 't', hoods), sumW(U.t), 'upper') : ''}${ctx.pt.some(m => m.low) ? '<p class="ucap bad">وحدة فوق العلوية لا تجد مكاناً تحت السقف، فوقها عمود أو خزانة تصل إلى السقف.</p>' : ''}
     <div class="ued-row">${c.auto ? '<p class="hint grow">التوزيع تلقائي حسب المقاسات، وأي تعديل هنا يجعله يدوياً.</p>' : '<p class="hint grow">التوزيع يدوي.</p><button type="button" class="btn sm" data-act="auto">توزيع تلقائي</button>'}</div></div>`;
   if (sm) {
     const T = UNIT[sm.t], L = U[sel.lvl];
     h += `<div class="ued" id="unitEditor"><div class="ued-h"><b>${T.n}</b><span>${sm.w} سم</span></div>
       <div class="ued-row"><span>العرض</span><span class="stepper"><button type="button" data-u="w-5" aria-label="أنقص 5 سم">−</button><input id="uw" type="number" min="${T.min}" max="${T.max}" value="${sm.w}" inputmode="numeric" aria-label="العرض بالسنتيمتر"><button type="button" data-u="w+5" aria-label="زد 5 سم">+</button></span><span class="hint">من ${T.min} إلى ${T.max} سم</span></div>
-      ${T.opts ? `<div class="opts">${optControls(T.opts, optsOf(sm), 'uo')}</div>` : ''}
+      ${T.opts ? `<div class="opts">${optControls(T.opts, optsOf(sm), 'uo')}</div>` : ''}${tallNote(sm)}
       ${UNIT[sm.t]?.gap || UNIT[sm.t]?.deco ? '' : cornersUI(sm.rc)}
       <div class="ued-row"><button type="button" class="btn sm" data-u="right" ${sel.i >= L.length - 1 ? 'disabled' : ''}>${arrowR} لليمين</button><button type="button" class="btn sm" data-u="left" ${sel.i === 0 ? 'disabled' : ''}>لليسار ${arrowL}</button><button type="button" class="btn sm" data-u="dup">تكرار</button>${FREE_UNITS.includes(sm.t) ? '<button type="button" class="btn sm" data-u="free">تحريك حر</button>' : ''}<button type="button" class="btn sm danger" data-u="del">حذف</button></div>
       <div class="grp"><h3>تغيير النوع</h3><div class="ugrid sm">${palFor(r.id, sel.lvl).map(t => `<button type="button" data-type="${t}" aria-pressed="${t === sm.t}">${unitIcon(t)}<span>${UNIT[t].s}</span></button>`).join('')}</div></div></div>`;
   }
-  const lvlSw = `<div class="choice" data-uv="lvl"><button type="button" data-v="b" aria-pressed="${view.lvl === 'b'}">على الأرض</button><button type="button" data-v="u" aria-pressed="${view.lvl === 'u'}">على الجدار</button></div>`;
+  const lvlSw = `<div class="choice" data-uv="lvl"><button type="button" data-v="b" aria-pressed="${view.lvl === 'b'}">على الأرض</button><button type="button" data-v="u" aria-pressed="${view.lvl === 'u'}">على الجدار</button>${palFor(r.id, 't').length ? `<button type="button" data-v="t" aria-pressed="${view.lvl === 't'}">فوق العلوية</button>` : ''}</div>`;
   const after = isUnit && sel.run === r.id && sel.lvl === view.lvl;
   h += `<div class="grp"><h3>إضافة وحدة إلى ${r.name} <small>${after ? 'بعد الوحدة المحددة' : 'في آخر الجدار'}</small></h3>${lvlSw}<div class="ugrid">${palFor(r.id, view.lvl).map(t => `<button type="button" data-add="${t}">${unitIcon(t)}<span>${UNIT[t].n}</span></button>`).join('')}</div></div>`;
   h += `<div class="grp"><p class="hint">لتحريك وحدة بحرية: اضغطها ثم اسحبها في المشهد، أو اضغط «تحريك حر». وكل القطع المستقلة والخزائن المخصصة في تبويب «تصميم حر».</p></div>`;
@@ -2983,7 +3061,7 @@ function checkIssues(){
   (c.items || []).forEach((it, i) => {
     const b = itemBoxes[i]; if (!b || it.t === 'rug') return;
     const name = `${DEF(it.t).n} P${i + 1}`;
-    if (b.x0 < (hasB ? -2 : -60) || (hasC && b.x1 > A + 2) || b.z0 < -2) out.push({i, msg: I18N.f('issueWall', {n: name})});
+    if (b.x0 < -2 || b.x1 > A + 2 || b.z0 < -2 || b.z1 > D + 2) out.push({i, msg: I18N.f('issueWall', {n: name})});
     if (b.y1 > H + 1) out.push({i, msg: I18N.f('issueCeil', {n: name, v: Math.round(b.y1 - H)})});
     if (b.y0 > 3 && it.t !== 'panel' && !(isUnitItem(it) && unitBox(it, H, Math.min(H - 4, 230))[0] > 3) && !(it.t === 'cab' && iopts(it).base === 'hang') && !it.sy) out.push({i, msg: I18N.f('issueFloat', {n: name, v: Math.round(b.y0)})});
     const obs = obstacles(i);
@@ -3026,7 +3104,7 @@ function renderFree(){
         <div class="choice" data-ifin><button type="button" data-f="" aria-pressed="${!o.fin}">حسب التصميم</button><button type="button" data-f="matte" aria-pressed="${o.fin === 'matte'}">مطفي</button><button type="button" data-f="gloss" aria-pressed="${o.fin === 'gloss'}">لامع</button></div>
         <div class="optseg"><span>المقابض</span><div class="choice" data-ihd><button type="button" data-v="" aria-pressed="${!o.hd}">حسب التصميم</button>${HANDLES.map(x => `<button type="button" data-v="${x.id}" aria-pressed="${o.hd === x.id}">${x.name}</button>`).join('')}</div></div>
         ${(isUnitItem(si) && (UNIT[si.t].counter || si.t === 'vanity')) || (si.t === 'cab' && iopts(si).top === 'stone') || (si.t === 'bar' && iopts(si).top !== 'wood') ? `<div class="optseg"><span>خامة السطح</span><div class="choice" data-iwt><button type="button" data-v="" aria-pressed="${!o.wt}">حسب التصميم</button>${TOPS.map(x => `<button type="button" data-v="${x.id}" aria-pressed="${o.wt === x.id}">${x.name}</button>`).join('')}</div></div>` : ''}</div>`}
-      ${T.opts ? `<div class="sect"><h4>الشكل والخيارات</h4><div class="opts">${optControls(T.opts, iopts(si), 'io')}</div></div>` : ''}`;
+      ${T.opts ? `<div class="sect"><h4>الشكل والخيارات</h4><div class="opts">${optControls(T.opts, iopts(si), 'io')}</div>${tallNote(si)}</div>` : ''}`;
     if (si.t === 'cab') {
       const g = cabGrid(si), cs = g.cells[Math.min(cellSel, g.cells.length - 1)];
       h += `<div class="sect"><h4>الواجهة خانة خانة <small>اضغط خانة لتغييرها</small></h4>
@@ -3066,7 +3144,7 @@ function select(m, from3D = false){
   sel = m ? (m.item !== undefined ? {item: m.item} : {run: m.run, lvl: m.lvl, i: m.i}) : null;
   if (sel && sel.item === undefined) { view.run = sel.run; view.lvl = sel.lvl; }
   if (sel && from3D) openTab(sel.item !== undefined ? 'free' : 'units');
-  if (sel && sel.item === undefined && from3D) { const r = runsOf(cfg).find(x => x.id === sel.run), L = r && layoutRun(cfg, r), m = L && (sel.lvl === 'b' ? L.pb : L.pu)[sel.i]; if (m && FREE_UNITS.includes(m.t) && !select.hinted) { select.hinted = true; toast('اسحب الوحدة الآن لتحريكها بحرية'); } }
+  if (sel && sel.item === undefined && from3D) { const r = runsOf(cfg).find(x => x.id === sel.run), L = r && layoutRun(cfg, r), m = L && atLvl(L, sel.lvl)[sel.i]; if (m && FREE_UNITS.includes(m.t) && !select.hinted) { select.hinted = true; toast('اسحب الوحدة الآن لتحريكها بحرية'); } }
   drawSel(); renderUnits();
   if (sel && from3D) { const target = sel.item !== undefined ? '#itemEditor' : '#unitEditor'; requestAnimationFrame(() => $(target)?.scrollIntoView({block: 'nearest', behavior: 'smooth'})); }
 }
@@ -3085,16 +3163,16 @@ function editItems(fn, rec = true, guard = true){
   if (guard) guardClash(before, keys0);
 }
 function addUnit(t){
-  const {r, U, talls} = unitsCtx(), lvl = UNIT[t].lvl, run = r.id, T = UNIT[t];
-  const rem = availOf(r, talls, lvl) - sumW(U[lvl]), w = rem >= T.min && rem < T.w ? rem : T.w;
-  editUnits(u => { const L = u[run][lvl]; const at = sel && sel.item === undefined && sel.run === run && sel.lvl === lvl ? sel.i + 1 : L.length; L.splice(at, 0, {t, w}); sel = {run, lvl, i: at}; });
+  const {r, U, talls, hoods} = unitsCtx(), lvl = UNIT[t].lvl, run = r.id, T = UNIT[t];
+  const rem = availOf(r, talls, lvl, hoods) - sumW(U[lvl] || []), w = rem >= T.min && rem < T.w ? rem : T.w;
+  editUnits(u => { const L = u[run][lvl] || (u[run][lvl] = []); const at = sel && sel.item === undefined && sel.run === run && sel.lvl === lvl ? sel.i + 1 : L.length; L.splice(at, 0, {t, w}); sel = {run, lvl, i: at}; });
   view.lvl = lvl;
   if (rem < w) toast('لا توجد مساحة كافية، الزيادة تظهر بالأحمر في المخطط');
 }
 function curUnit(u){ return sel && sel.item === undefined ? u[sel.run]?.[sel.lvl]?.[sel.i] : null; }
 function setType(t){ editUnits(u => { const m = curUnit(u); if (!m) return; m.t = t; m.w = clamp(m.w, UNIT[t].min, UNIT[t].max); delete m.o; }); }
 function setWidth(v){ editUnits(u => { const m = curUnit(u); if (m) m.w = Math.round(clamp(v || m.w, UNIT[m.t].min, UNIT[m.t].max)); }); }
-function setUnitOpt(k, v){ editUnits(u => { const m = curUnit(u); if (!m) return; m.o = {...optsOf(m), [k]: v}; }); }
+function setUnitOpt(k, v){ editUnits(u => { const m = curUnit(u); if (!m) return; m.o = {...optKeep(UNIT[m.t]?.opts, m), [k]: v}; }); }
 function unitAction(act){
   if (!sel || sel.item !== undefined) return; const {run, lvl, i} = sel;
   if (act === 'free') { const k = detachUnit(sel); if (k >= 0) { select({item: k}, true); toast('صارت الوحدة قطعة حرة، اسحبها أينما شئت'); } return; }
@@ -3102,7 +3180,7 @@ function unitAction(act){
     const L = u[run][lvl], m = L[i]; if (!m) return;
     if (act === 'del') {
       // removing a window or a room door must not slide the cabinets that follow it: leave the space empty
-      if ((m.t === 'window' || m.t === 'rdoor') && i < L.length - 1) L[i] = {t: lvl === 'u' ? 'ugap' : 'bgap', w: m.w};
+      if ((m.t === 'window' || m.t === 'rdoor') && i < L.length - 1) L[i] = {t: GAP_T[lvl], w: m.w};
       else L.splice(i, 1);
       sel = null;
     }
@@ -3217,6 +3295,7 @@ function nudge(k, v){
 }
 function itemAction(act){
   if (!sel || sel.item === undefined) return; const i = sel.item, it0 = cfg.items[i]; if (!it0) return;
+  if (act === 'close') { select(null); return; }
   if (act === 'del') { editItems(L => { L.splice(i, 1); }); sel = null; drawSel(); renderUnits(); toast('حُذفت القطعة، ويمكنك التراجع'); return; }
   if (act === 'dup') { editItems(L => { const c0 = JSON.parse(JSON.stringify(L[i])), [fw] = footprint(c0), th = -c0.r * Math.PI / 180; c0.x += Math.round(Math.cos(th) * fw); c0.z += Math.round(-Math.sin(th) * fw); L.push(c0); }); select({item: cfg.items.length - 1}, true); restack(() => {}, false); return; }
   if (act === 'mirror') { mirrorItem(); return; }
@@ -3231,7 +3310,7 @@ function setItemField(k, v){
   restack(L => { const t = L[sel.item]; if (k === 'w') { const [a, b] = limW(t); t.w = Math.round(clamp(v, a, b)); } else if (k === 'h' || k === 'd') { const lim = CUST[t.t]?.[k]; if (lim) t[k] = Math.round(clamp(v, lim[0], lim[1])); } else if (k === 'r') t.r = ((Math.round(v) % 360) + 360) % 360; else t[k] = Math.round(v); });
   renderUnits();
 }
-function setItemOpt(k, v){ restack(L => { const it = L[sel.item]; if (!it) return; it.o = {...(it.o || {}), ...iopts(it), [k]: v}; }); renderUnits(); }
+function setItemOpt(k, v){ restack(L => { const it = L[sel.item]; if (!it) return; it.o = {...(it.o || {}), ...optKeep(DEF(it.t)?.opts, it), [k]: v}; }); renderUnits(); }
 function setItemColor(v){ editItems(L => { const it = L[sel.item]; if (!it) return; const o = {...(it.o || {})}; if (v) o.col = v; else delete o.col; it.o = o; }); hist.key = 'col'; drawSel(); renderUnits(); }
 function setItemFinish(v){ editItems(L => { const it = L[sel.item]; if (!it) return; const o = {...(it.o || {})}; if (v) o.fin = v; else delete o.fin; it.o = o; }); drawSel(); renderUnits(); }
 // the cell grid of a custom cabinet
@@ -3292,7 +3371,7 @@ function obstacles(skip){
   const out = [], lay = {};
   (cfg.items || []).forEach((it, i) => { if (i !== skip && it.t !== 'rug' && itemBoxes[i]) out.push({...itemBoxes[i], item: i}); });
   world.traverse(o => {
-    if (o.userData.mod) { const m = o.userData.mod, L = lay[m.run] || (lay[m.run] = (() => { const r = runsOf(cfg).find(x => x.id === m.run); return r ? layoutRun(cfg, r) : null; })()), u = L && (m.lvl === 'b' ? L.pb : L.pu)[m.i];
+    if (o.userData.mod) { const m = o.userData.mod, L = lay[m.run] || (lay[m.run] = (() => { const r = runsOf(cfg).find(x => x.id === m.run); return r ? layoutRun(cfg, r) : null; })()), u = L && atLvl(L, m.lvl)[m.i];
       if (u && (UNIT[u.t]?.deco || ['clad', 'tv', 'frame', 'mirror', 'hooks', 'window', 'rdoor'].includes(u.t))) return; // wall decor (cladding, screen, frames) is not something to stand a piece on
       const b = objBox(o); if (!b.isEmpty()) out.push({...cmBox(b), mod: true}); }
     else if (o.userData.freeTop) { if (!o.userData.freeTop.includes(skip)) { const b = objBox(o); if (!b.isEmpty()) out.push(cmBox(b)); } }
@@ -3324,7 +3403,7 @@ function solidsOf(skip){
   const out = []; scene.updateMatrixWorld(true);
   world.traverse(o => {
     if (o.userData.item !== undefined && o.userData.item !== skip && cfg.items[o.userData.item] && cfg.items[o.userData.item].t !== 'rug') { const b = boards(o); if (b.length) out.push({who: {item: o.userData.item}, b, h: hull(b)}); }
-    else if (o.userData.mod) { const m = o.userData.mod, r = runsOf(cfg).find(x => x.id === m.run), L = r && layoutRun(cfg, r), u = L && (m.lvl === 'b' ? L.pb : L.pu)[m.i];
+    else if (o.userData.mod) { const m = o.userData.mod, r = runsOf(cfg).find(x => x.id === m.run), L = r && layoutRun(cfg, r), u = L && atLvl(L, m.lvl)[m.i];
       if (u && (UNIT[u.t]?.deco || ['clad', 'tv', 'frame', 'mirror', 'hooks', 'window', 'rdoor'].includes(u.t))) return;
       const b = boards(o); if (b.length) out.push({who: {mod: m}, b, h: hull(b)}); }
     else if (o.userData.freeTop) { const b = boards(o); if (b.length) out.push({who: {freeTop: o.userData.freeTop}, b, h: hull(b)}); }
@@ -3541,15 +3620,15 @@ function poseAt(it, x, z, r, lb, obs, free = !snapOn){
   let lockX = false, lockZ = false;
   if (!free && ortho(r)) {
     if (!NO_WALL.includes(it.t)) {
-      const cand = [{r: 0, gap: z - d / 2}, {r: 270, gap: x - d / 2}];
-      if (hasC) cand.push({r: 90, gap: A - x - d / 2});
+      // every wall of the room takes a piece: back, left, right and front
+      const cand = [{r: 0, gap: z - d / 2}, {r: 270, gap: x - d / 2}, {r: 90, gap: A - x - d / 2}, {r: 180, gap: D - z - d / 2}];
       const best = cand.filter(c0 => c0.gap < near && c0.gap > -d).sort((p, q) => p.gap - q.gap)[0];
-      if (best) { r = best.r; if (r === 0) { z = d / 2; lockZ = true; } else if (r === 270) { x = d / 2; lockX = true; } else { x = A - d / 2; lockX = true; } }
+      if (best) { r = best.r; if (r === 0) { z = d / 2; lockZ = true; } else if (r === 270) { x = d / 2; lockX = true; } else if (r === 180) { z = D - d / 2; lockZ = true; } else { x = A - d / 2; lockX = true; } }
     }
     // flush with the room's corners and with the sides of the pieces around
     let bb = aabbAt(it, x, z, r);
-    if (Math.abs(bb.x0) < 12) x -= bb.x0; else if (Math.abs(A - bb.x1) < 12 && (hasC || r === 0)) x += A - bb.x1;
-    bb = aabbAt(it, x, z, r); if (Math.abs(bb.z0) < 12) z -= bb.z0;
+    if (Math.abs(bb.x0) < 12) x -= bb.x0; else if (Math.abs(A - bb.x1) < 12) x += A - bb.x1;
+    bb = aabbAt(it, x, z, r); if (Math.abs(bb.z0) < 12) z -= bb.z0; else if (Math.abs(D - bb.z1) < 12) z += D - bb.z1;
     bb = aabbAt(it, x, z, r);
     let dx = 8, dz = 8;
     for (const o of obs) {
@@ -3598,13 +3677,13 @@ function gapDims(it, q, obs, lb){
 // a unit on a wall becomes a free piece at the very same spot; the space it leaves stays empty
 function detachUnit(mod){
   const r = runsOf(cfg).find(x => x.id === mod.run); if (!r || !runGroups[mod.run]) return -1;
-  const {pb, pu} = layoutRun(cfg, r), m = (mod.lvl === 'b' ? pb : pu)[mod.i];
+  const L0 = layoutRun(cfg, r), m = atLvl(L0, mod.lvl)[mod.i];
   if (!m || !m.fit || !FREE_UNITS.includes(m.t)) return -1;
   const g = runGroups[mod.run]; g.updateMatrixWorld(true);
   const v = new THREE.Vector3((m.s0 + m.s1) / 200, 0, (UNIT[m.t].d || 4) / 200).applyMatrix4(g.matrixWorld);
   const rr = Math.round(((-g.rotation.y * 180 / Math.PI) % 360 + 360) % 360);
   record();
-  const u = JSON.parse(JSON.stringify(cfg.units)); u[mod.run][mod.lvl][mod.i] = {t: mod.lvl === 'u' ? 'ugap' : 'bgap', w: m.w};
+  const u = JSON.parse(JSON.stringify(cfg.units)); u[mod.run][mod.lvl][mod.i] = {t: GAP_T[mod.lvl], w: m.w};
   const L = JSON.parse(JSON.stringify(cfg.items || [])), rc0 = cfg.units[mod.run]?.[mod.lvl]?.[mod.i]?.rc; L.push({t: m.t, w: m.w, x: Math.round(v.x * 100), z: Math.round(v.z * 100), r: rr, ...(m.o ? {o: m.o} : {}), ...(rc0 ? {rc: rc0} : {})});
   cfg = {...cfg, auto: false, itemsAuto: false, units: sanitizeUnits(u), items: sanitizeItems(L, cfg)};
   sel = null; build(); renderSpace();
@@ -3621,7 +3700,7 @@ stageEl.addEventListener('pointerdown', e => {
   downAt = {x: e.clientX, y: e.clientY, t: performance.now()};
   const hit = pickAt(e), f = floorAt(e);
   if (hit && hit.item !== undefined && f && cfg.items[hit.item]) { controls.enabled = false; drag = {pending: true, item: hit.item, f}; }
-  else if (hit && hit.mod && f && sel && sel.item === undefined && sel.run === hit.mod.run && sel.lvl === hit.mod.lvl && sel.i === hit.mod.i) { const r = runsOf(cfg).find(x => x.id === hit.mod.run), L = r && layoutRun(cfg, r), m = L && (hit.mod.lvl === 'b' ? L.pb : L.pu)[hit.mod.i]; if (m && FREE_UNITS.includes(m.t)) { controls.enabled = false; drag = {pending: true, mod: hit.mod, f}; } }
+  else if (hit && hit.mod && f && sel && sel.item === undefined && sel.run === hit.mod.run && sel.lvl === hit.mod.lvl && sel.i === hit.mod.i) { const r = runsOf(cfg).find(x => x.id === hit.mod.run), L = r && layoutRun(cfg, r), m = L && atLvl(L, hit.mod.lvl)[hit.mod.i]; if (m && FREE_UNITS.includes(m.t)) { controls.enabled = false; drag = {pending: true, mod: hit.mod, f}; } }
 }, true);
 window.addEventListener('pointermove', e => {
   if (!drag || !downAt) return;
@@ -3660,7 +3739,8 @@ window.addEventListener('pointerup', e => {
   }
   if (!downAt || e.target !== canvas) { downAt = null; return; }
   const moved = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y), dt = performance.now() - downAt.t; downAt = null;
-  if (moved > 6 || dt > 600) return;
+  const touch = e.pointerType === 'touch';   // a finger moves a little and stays a little longer than a mouse click
+  if (moved > (touch ? 12 : 6) || dt > (touch ? 900 : 600)) return;
   const hit = pickAt(e);
   if (!hit) return select(null);
   select(hit.item !== undefined ? {item: hit.item} : hit.mod, true);
@@ -3733,7 +3813,7 @@ function frontColorCss(id){ const f = frontDef(id); return f.wood ? ({oak: '#B88
 
 /* prices: per viewer */
 const PRICE_CAT = {
-  base:{n:'خزائن سفلية', u:'m', def:260, lab:'متر طولي سفلي'}, upper:{n:'خزائن علوية', u:'m', def:190, lab:'متر طولي علوي'}, tall:{n:'أعمدة طويلة', u:'pc', def:520, lab:'عمود طويل'},
+  base:{n:'خزائن سفلية', u:'m', def:260, lab:'متر طولي سفلي'}, upper:{n:'خزائن علوية', u:'m', def:190, lab:'متر طولي علوي'}, toprow:{n:'خزائن فوق العلوية', u:'m', def:140, lab:'متر طولي فوق العلوية'}, tall:{n:'أعمدة طويلة', u:'pc', def:520, lab:'عمود طويل'},
   ward:{n:'خزائن طويلة ومكتبات', u:'m2', def:170, lab:'متر مربع خزانة أو مكتبة'}, low:{n:'وحدات منخفضة', u:'m', def:220, lab:'متر طولي وحدات منخفضة'}, desk:{n:'مكاتب', u:'m', def:180, lab:'متر طولي مكتب'},
   shelf:{n:'رفوف عائمة', u:'m', def:60, lab:'متر رف عائم'}, panel:{n:'ديكور جدران', u:'m2', def:120, lab:'متر مربع ديكور جدار'}, mirror:{n:'مرايا', u:'m2', def:90, lab:'متر مربع مرآة'}, hooks:{n:'علاقات', u:'pc', def:25, lab:'علاقة معاطف'},
   top:{n:'أسطح العمل', u:'m2', def:140, lab:'متر مربع سطح'}, radius:{n:'زوايا مدوّرة', u:'pc', def:25, lab:'زاوية مدوّرة'}, island:{n:'جزيرة', u:'pc', def:950, lab:'جزيرة'},
@@ -3765,8 +3845,8 @@ function saleLines(){
   const c = cfg, p = prices, n = k => +p[k] || 0, acc = {};
   const addTo = (cat, qty, label) => { const a = acc[cat] || (acc[cat] = {qty: 0, count: 0}); a.qty += qty; a.count += 1; };
   for (const r of runsOf(c)) {
-    const {pb, pu} = layoutRun(c, r);
-    for (const m of [...pb, ...pu]) {
+    const {pb, pu, pt} = layoutRun(c, r);
+    for (const m of [...pb, ...pu, ...pt]) {
       if (!m.fit) continue; const T = UNIT[m.t]; if (!T.cat) continue; const pc = PRICE_CAT[T.cat];
       addTo(T.cat, pc.u === 'm' ? m.w / 100 * (m.t === 'shelf' ? +optsOf(m).n : 1) : pc.u === 'm2' ? m.w / 100 * frontHeight(m, c) : 1);
     }
@@ -3841,11 +3921,11 @@ function cutList(c){
   const doors = (code, W, h, n, f, kind = 'باب', mat) => { add(code, kind, h - GAP, W / n - GAP, TF, n, mat || F(f), 2, 2); addHw('hinge', n * hingesFor(h)); if (!gola) addHw('handle', n); };
   const drawer = (code, W, h, f) => { add(code, 'واجهة جارور', W - GAP, h - GAP, TF, 1, F(f), 2, 2); addHw('runner'); addHw('dbox'); if (!gola) addHw('handle'); };
   let units = 0, golaM = 0;
-  const H = c.height * 10, Ht = Math.min(H - 40, 2300), fh = gola ? 725 : 760, top = Math.min(Ht, 2060), t2 = Ht - top > 120 ? top : Ht;
+  const H = c.height * 10, HtR = Math.min(H - 40, 2300), fh = gola ? 725 : 760, t2R = HtR - Math.min(HtR, 2060) > 120 ? Math.min(HtR, 2060) : HtR;
   const K = c.room === 'kitchen', hasB = c.layout !== 'I', hasC = c.layout === 'U';
   let plinth = 0;
   // one unit's parts, the same whether it hangs on a wall run or stands freely
-  const cutBase = (m, code, fid) => { const W = m.w * 10, o = optsOf(m), n2 = W > 640 ? 2 : 1;
+  const cutBase = (m, code, fid) => { const W = m.w * 10, o = optsOf(m), n2 = W > 640 ? 2 : 1, TD = ['fridge', 'pantry', 'oventall'].includes(m.t) ? tallOf(m, c.height) : null, Ht = TD ? TD.Ht * 10 : HtR, t2 = TD ? TD.t2 * 10 : t2R;
       switch (m.t) {
         case 'door': units++; addHw('leg', 4); plinth += W; carcass(code, W, 760, 560, {rails: true, shelves: 1}); doors(code, W, fh, n2, fid); break;
         case 'sink': units++; addHw('leg', 4); plinth += W; carcass(code, W, 760, 560, {rails: true}); doors(code, W, fh, n2, fid); addAp('sink'); break;
@@ -3886,6 +3966,13 @@ function cutList(c){
           if (o.s === 'drawers' && W >= 900) { carcass(code, 440, 700, 560, {}); for (const h of [200, 200, 290]) drawer(code, 440, h, fid); } break; }
       }
   };
+  // top row: the height is what is left between the cabinet under it and the ceiling, or the height chosen
+  const cutTop = (m, code, ufid) => { const W = m.w * 10, Hh = Math.round((m.ty1 - m.ty0) * 10), Dp = unitDepth(m) * 10, n2 = W > 640 ? 2 : 1;
+    if (m.t === 'topen') { carcass(code, W, Hh, Dp, {shelves: Hh > 450 ? 1 : 0, mat: F(ufid)}); return; }
+    carcass(code, W, Hh, Dp, {});
+    if (m.t === 'tlift') { add(code, 'باب قلاب', W - GAP, Hh - GAP, TF, 1, F(ufid), 2, 2); addHw('lift'); if (!gola) addHw('handle'); }
+    else doors(code, W, Hh, n2, ufid);
+  };
   const cutUpper = (m, code, ufid) => { const o = optsOf(m), W = m.w * 10, n2 = W > 640 ? 2 : 1;
       switch (m.t) {
         case 'udoor': carcass(code, W, 720, 350, {shelves: 1}); doors(code, W, 735, n2, ufid); break;
@@ -3905,8 +3992,8 @@ function cutList(c){
       }
   };
   for (const r of runsOf(c)) {
-    const {pb, pu} = layoutRun(c, r);
-    let bi = 0, ui = 0; plinth = 0;
+    const {pb, pu, pt} = layoutRun(c, r);
+    let bi = 0, ui = 0, ti = 0; plinth = 0;
     if (K && r.id === 'A') { const corners = (hasB ? 1 : 0) + (hasC ? 1 : 0); for (let k = 0; k < corners; k++) { const code = 'AZ' + (k + 1); units++; carcass(code, 600, 760, 560, {rails: true, shelves: 1}); doors(code, 600, fh, 1, fid); addHw('leg', 4); plinth += 600; } }
     for (const m of pb) {
       if (!m.fit || UNIT[m.t].gap || UNIT[m.t].deco) { if (m.fit && m.t === 'rdoor') addAp('idoor'); continue; }
@@ -3919,6 +4006,10 @@ function cutList(c){
       if (m.t === 'tv') { addAp('tv'); continue; }
       if (!UNIT[m.t].cat) continue;
       units++; { const cd = r.id + '^' + (++ui); cutUpper(m, cd, ufid); noteRC(c.units?.[r.id]?.u?.[m.i]?.rc, cd); }
+    }
+    for (const m of pt) {
+      if (!m.fit || UNIT[m.t].gap) continue;
+      units++; { const cd = r.id + 'T' + (++ti); cutTop(m, cd, ufid); noteRC(c.units?.[r.id]?.t?.[m.i]?.rc, cd); }
     }
   }
   if (K && c.island && c.wallA >= 280) {
@@ -4231,7 +4322,7 @@ function planSvg(){
   if (hasC) out.push(`<rect x="${A}" y="0" width="${T}" height="${c.wallC}" class="pwl"/>`);
   const tops = [], mods = [];
   world.traverse(o => {
-    if (o.userData.mod) { const m = o.userData.mod, r = runsOf(c).find(x => x.id === m.run), L = r && layoutRun(c, r), u = L && (m.lvl === 'b' ? L.pb : L.pu)[m.i]; if (!u || UNIT[u.t].gap) return; const b = cmBox(objBox(o)); if (b.x1 - b.x0 > 0) mods.push({b, cls: u.t === 'window' ? 'pg' : m.lvl === 'u' ? 'pu' : 'pb'}); }
+    if (o.userData.mod) { const m = o.userData.mod, r = runsOf(c).find(x => x.id === m.run), L = r && layoutRun(c, r), u = L && atLvl(L, m.lvl)[m.i]; if (!u || UNIT[u.t].gap) return; const b = cmBox(objBox(o)); if (b.x1 - b.x0 > 0) mods.push({b, cls: u.t === 'window' ? 'pg' : m.lvl === 'u' ? 'pu' : 'pb'}); }
     else if (o.isMesh && o.userData.top) { let p = o.parent, own = false; while (p) { if (p.userData.item !== undefined) { own = true; break; } p = p.parent; } if (!own) tops.push(cmBox(objBox(o))); }
   });
   for (const m of mods.filter(m => m.cls === 'pb')) out.push(`<rect x="${m.b.x0}" y="${m.b.z0}" width="${m.b.x1 - m.b.x0}" height="${m.b.z1 - m.b.z0}" class="pb"/>`);
@@ -4430,8 +4521,8 @@ document.addEventListener('change', e => {
   if (t.dataset.tog) { set(t.dataset.tog, t.checked, {ui: false}); if (t.dataset.tog === 'island' && t.checked && cfg.wallA < 280) toast('الجزيرة تحتاج جداراً رئيسياً من 280 سم أو أكثر'); }
   if (t.dataset.price === 'cur') renderCost();
   if (t.id === 'uw') setWidth(+t.value);
-  if (t.dataset.uo) { const d = UNIT[curUnit(cfg.units)?.t]?.opts?.find(x => x.k === t.dataset.uo); if (d) setUnitOpt(d.k, d.type === 'bool' ? t.checked : Math.round(clamp(+t.value || d.def, d.min, d.max))); }
-  if (t.dataset.io) { const it = cfg.items[sel?.item], d = it && DEF(it.t).opts?.find(x => x.k === t.dataset.io); if (d) setItemOpt(d.k, d.type === 'bool' ? t.checked : Math.round(clamp(+t.value || d.def, d.min, d.max))); }
+  if (t.dataset.uo) { const d = UNIT[curUnit(cfg.units)?.t]?.opts?.find(x => x.k === t.dataset.uo); if (d) setUnitOpt(d.k, d.type === 'bool' ? t.checked : Math.round(clamp(t.value === '' ? d.def : +t.value, d.min, d.max))); }
+  if (t.dataset.io) { const it = cfg.items[sel?.item], d = it && DEF(it.t).opts?.find(x => x.k === t.dataset.io); if (d) setItemOpt(d.k, d.type === 'bool' ? t.checked : Math.round(clamp(t.value === '' ? d.def : +t.value, d.min, d.max))); }
   if (t.id === 'iw') setItemField('w', +t.value);
   if (t.id === 'ix') setItemField('x', +t.value);
   if (t.id === 'iz') setItemField('z', +t.value);
@@ -4822,10 +4913,11 @@ front: ${l(FRONTS)}
 upperFront: same | any front id. finish: matte | gloss. accent (shelves, desk and table tops, slats): ${l(ACCENTS)}
 worktop: ${l(TOPS)}. handle: ${l(HANDLES)}. splash: ${l(SPLASH)}. floor: ${l(FLOORS)}. wall: ${l(WALLS)}. fabric: ${l(FABRICS)}
 units: pieces fixed on each wall, or null to generate them automatically for the room.
-  Shape: {"A":{"b":[{"t":type,"w":cm,"o":{options}}],"u":[...]}, "B":{...}, "C":{...}}. A = main wall, B = left wall, C = right wall. Lists run left to right as seen facing the wall. B is filled from the back corner.
-  b = standing on the floor (lengths: kitchen A = wallA minus 60 per corner, B = wallB-60, C = wallC-60; other rooms A = wallA, B and C lose the depth of A's units at the corner). u = hung on the wall, starts at the left end, skips tall units automatically; use gap types to position pieces.
+  Shape: {"A":{"b":[{"t":type,"w":cm,"o":{options}}],"u":[...],"t":[...]}, "B":{...}, "C":{...}, "D":{...}}. A = main wall, B = left wall, C = right wall, D = front wall (every wall takes units whatever the layout). Lists run left to right as seen facing the wall. B is filled from the back corner.
+  b = standing on the floor (lengths: kitchen A = wallA minus 60 per corner, B = wallB-60, C = wallC-60; other rooms A = wallA, B and C lose the depth of A's units at the corner). u = hung on the wall, starts at the left end, skips tall units automatically; use gap types to position pieces. t = top row above the wall cabinets up to the ceiling, passes over tall units, skips hoods.
   Floor types: ${ALL_B.map(t => t + ' (' + UNIT[t].n + (UNIT[t].opts ? '; o: ' + UNIT[t].opts.map(d => d.k + (d.vals ? '=' + Object.keys(d.vals).join('|') : d.type === 'bool' ? ' bool' : ' ' + d.min + '-' + d.max)).join(', ') : '') + ')').join('; ')}
   Wall types: ${ALL_U.map(t => t + ' (' + UNIT[t].n + (UNIT[t].opts ? '; o: ' + UNIT[t].opts.map(d => d.k + (d.vals ? '=' + Object.keys(d.vals).join('|') : d.type === 'bool' ? ' bool' : ' ' + d.min + '-' + d.max)).join(', ') : '') + ')').join('; ')}
+  Top row types: ${ALL_T.map(t => t + ' (' + UNIT[t].n + (UNIT[t].opts ? '; o: ' + UNIT[t].opts.map(d => d.k + (d.vals ? '=' + Object.keys(d.vals).join('|') : d.type === 'bool' ? ' bool' : ' ' + d.min + '-' + d.max)).join(', ') : '') + ')').join('; ')}
   Widths in cm within each type's range.
 items: freestanding pieces, or null to place them automatically. Each {"t":type,"w":cm,"x":cm from left wall to centre,"z":cm from main wall to centre,"r":0|90|180|270,"o":{options}}. r=0 faces into the room with its back or headboard to the main wall; r=180 faces the main wall (sofa looking at the TV wall).
   Item types: ${Object.keys(ITEM).map(t => t + ' (' + ITEM[t].n + ', depth ' + ITEM[t].d + (ITEM[t].opts ? '; o: ' + ITEM[t].opts.map(d => d.k + (d.vals ? '=' + Object.keys(d.vals).join('|') : d.type === 'bool' ? ' bool' : ' ' + d.min + '-' + d.max)).join(', ') : '') + ')').join('; ')}`;
@@ -4900,7 +4992,7 @@ async function photoCompare(n){
     return {w, h, pixels: cnt, mean: +(sum / cnt / 3).toFixed(3), max};
   } finally { photoBusy = false; photoN = 0; dirty = true; }
 }
-window.__wr = {get pixelRatio(){ return renderer.getPixelRatio(); }, get rcStats(){ return rcStats; }, setRC, get clashes(){ return lastClashes.map(c => ({a: c.a, b: c.b.item ?? (c.b.mod ? 'unit' : 'top'), depth: Math.round(c.depth * 10) / 10})); }, set noClash(v){ noClash = v; }, settle: i => { const g = itemGroup(i); return g ? settleDrop({i, group: g}) : null; }, photoCompare, deviceTest: () => deviceTest(document.createElement('pre')), texReady, texStats, setPhoto, get photoN(){ return photoN; }, photoShot: async (w, h, n) => (await photoShot(w, h, n, false, false)), makeShot, get envReady(){ return envReady; }, openNow: v => { openT = openV = v; applyAnims(); renderer.shadowMap.needsUpdate = true; dirty = true; }, setQuality, get quality(){ return quality; }, dirty: () => { dirty = true; }, setCam, openDemo, DEMOS, exportFile, importFile, setPresent, get fab(){ return fab; }, set fab(v){ fab = WarshaFab.sanitizeFab(v); }, store, setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
+window.__wr = {tallOf, get pixelRatio(){ return renderer.getPixelRatio(); }, get rcStats(){ return rcStats; }, setRC, get clashes(){ return lastClashes.map(c => ({a: c.a, b: c.b.item ?? (c.b.mod ? 'unit' : 'top'), depth: Math.round(c.depth * 10) / 10})); }, set noClash(v){ noClash = v; }, settle: i => { const g = itemGroup(i); return g ? settleDrop({i, group: g}) : null; }, photoCompare, deviceTest: () => deviceTest(document.createElement('pre')), texReady, texStats, setPhoto, get photoN(){ return photoN; }, photoShot: async (w, h, n) => (await photoShot(w, h, n, false, false)), makeShot, get envReady(){ return envReady; }, openNow: v => { openT = openV = v; applyAnims(); renderer.shadowMap.needsUpdate = true; dirty = true; }, setQuality, get quality(){ return quality; }, dirty: () => { dirty = true; }, setCam, openDemo, DEMOS, exportFile, importFile, setPresent, get fab(){ return fab; }, set fab(v){ fab = WarshaFab.sanitizeFab(v); }, store, setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
 })();
 </script>
 
