@@ -44,9 +44,11 @@ The working environment used to build this version could not reach polyhaven.com
 
 | File | Original | Official page | Use | Copy taken from |
 |---|---|---|---|---|
-| `lebombo_1k.hdr` | Poly Haven `lebombo` | https://polyhaven.com/a/lebombo | interior light and reflections | pmndrs/drei-assets |
-| `rooitou_park_1k.hdr` | Poly Haven `rooitou_park` | https://polyhaven.com/a/rooitou_park | view through the windows, day | pmndrs/drei-assets |
-| `dikhololo_night_1k.hdr` | Poly Haven `dikhololo_night` | https://polyhaven.com/a/dikhololo_night | view through the windows, evening | pmndrs/drei-assets |
+| `lebombo_1k.hdr.txt` | Poly Haven `lebombo` | https://polyhaven.com/a/lebombo | interior light and reflections | pmndrs/drei-assets |
+| `rooitou_park_1k.hdr.txt` | Poly Haven `rooitou_park` | https://polyhaven.com/a/rooitou_park | view through the windows, day | pmndrs/drei-assets |
+| `dikhololo_night_1k.hdr.txt` | Poly Haven `dikhololo_night` | https://polyhaven.com/a/dikhololo_night | view through the windows, evening | pmndrs/drei-assets |
+
+The `.hdr` files are stored as base64 text (`.hdr.txt`, decoded in the page), because not every static host serves the `.hdr` type. Content unchanged.
 
 ## Code
 

@@ -1296,7 +1296,15 @@ function loadHDR(name, cb){
   const h = HDR[name] || (HDR[name] = {tex: null, wait: [], go: true});
   if (h.tex) return cb(h.tex);
   h.wait.push(cb); if (!h.go) return; h.go = false;
-  hdrLoader.load(HDR_DIR + name, t => { h.tex = t; const w = h.wait; h.wait = []; w.forEach(f => f(t)); }, undefined, () => { h.wait = []; });
+  // the .hdr file is stored as base64 text (.hdr.txt): every static host serves text, not all serve .hdr
+  fetch(HDR_DIR + name + '.txt').then(r => r.ok ? r.text() : Promise.reject(r.status)).then(b64 => {
+    const bin = atob(b64.replace(/\s+/g, '')), u = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    const d = hdrLoader.parse(u.buffer), t = new THREE.DataTexture(d.data, d.width, d.height, THREE.RGBAFormat, d.type);
+    // same settings as RGBELoader.load
+    t.encoding = THREE.LinearEncoding; t.minFilter = t.magFilter = THREE.LinearFilter; t.generateMipmaps = false; t.flipY = true; t.needsUpdate = true;
+    h.tex = t; const w = h.wait; h.wait = []; w.forEach(f => f(t));
+  }).catch(() => { h.wait = []; });
 }
 // the generated studio room stays until the photographed one arrives
 loadHDR('lebombo_1k.hdr', t => { t.mapping = THREE.EquirectangularReflectionMapping; const old = scene.environment; scene.environment = pmrem.fromEquirectangular(t).texture; old?.dispose(); t.dispose(); envReady = true; applyLight(); dirty = true; photoReset(); });

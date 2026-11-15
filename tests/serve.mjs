@@ -2,7 +2,7 @@
 // so photo textures and HDR environments load. WR_FILE=1 opens it as a file instead, to test the fallback.
 import path from 'node:path';
 import fs from 'node:fs';
-const TYPES = {'.html': 'text/html', '.js': 'text/javascript', '.jpg': 'image/jpeg', '.png': 'image/png', '.hdr': 'application/octet-stream', '.json': 'application/json', '.css': 'text/css'};
+const TYPES = {'.html': 'text/html', '.js': 'text/javascript', '.jpg': 'image/jpeg', '.png': 'image/png', '.hdr': 'application/octet-stream', '.json': 'application/json', '.css': 'text/css', '.txt': 'text/plain'};
 export async function openApp(page, root, threeDir, asFile = process.env.WR_FILE === '1'){
   await page.route('**/*', r => {
     const u = r.request().url();
