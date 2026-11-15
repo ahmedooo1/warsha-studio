@@ -4696,6 +4696,8 @@ requestAnimationFrame(() => requestAnimationFrame(() => $('#veil').classList.add
 store.init();
 // interface language: Arabic, French or Turkish
 I18N.applyDoc(); I18N.start(); $('#langSel').value = I18N.lang;
+// the client chip is marked not-to-translate (it shows names typed by the user): its default label is set here in the page language
+setClient(current);
 $('#langSel').onchange = e => { I18N.setLang(e.target.value); setClient(current); renderAll(); build(); setTimeout(() => { resize(); dirty = true; }, 50); };
 // warm the remaining swatch textures in idle time so the material tab opens instantly
 const idle = window.requestIdleCallback || (f => setTimeout(f, 200));

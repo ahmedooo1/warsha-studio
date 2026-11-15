@@ -23,8 +23,8 @@ for (const lang of ['ar', 'fr', 'tr']) {
   await openApp(page, root, threeDir);
   await page.waitForFunction(() => window.__wr, null, {timeout: 180000});
   await page.evaluate(() => window.__wr.texReady()); await page.waitForTimeout(1500);
-  const st = await page.evaluate(() => ({q: window.__wr.quality, tex: window.__wr.texStats(), env: window.__wr.envReady, dir: document.documentElement.dir, scroll: document.documentElement.scrollWidth - innerWidth}));
-  report.push(`[${lang}] default level ${st.q}, textures ${st.tex.textures} (${st.tex.mb} MB, ${st.tex.failed} failed), HDR ${st.env}, dir ${st.dir}, horizontal overflow ${st.scroll}px`);
+  const st = await page.evaluate(() => ({q: window.__wr.quality, tex: window.__wr.texStats(), env: window.__wr.envReady, dir: document.documentElement.dir, scroll: document.documentElement.scrollWidth - innerWidth, chip: document.querySelector('#clientName').textContent}));
+  report.push(`[${lang}] default level ${st.q}, textures ${st.tex.textures} (${st.tex.mb} MB, ${st.tex.failed} failed), HDR ${st.env}, dir ${st.dir}, horizontal overflow ${st.scroll}px, client chip "${st.chip}"${lang !== 'ar' && /[\u0600-\u06FF]/.test(st.chip) ? ' NOT TRANSLATED' : ''}`);
   await shot(page, `${lang}-1-editor.jpg`);
   // photo mode on the phone, a few frames accumulated
   await page.evaluate(() => { window.__wr.setCam('eye', true); window.__wr.setPhoto(true); });

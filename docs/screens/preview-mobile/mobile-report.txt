@@ -1,0 +1,10 @@
+[ar] default level performance, textures 16 (21 MB, 0 failed), HDR true, dir rtl, horizontal overflow 0px
+[ar] photo mode: 8 frames accumulated
+[ar] device test done in 769 s
+[ar] page errors: none
+[fr] default level performance, textures 16 (21 MB, 0 failed), HDR true, dir ltr, horizontal overflow 0px
+[fr] photo mode: 8 frames accumulated
+[fr] page errors: none
+[tr] default level performance, textures 16 (21 MB, 0 failed), HDR true, dir ltr, horizontal overflow 0px
+[tr] photo mode: 8 frames accumulated
+[tr] page errors: none
