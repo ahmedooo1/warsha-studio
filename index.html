@@ -1159,9 +1159,15 @@ function buildComposer(){
 }
 function sizeComposer(w, h, pr){ if (!composer) return; composer.setPixelRatio(pr); composer.setSize(w, h); }
 function renderNow(){ clashGroup.visible = clashShown(); if (QUALITY[quality].ao && composer) composer.render(); else renderer.render(scene, camera); }
+// a still view is redrawn once at the screen's own sharpness (phones have 2 to 3 pixels per point); while the view
+// moves, the level's lighter resolution keeps it fluid. Photo mode stays at full sharpness.
+const STILL_PR = () => Math.min(devicePixelRatio || 1, 2.5);
+let sharpOn = false, moveAt = 0;
+const basePR = () => Math.min(QUALITY[quality].pr, 3);
+function setPR(pr){ if (Math.abs(renderer.getPixelRatio() - pr) < .01) return false; renderer.setPixelRatio(pr); resize(); return true; }
 function applyQuality(){
   const Q = QUALITY[quality];
-  renderer.setPixelRatio(Math.min(Q.pr, 3));
+  renderer.setPixelRatio(photoOn ? STILL_PR() : basePR()); sharpOn = photoOn;
   for (const l of [sun, key]) { if (l.shadow.mapSize.x !== Q.shadow) { l.shadow.mapSize.set(Q.shadow, Q.shadow); l.shadow.map?.dispose(); l.shadow.map = null; } }
   if (Q.ao) { buildComposer(); }
   document.querySelectorAll('[data-q]').forEach(b => b.setAttribute('aria-pressed', b.dataset.q === quality));
@@ -1247,6 +1253,7 @@ function photoPill(){
 }
 function setPhoto(on){
   photoOn = !!on; if (photoOn) buildComposer();
+  renderer.setPixelRatio(photoOn ? STILL_PR() : basePR()); sharpOn = photoOn;
   refreshTextures(); resize(); photoN = 0; dirty = true;
   $('#photoBtn')?.setAttribute('aria-pressed', photoOn); $$('.pres-views [data-pv="photo"]').forEach(b => b.setAttribute('aria-pressed', photoOn)); photoPill();
 }
@@ -2622,7 +2629,12 @@ function loop(){
     if (photoN < PHOTO_N && performance.now() - photoIdle > 160) { const s = renderer.getDrawingBufferSize(new THREE.Vector2()); if (!photoN) { photoTargets(s.x, s.y); photoClear(); } photoSample(s.x, s.y); photoDisplay(); photoPill(); }
     return;
   }
-  if (!dirty && !moved) return;
+  const busy = moved || !!tween || tourOn || !!(drag && !drag.pending) || openV !== openT;
+  if (busy) { moveAt = performance.now(); if (sharpOn) { sharpOn = false; setPR(basePR()); } }
+  if (!dirty && !moved) {
+    if (!sharpOn && performance.now() - moveAt > 220) { sharpOn = true; if (setPR(STILL_PR())) { dirty = false; renderNow(); drawDims(dctx, dimCv.width, dimCv.height, dimCv.width / W); } }
+    return;
+  }
   dirty = false; renderNow();
   const pr = dimCv.width / W; drawDims(dctx, dimCv.width, dimCv.height, pr);
 }
@@ -4888,7 +4900,7 @@ async function photoCompare(n){
     return {w, h, pixels: cnt, mean: +(sum / cnt / 3).toFixed(3), max};
   } finally { photoBusy = false; photoN = 0; dirty = true; }
 }
-window.__wr = {get rcStats(){ return rcStats; }, setRC, get clashes(){ return lastClashes.map(c => ({a: c.a, b: c.b.item ?? (c.b.mod ? 'unit' : 'top'), depth: Math.round(c.depth * 10) / 10})); }, set noClash(v){ noClash = v; }, settle: i => { const g = itemGroup(i); return g ? settleDrop({i, group: g}) : null; }, photoCompare, deviceTest: () => deviceTest(document.createElement('pre')), texReady, texStats, setPhoto, get photoN(){ return photoN; }, photoShot: async (w, h, n) => (await photoShot(w, h, n, false, false)), makeShot, get envReady(){ return envReady; }, openNow: v => { openT = openV = v; applyAnims(); renderer.shadowMap.needsUpdate = true; dirty = true; }, setQuality, get quality(){ return quality; }, dirty: () => { dirty = true; }, setCam, openDemo, DEMOS, exportFile, importFile, setPresent, get fab(){ return fab; }, set fab(v){ fab = WarshaFab.sanitizeFab(v); }, store, setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
+window.__wr = {get pixelRatio(){ return renderer.getPixelRatio(); }, get rcStats(){ return rcStats; }, setRC, get clashes(){ return lastClashes.map(c => ({a: c.a, b: c.b.item ?? (c.b.mod ? 'unit' : 'top'), depth: Math.round(c.depth * 10) / 10})); }, set noClash(v){ noClash = v; }, settle: i => { const g = itemGroup(i); return g ? settleDrop({i, group: g}) : null; }, photoCompare, deviceTest: () => deviceTest(document.createElement('pre')), texReady, texStats, setPhoto, get photoN(){ return photoN; }, photoShot: async (w, h, n) => (await photoShot(w, h, n, false, false)), makeShot, get envReady(){ return envReady; }, openNow: v => { openT = openV = v; applyAnims(); renderer.shadowMap.needsUpdate = true; dirty = true; }, setQuality, get quality(){ return quality; }, dirty: () => { dirty = true; }, setCam, openDemo, DEMOS, exportFile, importFile, setPresent, get fab(){ return fab; }, set fab(v){ fab = WarshaFab.sanitizeFab(v); }, store, setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
 })();
 </script>
 
