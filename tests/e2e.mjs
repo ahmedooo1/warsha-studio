@@ -157,6 +157,18 @@ try {
   ok(bd.demos.every(n => n === 0), 'لا قطعة خارج الأرضية في المشاريع السبعة');
   ok(bd.left >= -.6 && bd.front <= .6, `قطعة دُفعت خارج الجدار أو الأرضية رجعت إلى الداخل (${Math.round(bd.left)}، ${Math.round(bd.front)})`);
   ok(bd.shrink === 0, 'تصغير الغرفة يُبقي القطع داخلها');
+  console.log('الزوايا المدوّرة');
+  const rcx = await page.evaluate(() => { const w = window.__wr, sig = () => JSON.stringify(w.cutList().grouped.map(g => [g.kind, g.L, g.W, g.th, g.qty, g.grain]));
+    w.openDemo(6); const s0 = sig(), p0 = w.sale().total; w.select({item: 1});
+    w.setRC(() => ({r: 30, c: ['fl', 'fr', 'tl', 'tr']})); const st = {...w.rcStats}, cl = w.cutList(), p1 = w.sale().total;
+    const out = {cut: st.cut, same: sig() === s0, notes: cl.shaping.length, jobs: cl.hw.radius, diff: Math.round(p1 - p0), kept: w.cfg.items[1].rc?.c.length};
+    w.openDemo(0); w.select({run: 'A', lvl: 'b', i: 0}); w.setRC(() => ({r: 20, c: ['fl']})); out.unit = w.rcStats.cut; out.unitNote = w.cutList().shaping.length;
+    w.select({run: 'A', lvl: 'b', i: 0}); w.setRC(() => null); out.cleared = w.cutList().shaping.length; w.openDemo(6); return out; });
+  ok(rcx.cut > 0 && rcx.kept === 4, `زوايا مدوّرة على خزانة حرة (${rcx.cut} لوحاً أعيد رسمه)`);
+  ok(rcx.same, 'قائمة القطع ومقاساتها لا تتغير، تُضاف ملاحظة القص فقط');
+  ok(rcx.notes === 1 && rcx.jobs === 4, `ملاحظة الزوايا في ورقة الورشة و${rcx.jobs} أعمال قص`);
+  ok(rcx.diff > 0, `سعر الزوايا يُضاف إلى العرض (+${rcx.diff})`);
+  ok(rcx.unit > 0 && rcx.unitNote === 1 && rcx.cleared === 0, 'زاوية مدوّرة على وحدة مطبخ، ثم إلغاؤها');
   console.log('وضع العرض');
   await page.evaluate(() => window.__wr.setPresent(true)); await page.waitForTimeout(300);
   ok(await page.evaluate(() => getComputedStyle(document.querySelector('#panel')).display === 'none' && getComputedStyle(document.querySelector('.bar')).display === 'none'), 'الأدوات مخفية في وضع العرض');

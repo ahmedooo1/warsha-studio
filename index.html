@@ -308,6 +308,14 @@ body.present .pres-exit kbd{font-family:var(--f-num);font-size:11px;background:r
 .photo-pill i{display:block;width:54px;height:3px;border-radius:2px;background:rgba(255,255,255,.18);overflow:hidden}
 .photo-pill i::after{content:"";display:block;height:100%;width:var(--p,0%);background:#F4B400;transition:width .2s}
 .diag{direction:ltr;text-align:left;font:11.5px/1.5 ui-monospace,Menlo,Consolas,monospace;background:#101317;color:#DDE3E8;border-radius:10px;padding:10px 12px;max-height:260px;overflow:auto;white-space:pre-wrap;word-break:break-word;margin:8px 0 0}
+.rc-box{display:flex;align-items:center;gap:10px;margin:6px 0}.rc-box .lab{min-width:62px;font-size:13px;color:var(--muted)}
+.rc-plan,.rc-front{direction:ltr;display:grid;grid-template-columns:1fr 1fr;gap:6px;flex:1}
+.rc-plan i{grid-column:1/3;order:2;text-align:center;font-style:normal;font-size:11.5px;color:var(--muted);border-top:2px solid var(--line);padding-top:2px}
+.rc-plan [data-rc="fl"],.rc-plan [data-rc="fr"]{order:3}
+.rc-plan button,.rc-front button{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:7px 6px;font-size:13px}
+.rc-plan button[aria-pressed="true"],.rc-front button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.rc-plan [data-rc="bl"],.rc-plan [data-rc="fl"],.rc-front [data-rc="tl"]{border-top-left-radius:18px}
+.rc-plan [data-rc="br"],.rc-plan [data-rc="fr"],.rc-front [data-rc="tr"]{border-top-right-radius:18px}
 .tog{display:flex;align-items:center;gap:8px;cursor:pointer}.tog input{width:18px;height:18px;accent-color:#E5484D}
 .pres-views,.pres-info,.pres-vars{display:none}
 body.present .pres-views{display:flex;position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:4;gap:2px;align-items:center;background:rgba(18,21,25,.82);backdrop-filter:blur(10px);border-radius:14px;padding:5px;max-width:calc(100% - 24px);overflow-x:auto;box-shadow:0 12px 34px rgba(0,0,0,.28)}
@@ -951,10 +959,18 @@ function autoItems(c){
   }
   return it;
 }
+// rounded corners of a piece or a wall unit: one radius (cm) and the corners it applies to.
+// Seen from above: fl fr bl br (front/back, left/right as you face the piece). Seen from the front: tl tr (top left, top right).
+const RC_CORNERS = {fl: 'أمام يسار', fr: 'أمام يمين', bl: 'خلف يسار', br: 'خلف يمين', tl: 'أعلى يسار', tr: 'أعلى يمين'};
+function cleanRC(rc){
+  if (!rc || typeof rc !== 'object') return undefined;
+  const r = Math.round(clamp(Number(rc.r) || 0, 0, 150)), c = Array.isArray(rc.c) ? [...new Set(rc.c.filter(k => k in RC_CORNERS))] : [];
+  return r >= 1 && c.length ? {r, c} : (c.length ? {r: 10, c} : undefined);
+}
 function sanitizeUnits(u){
   if (!u || typeof u !== 'object') return null;
   const cleanO = (t, o) => { if (!o || typeof o !== 'object') return undefined; const out = {}; for (const d of UNIT[t].opts || []) { const v = o[d.k]; if (v === undefined) continue; if (d.type === 'bool') out[d.k] = !!v; else if (d.type === 'num') { const n = Number(v); if (isFinite(n)) out[d.k] = Math.round(clamp(n, d.min, d.max)); } else if (String(v) in d.vals) out[d.k] = String(v); } return Object.keys(out).length ? out : undefined; };
-  const clean = (arr, allowed) => Array.isArray(arr) ? arr.slice(0, 40).map(x => { if (!x || typeof x !== 'object' || !allowed.includes(x.t)) return null; const m = {t: x.t, w: Math.round(clamp(Number(x.w) || UNIT[x.t].w, UNIT[x.t].min, UNIT[x.t].max))}; const o = cleanO(x.t, x.o); if (o) m.o = o; return m; }).filter(Boolean) : [];
+  const clean = (arr, allowed) => Array.isArray(arr) ? arr.slice(0, 40).map(x => { if (!x || typeof x !== 'object' || !allowed.includes(x.t)) return null; const m = {t: x.t, w: Math.round(clamp(Number(x.w) || UNIT[x.t].w, UNIT[x.t].min, UNIT[x.t].max))}; const o = cleanO(x.t, x.o); if (o) m.o = o; const rc = cleanRC(x.rc); if (rc) m.rc = rc; return m; }).filter(Boolean) : [];
   const out = {};
   for (const r of ['A', 'B', 'C']) out[r] = {b: clean(u[r]?.b, ALL_B), u: clean(u[r]?.u, ALL_U)};
   if (u.W?.b && !out.B.b.length) out.B.b = clean(u.W.b, ALL_B);   // designs saved before the room system
@@ -971,6 +987,7 @@ function sanitizeItems(arr, c){
     if (x.sy) it.sy = num(x.sy, 0, 400, 0);
     if (CUST[x.t]) { const L = CUST[x.t]; it.h = num(x.h, L.h[0], L.h[1], L.h[2]); it.d = num(x.d, L.d[0], L.d[1], L.d[2]); }
     const o = {}; for (const d of I.opts || []) { const v = x.o?.[d.k]; if (v === undefined) continue; if (d.type === 'bool') o[d.k] = !!v; else if (d.type === 'num') { const n = Number(v); if (isFinite(n)) o[d.k] = Math.round(clamp(n, d.min, d.max)); } else if (String(v) in d.vals) o[d.k] = String(v); }
+    { const rc = cleanRC(x.rc); if (rc) it.rc = rc; }
     const xo = x.o || {};
     if (isHex(xo.col) || FRONTS.some(f => f.id === xo.col)) o.col = xo.col;
     if (['matte', 'gloss'].includes(xo.fin)) o.fin = xo.fin;
@@ -2089,7 +2106,7 @@ function slab(parent, mat, pts, y0, y1, tile = 1.2){
   if (y1 - y0 < 1e-4 || pts.length < 3) return null;
   const sh = new THREE.Shape(); pts.forEach(([x, z], i) => i ? sh.lineTo(x, z) : sh.moveTo(x, z));
   const g = new THREE.ExtrudeGeometry(sh, {depth: y1 - y0, bevelEnabled: false, curveSegments: 1}); boxUV(g, tile, R(), R());
-  const m = new THREE.Mesh(g, mat); m.rotation.x = Math.PI / 2; m.position.y = y1; m.castShadow = m.receiveShadow = true; parent.add(m); return m;
+  const m = new THREE.Mesh(g, mat); m.rotation.x = Math.PI / 2; m.position.y = y1; m.castShadow = m.receiveShadow = true; m.userData.slab = pts; parent.add(m); return m;
 }
 // front edge of a shaped end, from the body's front corner (e, D) round to the back corner (0, 0)
 function endEdge(kind, e, D){
@@ -2881,6 +2898,7 @@ function renderUnits(){
     h += `<div class="ued" id="unitEditor"><div class="ued-h"><b>${T.n}</b><span>${sm.w} سم</span></div>
       <div class="ued-row"><span>العرض</span><span class="stepper"><button type="button" data-u="w-5" aria-label="أنقص 5 سم">−</button><input id="uw" type="number" min="${T.min}" max="${T.max}" value="${sm.w}" inputmode="numeric" aria-label="العرض بالسنتيمتر"><button type="button" data-u="w+5" aria-label="زد 5 سم">+</button></span><span class="hint">من ${T.min} إلى ${T.max} سم</span></div>
       ${T.opts ? `<div class="opts">${optControls(T.opts, optsOf(sm), 'uo')}</div>` : ''}
+      ${UNIT[sm.t]?.gap || UNIT[sm.t]?.deco ? '' : cornersUI(sm.rc)}
       <div class="ued-row"><button type="button" class="btn sm" data-u="right" ${sel.i >= L.length - 1 ? 'disabled' : ''}>${arrowR} لليمين</button><button type="button" class="btn sm" data-u="left" ${sel.i === 0 ? 'disabled' : ''}>لليسار ${arrowL}</button><button type="button" class="btn sm" data-u="dup">تكرار</button>${FREE_UNITS.includes(sm.t) ? '<button type="button" class="btn sm" data-u="free">تحريك حر</button>' : ''}<button type="button" class="btn sm danger" data-u="del">حذف</button></div>
       <div class="grp"><h3>تغيير النوع</h3><div class="ugrid sm">${palFor(r.id, sel.lvl).map(t => `<button type="button" data-type="${t}" aria-pressed="${t === sm.t}">${unitIcon(t)}<span>${UNIT[t].s}</span></button>`).join('')}</div></div></div>`;
   }
@@ -3007,6 +3025,7 @@ function renderFree(){
         ${colorRow('cellc', cs.c, 'ccolor', 'لون الخزانة')}
         <div class="ued-row"><button type="button" class="btn sm" data-cellall>طبّق هذه الخانة على كل الخانات</button></div></div>`;
     }
+    h += cornersUI(si.rc);
     h += `<div class="ued-row acts"><button type="button" class="btn sm" data-it="dup">نسخ</button>${si.t === 'cab' || si.t === 'bar' ? '<button type="button" class="btn sm" data-it="mirror">عكس يمين ويسار</button>' : ''}${si.t === 'cab' || si.t === 'bar' ? `<button type="button" class="btn sm" data-open>${openT ? 'أغلق الأبواب' : 'افتح الأبواب'}</button>` : ''}<button type="button" class="btn sm danger" data-it="del">حذف</button></div>
       <p class="hint">من لوحة المفاتيح: الأسهم للتحريك سنتيمتراً (مع Shift عشرة)، Q و E للتدوير، PageUp و PageDown للرفع والإنزال، Ctrl+D للنسخ. اضغط Alt أثناء السحب لإلغاء الالتصاق.</p></div>`;
   }
@@ -3350,12 +3369,12 @@ function keepInside(){
     if (dx || dz || dy) { L[i].x += dx; L[i].z += dz; if (dy) L[i].y = (L[i].y || 0) + dy; moved = true; }
   });
   if (!moved) return false;
-  cfg = {...cfg, items: sanitizeItems(L, cfg)}; buildScene();
+  cfg = {...cfg, items: sanitizeItems(L, cfg)}; buildScene(); applyCorners();
   toast(I18N.t('القطعة تبقى داخل حدود الغرفة'));
   return true;
 }
 const buildScene = build;
-build = function(){ buildScene(); keepInside(); refreshClashes(); };
+build = function(){ buildScene(); applyCorners(); keepInside(); refreshClashes(); };
 // after a change to the pieces: a new clash is undone (prevention on) or reported (off); old ones are left to the user
 function guardClash(before, keys0){
   const fresh = lastClashes.filter(c => !keys0.has(clashKey(c)));
@@ -3363,7 +3382,7 @@ function guardClash(before, keys0){
   const c = fresh.sort((p, q) => q.depth - p.depth)[0], v = Math.max(1, Math.round(c.depth)), a = whoName({item: c.a}), b = whoName(c.b);
   if (!noClash) { toast(I18N.f('clashMsg', {a, b, v})); return false; }
   const s0 = JSON.stringify(before);
-  cfg = before; buildScene(); refreshClashes();
+  cfg = before; buildScene(); applyCorners(); refreshClashes();
   if (hist.past[hist.past.length - 1] === s0) { hist.past.pop(); syncHist(); }
   toast(I18N.f('clashBlocked', {a, b, v}));
   return true;
@@ -3379,6 +3398,122 @@ function settleDrop(d){
     if (!clashWith(d.i, mine, others, dx, dz).length) return {dx, dz, s};
   }
   return {back: true};
+}
+
+/* ================= rounded corners on any piece ================= */
+// One operation for every kind of furniture: each board of the piece is intersected with the piece's rounded silhouette.
+// Seen from above (fl fr bl br) the silhouette is a vertical prism; seen from the front (tl tr) a prism along the depth.
+// A board lying in that plane takes the arc exactly (tops, shelves, worktops from above; doors, backs from the front).
+// A board across it is cut back straight to where the arc passes (the side and the door at a rounded front corner:
+// the corner opens, as an open rounded end). A front left with less than a third of its face is removed with its handle.
+// The design data never changes: only the drawing. The cut list carries the radius and what to cut back.
+function rrPoly(x0, x1, y0, y1, r){   // convex rounded rectangle, counter-clockwise; r = [r00, r10, r11, r01]
+  const out = [], seg = 10, P = [[x0, y0, 180], [x1, y0, 270], [x1, y1, 0], [x0, y1, 90]], S = [[1, 1], [-1, 1], [-1, -1], [1, -1]];
+  P.forEach(([cx, cy, a0], k) => { const rr = r[k]; if (rr <= 1e-4) { out.push([cx, cy]); return; }
+    const ox = cx + S[k][0] * rr, oy = cy + S[k][1] * rr; for (let i = 0; i <= seg; i++) { const a = (a0 + 90 * i / seg) * Math.PI / 180; out.push([ox + rr * Math.cos(a), oy + rr * Math.sin(a)]); } });
+  return out;
+}
+function clipPoly(subj, clip){   // Sutherland-Hodgman, clip polygon convex and counter-clockwise
+  let out = subj;
+  for (let i = 0; i < clip.length && out.length; i++) {
+    const A = clip[i], B = clip[(i + 1) % clip.length], side = q => (B[0] - A[0]) * (q[1] - A[1]) - (B[1] - A[1]) * (q[0] - A[0]), inp = out; out = [];
+    for (let j = 0; j < inp.length; j++) { const P = inp[j], Q = inp[(j + 1) % inp.length], sp = side(P), sq = side(Q);
+      if (sp >= -1e-9) out.push(P); if ((sp >= -1e-9) !== (sq >= -1e-9)) { const t = sp / (sp - sq); out.push([P[0] + (Q[0] - P[0]) * t, P[1] + (Q[1] - P[1]) * t]); } }
+  }
+  return out;
+}
+const polyArea = P => Math.abs(P.reduce((s, p, i) => { const q = P[(i + 1) % P.length]; return s + p[0] * q[1] - q[0] * p[1]; }, 0)) / 2;
+// extent of a convex polygon along one axis, at a given value of the other (axis 0: x at y = v; axis 1: y at x = v)
+function polyAt(P, axis, v){
+  const o = 1 - axis; let lo = Infinity, hi = -Infinity;
+  for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length];
+    if ((a[o] - v) * (b[o] - v) <= 0 && a[o] !== b[o]) { const t = (v - a[o]) / (b[o] - a[o]), x = a[axis] + (b[axis] - a[axis]) * t; lo = Math.min(lo, x); hi = Math.max(hi, x); }
+    else if (a[o] === v) { lo = Math.min(lo, a[axis]); hi = Math.max(hi, a[axis]); } }
+  return lo <= hi ? [lo, hi] : null;
+}
+const inPoly = (P, x, y) => P.every((A, i) => { const B = P[(i + 1) % P.length]; return (B[0] - A[0]) * (y - A[1]) - (B[1] - A[1]) * (x - A[0]) >= -1e-6; });
+let rcStats = {pieces: 0, cut: 0, hidden: 0};
+function shapeCorners(root, rc){
+  const list = rc?.c || [], rad = (rc?.r || 0) / 100; if (rad <= 0 || !list.length) return;
+  root.updateMatrixWorld(true);
+  const inv = root.matrixWorld.clone().invert(), toRoot = m => new THREE.Matrix4().multiplyMatrices(inv, m.matrixWorld);
+  const meshes = []; root.traverse(m => { if (m.isMesh && !m.userData.skip && m.visible && m.geometry) meshes.push(m); });
+  if (!meshes.length) return;
+  const info = meshes.map(m => { if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); const T = toRoot(m); return {m, T, b: m.geometry.boundingBox.clone().applyMatrix4(T)}; });
+  const H = new THREE.Box3(); info.forEach(x => H.union(x.b));
+  const W = H.max.x - H.min.x, D = H.max.z - H.min.z, Ht = H.max.y - H.min.y, has = k => list.includes(k);
+  const rp = Math.min(rad, W / 2, D / 2), rf = Math.min(rad, W / 2, Ht / 2);
+  // plan (x, z): corners 00 = back left, 10 = back right, 11 = front right, 01 = front left (front is +z)
+  const F = (has('bl') || has('br') || has('fl') || has('fr')) ? rrPoly(H.min.x, H.max.x, H.min.z, H.max.z, [has('bl') ? rp : 0, has('br') ? rp : 0, has('fr') ? rp : 0, has('fl') ? rp : 0]) : null;
+  // front (x, y): only the top corners
+  const S = (has('tl') || has('tr')) ? rrPoly(H.min.x, H.max.x, H.min.y, H.max.y, [0, 0, has('tr') ? rf : 0, has('tl') ? rf : 0]) : null;
+  const hidden = new Set();
+  for (const {m, T, b} of info) {
+    const dx = b.max.x - b.min.x, dy = b.max.y - b.min.y, dz = b.max.z - b.min.z, cx = (b.min.x + b.max.x) / 2, cy = (b.min.y + b.max.y) / 2, cz = (b.min.z + b.max.z) / 2;
+    // a board turned at an angle inside the piece cannot be redrawn as a straight prism: it is kept or removed whole
+    const e = T.elements, aligned = [0, 4, 8].every(k => { const v = [Math.abs(e[k]), Math.abs(e[k + 1]), Math.abs(e[k + 2])], n = Math.hypot(...v); return Math.max(...v) > n * .999; });
+    const boxy = aligned && (m.geometry.type === 'BoxGeometry' || m.geometry.type === 'RoundedBoxGeometry'), slabby = aligned && !!m.userData.slab && !Array.isArray(m.material);
+    if ((!boxy && !slabby) || Array.isArray(m.material)) {   // handles, legs, decor, glass: kept or removed whole
+      if ((F && !inPoly(F, cx, cz)) || (S && !inPoly(S, cx, cy))) { m.visible = false; hidden.add(m); }
+      continue;
+    }
+    // the board's outline in its own plane, in the piece's frame
+    let plan = slabby ? m.userData.slab.map(([px, pz]) => { const v = new THREE.Vector3(px, pz, 0).applyMatrix4(T); return [v.x, v.z]; }) : [[b.min.x, b.min.z], [b.max.x, b.min.z], [b.max.x, b.max.z], [b.min.x, b.max.z]];
+    const thin = slabby ? 'y' : (dy <= dx && dy <= dz ? 'y' : dz <= dx ? 'z' : 'x');
+    let x0 = b.min.x, x1 = b.max.x, y0 = b.min.y, y1 = b.max.y, z0 = b.min.z, z1 = b.max.z, shape = null, axis = null;
+    if (thin === 'y') {                      // horizontal board: exact from above, cut back straight for a front corner
+      if (F) { const c = clipPoly(plan, F); if (polyArea(c) < polyArea(plan) - 1e-7) { plan = c; shape = c; axis = 'y'; } }
+      if (S) { const iv = polyAt(S, 0, cy); if (iv && (iv[0] > x0 + 1e-4 || iv[1] < x1 - 1e-4)) { plan = clipPoly(plan, rrPoly(iv[0], iv[1], z0 - 1, z1 + 1, [0, 0, 0, 0])); shape = plan; axis = 'y'; } }
+    } else if (thin === 'z') {               // front or back board: exact from the front, cut back straight for a plan corner
+      let face = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+      if (S) { const c = clipPoly(face, S); if (polyArea(c) < polyArea(face) - 1e-7) { face = c; shape = c; axis = 'z'; } }
+      if (F) { const iv = polyAt(F, 0, cz); if (iv && (iv[0] > x0 + 1e-4 || iv[1] < x1 - 1e-4)) { face = clipPoly(face, rrPoly(iv[0], iv[1], y0 - 1, y1 + 1, [0, 0, 0, 0])); shape = face; axis = 'z'; } }
+      plan = null; if (shape) shape = face;
+    } else {                                 // side or divider: stays a rectangle, shortened where the arc passes
+      let za = z0, zb = z1, ya = y0, yb = y1;
+      if (F) { const iv = polyAt(F, 1, cx); if (iv) { za = Math.max(za, iv[0]); zb = Math.min(zb, iv[1]); } }
+      if (S) { const iv = polyAt(S, 1, cx); if (iv) { ya = Math.max(ya, iv[0]); yb = Math.min(yb, iv[1]); } }
+      if (za > z0 + 1e-4 || zb < z1 - 1e-4 || ya > y0 + 1e-4 || yb < y1 - 1e-4) { shape = [[za, ya], [zb, ya], [zb, yb], [za, yb]]; axis = 'x'; }
+    }
+    if (!shape) continue;
+    const full = thin === 'y' ? (slabby ? polyArea(m.userData.slab) : dx * dz) : thin === 'z' ? dx * dy : dz * dy;
+    if (shape.length < 3 || polyArea(shape) < full * .34) { m.visible = false; hidden.add(m); continue; }
+    // the new board, built in the piece's frame and brought back into the mesh's own frame
+    const sh = new THREE.Shape(); shape.forEach(([u, v], i) => i ? sh.lineTo(u, v) : sh.moveTo(u, v));
+    let g;
+    if (axis === 'y') { g = new THREE.ExtrudeGeometry(sh, {depth: y1 - y0, bevelEnabled: false, curveSegments: 1}); g.rotateX(Math.PI / 2); g.translate(0, y1, 0); }
+    else if (axis === 'z') { g = new THREE.ExtrudeGeometry(sh, {depth: z1 - z0, bevelEnabled: false, curveSegments: 1}); g.translate(0, 0, z0); }
+    else { g = new THREE.ExtrudeGeometry(sh, {depth: x1 - x0, bevelEnabled: false, curveSegments: 1}); g.rotateY(-Math.PI / 2); g.translate(x1, 0, 0); }
+    g.computeVertexNormals();
+    if (isMetric(m.material)) boxUV(g, 1, R(), R(), grainFor(dx, dy, dz)); else boxUV(g, 1.1, R(), R());
+    g.applyMatrix4(T.clone().invert());
+    m.geometry.dispose(); m.geometry = g; rcStats.cut++;
+  }
+  // a door or drawer whose face is gone goes with its handle and box
+  for (const a of anims) { let inside = false; for (let p = a.o; p; p = p.parent) if (p === root) { inside = true; break; } if (!inside) continue;
+    let big = null, area = 0; a.o.traverse(m => { if (m.isMesh && (m.geometry.type === 'BoxGeometry' || m.geometry.type === 'RoundedBoxGeometry' || m.geometry.type === 'ExtrudeGeometry')) { const bb = new THREE.Box3().setFromObject(m), s = bb.getSize(new THREE.Vector3()), ar = Math.max(s.x * s.y, s.x * s.z, s.y * s.z); if (ar > area) { area = ar; big = m; } } });
+    if (big && hidden.has(big)) a.o.traverse(m => { if (m.isMesh) { m.visible = false; hidden.add(m); } }); }
+  rcStats.pieces++; rcStats.hidden += hidden.size;
+}
+function applyCorners(){
+  rcStats = {pieces: 0, cut: 0, hidden: 0};
+  (cfg.items || []).forEach((it, i) => { if (it.rc) { const g = itemGroup(i); if (g) { shapeCorners(g, it.rc); const b = objBox(g); itemBoxes[i] = {x0: b.min.x * 100, x1: b.max.x * 100, y0: b.min.y * 100, y1: b.max.y * 100, z0: b.min.z * 100, z1: b.max.z * 100}; } } });
+  world.traverse(o => { const m = o.userData.mod; if (!m) return; const u = cfg.units?.[m.run]?.[m.lvl]?.[m.i]; if (u?.rc) shapeCorners(o, u.rc); });
+}
+const rcCount = c => (c.items || []).reduce((s, it) => s + (it.rc?.c.length || 0), 0) + Object.values(c.units || {}).reduce((s, r) => s + [...(r.b || []), ...(r.u || [])].reduce((t, u) => t + (u.rc?.c.length || 0), 0), 0);
+function rcNote(rc){ return I18N.f('rcNote', {c: rc.c.map(k => I18N.t(RC_CORNERS[k])).join(I18N.lang === 'ar' ? '، ' : ', '), r: rc.r}); }
+// panel controls: the corners laid out as they are, from above and from the front
+function cornersUI(rc){
+  const on = k => rc?.c?.includes(k), b = k => `<button type="button" data-rc="${k}" aria-pressed="${!!on(k)}">${RC_CORNERS[k]}</button>`;
+  return `<div class="grp rcg"><h3>الزوايا المدوّرة <small>${rc?.c?.length ? rc.c.length + ' × ' + rc.r + ' سم' : 'كلها مستقيمة'}</small></h3>
+    <div class="rc-box"><span class="lab">من فوق</span><div class="rc-plan">${b('bl')}${b('br')}<i>الأمام</i>${b('fl')}${b('fr')}</div></div>
+    <div class="rc-box"><span class="lab">من الأمام</span><div class="rc-front">${b('tl')}${b('tr')}</div></div>
+    <div class="ued-row"><span class="lab">نصف القطر</span><span class="num"><input id="rcR" type="number" min="1" max="150" value="${rc?.r || 10}" inputmode="numeric"><span>سم</span></span></div>
+    <p class="hint">من فوق: الأسطح والرفوف تأخذ القوس، والجانب والواجهة عند الزاوية يُقصّران فتصير الزاوية مفتوحة. من الأمام: الأبواب والظهر تأخذ القوس، والجانب والسقف يُقصّران. القياس في قائمة التقطيع يبقى للوح كاملاً مع ملاحظة القص.</p></div>`;
+}
+function setRC(fn){
+  if (sel?.item !== undefined) { editItems(L => { const it = L[sel.item]; if (it) { const r = fn(it.rc); if (r) it.rc = r; else delete it.rc; } }); renderFree?.(); drawSel(); }
+  else if (sel) { editUnits(u => { const m = curUnit(u); if (m) { const r = fn(m.rc); if (r) m.rc = r; else delete m.rc; } }); renderUnits(); }
 }
 // the piece's own box with no move and no turn
 function localBox(g){
@@ -3458,7 +3593,7 @@ function detachUnit(mod){
   const rr = Math.round(((-g.rotation.y * 180 / Math.PI) % 360 + 360) % 360);
   record();
   const u = JSON.parse(JSON.stringify(cfg.units)); u[mod.run][mod.lvl][mod.i] = {t: mod.lvl === 'u' ? 'ugap' : 'bgap', w: m.w};
-  const L = JSON.parse(JSON.stringify(cfg.items || [])); L.push({t: m.t, w: m.w, x: Math.round(v.x * 100), z: Math.round(v.z * 100), r: rr, ...(m.o ? {o: m.o} : {})});
+  const L = JSON.parse(JSON.stringify(cfg.items || [])), rc0 = cfg.units[mod.run]?.[mod.lvl]?.[mod.i]?.rc; L.push({t: m.t, w: m.w, x: Math.round(v.x * 100), z: Math.round(v.z * 100), r: rr, ...(m.o ? {o: m.o} : {}), ...(rc0 ? {rc: rc0} : {})});
   cfg = {...cfg, auto: false, itemsAuto: false, units: sanitizeUnits(u), items: sanitizeItems(L, cfg)};
   sel = null; build(); renderSpace();
   return cfg.items.length - 1;
@@ -3589,11 +3724,11 @@ const PRICE_CAT = {
   base:{n:'خزائن سفلية', u:'m', def:260, lab:'متر طولي سفلي'}, upper:{n:'خزائن علوية', u:'m', def:190, lab:'متر طولي علوي'}, tall:{n:'أعمدة طويلة', u:'pc', def:520, lab:'عمود طويل'},
   ward:{n:'خزائن طويلة ومكتبات', u:'m2', def:170, lab:'متر مربع خزانة أو مكتبة'}, low:{n:'وحدات منخفضة', u:'m', def:220, lab:'متر طولي وحدات منخفضة'}, desk:{n:'مكاتب', u:'m', def:180, lab:'متر طولي مكتب'},
   shelf:{n:'رفوف عائمة', u:'m', def:60, lab:'متر رف عائم'}, panel:{n:'ديكور جدران', u:'m2', def:120, lab:'متر مربع ديكور جدار'}, mirror:{n:'مرايا', u:'m2', def:90, lab:'متر مربع مرآة'}, hooks:{n:'علاقات', u:'pc', def:25, lab:'علاقة معاطف'},
-  top:{n:'أسطح العمل', u:'m2', def:140, lab:'متر مربع سطح'}, island:{n:'جزيرة', u:'pc', def:950, lab:'جزيرة'},
+  top:{n:'أسطح العمل', u:'m2', def:140, lab:'متر مربع سطح'}, radius:{n:'زوايا مدوّرة', u:'pc', def:25, lab:'زاوية مدوّرة'}, island:{n:'جزيرة', u:'pc', def:950, lab:'جزيرة'},
   bed:{n:'أسرّة', u:'pc', def:650, lab:'سرير'}, night:{n:'كومودينو', u:'pc', def:140, lab:'كومودينو'}, bunk:{n:'أسرّة بطابقين', u:'pc', def:600, lab:'سرير بطابقين'},
   dresser:{n:'تسريحات', u:'pc', def:350, lab:'تسريحة'}, commode:{n:'كومودا', u:'pc', def:300, lab:'كومودا'}, dtable:{n:'طاولات سفرة', u:'pc', def:450, lab:'طاولة سفرة'}, ctable:{n:'طاولات وسط', u:'pc', def:150, lab:'طاولة وسط'},
 };
-const COST_DEF = {sheetCarcass:70, sheetFront:140, sheetBack:22, sheetAccent:160, sheetPanel:60, edge:1, hinge:4, runner:16, handleU:6, leg:1.5, lift:40, rod:5, gola:12, glassM2:60, mirrorM2:70, stoneM2:110, topCost:90, labor:30,
+const COST_DEF = {radiusCost:10, sheetCarcass:70, sheetFront:140, sheetBack:22, sheetAccent:160, sheetPanel:60, edge:1, hinge:4, runner:16, handleU:6, leg:1.5, lift:40, rod:5, gola:12, glassM2:60, mirrorM2:70, stoneM2:110, topCost:90, labor:30,
   bracket:3, flap:8, tilt:12, led:8, legMetal:6, cushion:40, floatbr:4, hook:2, upholstery:35, slats:45};
 const PRICE_DEF = {cur:'$', shop:'', shopPhone:'', install:250, vat:0, deposit:50, ...Object.fromEntries(Object.entries(PRICE_CAT).map(([k, v]) => [k, v.def])), ...COST_DEF};
 let prices = {...PRICE_DEF, ...lsGet('wr_prices', {})};
@@ -3633,6 +3768,7 @@ function saleLines(){
     const cat = ITEM[it.t]?.cat; if (cat && PRICE_CAT[cat]) addTo(cat, 1);
   }
   if (stats.island) addTo('island', 1);
+  { const n = rcCount(c); if (n) addTo('radius', n); }
   if (stats.top) acc.top = {qty: stats.top, count: (stats.wt || []).length};
   const L = [];
   for (const [cat, def] of Object.entries(PRICE_CAT)) {
@@ -3649,7 +3785,7 @@ function saleLines(){
 function estimate(){ return saleLines().sub - (+prices.install || 0); }
 
 /* ================= cut list (mm) ================= */
-const HW = {hinge:'مفصلة', runner:'سكة جارور (زوج)', dbox:'جسم جارور', handle:'مقبض', leg:'رجل قابلة للتعديل', lift:'آلية باب قلاب', rod:'قضيب تعليق', pin:'حامل رف', gola:'بروفيل Gola (متر)',
+const HW = {radius:'زاوية مدوّرة (CNC أو قالب)', hinge:'مفصلة', runner:'سكة جارور (زوج)', dbox:'جسم جارور', handle:'مقبض', leg:'رجل قابلة للتعديل', lift:'آلية باب قلاب', rod:'قضيب تعليق', pin:'حامل رف', gola:'بروفيل Gola (متر)',
   bracket:'حامل تعليق للجدار', flap:'مسند باب قلاب', tilt:'مفصلة جزامة قلابة', led:'شريط LED (متر)', legMetal:'رجل معدنية', cushion:'وسادة منجّدة', floatbr:'حامل رف مخفي', hook:'شمّاعة', upholstery:'تنجيد (م²)', slats:'قاعدة سرير شرائح'};
 const APPL = {sink:'مجلى', hob:'هوب', oven:'فرن مدمج', dw:'جلاية مدمجة', fridge:'ثلاجة مدمجة', micro:'مايكرويف مدمج', hood:'شفاط', washer:'غسالة', dryer:'نشافة', fridgeFree:'ثلاجة مستقلة', basin:'حوض مغسلة', tv:'شاشة', idoor:'باب داخلي', chairs:'كراسي سفرة', stools:'كراسي بار'};
 const NOSHEET = ['glass', 'mirror', 'stone', 'worktop'];
@@ -3679,6 +3815,8 @@ function cutList(c){
     if (pt) parts.push(pt);
   };
   const T = fab.t, TF = fab.tf, TB = fab.back, GAP = fab.gap, BI = fab.backInset * 2, PL = fab.plinthH;
+  // rounded corners: the parts keep their full size, the sheet says what to cut and a radius job is counted per corner
+  const shaping = [], noteRC = (rc, code) => { if (!rc?.c?.length) return; addHw('radius', rc.c.length); shaping.push({code, msg: rcNote(rc), rc}); };
   const carcass = (code, W, H, D, o = {}) => {
     const m = o.mat || 'carcass', vis = !!o.mat;
     add(code, 'جانب', H, D, T, 2, m, vis ? 2 : 1, vis ? 1 : 0);
@@ -3760,7 +3898,7 @@ function cutList(c){
     if (K && r.id === 'A') { const corners = (hasB ? 1 : 0) + (hasC ? 1 : 0); for (let k = 0; k < corners; k++) { const code = 'AZ' + (k + 1); units++; carcass(code, 600, 760, 560, {rails: true, shelves: 1}); doors(code, 600, fh, 1, fid); addHw('leg', 4); plinth += 600; } }
     for (const m of pb) {
       if (!m.fit || UNIT[m.t].gap || UNIT[m.t].deco) { if (m.fit && m.t === 'rdoor') addAp('idoor'); continue; }
-      cutBase(m, r.id + (++bi), fid);
+      { const cd = r.id + (++bi); cutBase(m, cd, fid); noteRC(c.units?.[r.id]?.b?.[m.i]?.rc, cd); }
     }
     if (plinth) add(r.id, 'وزرة أمامية', plinth, PL, T, 1, F(fid), 1, 0); if (gola) golaM += plinth;
     for (const m of pu) {
@@ -3768,7 +3906,7 @@ function cutList(c){
       if (m.t === 'hood') { addAp('hood'); continue; }
       if (m.t === 'tv') { addAp('tv'); continue; }
       if (!UNIT[m.t].cat) continue;
-      units++; cutUpper(m, r.id + '^' + (++ui), ufid);
+      units++; { const cd = r.id + '^' + (++ui); cutUpper(m, cd, ufid); noteRC(c.units?.[r.id]?.u?.[m.i]?.rc, cd); }
     }
   }
   if (K && c.island && c.wallA >= 280) {
@@ -3779,6 +3917,7 @@ function cutList(c){
   }
   (c.items || []).forEach((it, i) => {
     const code = 'P' + (i + 1), W = it.w * 10, o = iopts(it), f = it.o?.col || fid;
+    noteRC(it.rc, code);
     if (isUnitItem(it)) {
       const T = UNIT[it.t];
       if (T.lvl === 'b') { if (T.deco || T.gap) return; plinth = 0; cutBase(it, code, f); if (plinth) add(code, 'وزرة أمامية', plinth, 100, T, 1, F(f), 1, 0); }
@@ -3852,13 +3991,13 @@ function cutList(c){
   const doorsN = parts.filter(p => p.kind.startsWith('باب') || p.kind === 'واجهة جلاية').reduce((s, p) => s + p.qty, 0), drawersN = parts.filter(p => p.kind === 'واجهة جارور').reduce((s, p) => s + p.qty, 0);
   const nest = nestSheets({grouped}); for (const m of matList) { const n = nest.find(x => x.mat === m.mat && x.th === m.th); if (n) m.sheets = n.count; }
   const checks = WarshaFab.checkParts(grouped, fab, NOSHEET);
-  return {parts, grouped, nest, checks, hw, ap, mats: matList, edgeM, wt, topM2: wt.reduce((s, [l, w]) => s + l * w / 1e6, 0), unitCount: units, doorsN, drawersN};
+  return {shaping, parts, grouped, nest, checks, hw, ap, mats: matList, edgeM, wt, topM2: wt.reduce((s, [l, w]) => s + l * w / 1e6, 0), unitCount: units, doorsN, drawersN};
 }
 function costOf(cl){
   const p = prices, n = k => +p[k] || 0;
   let boards = 0;
   for (const m of cl.mats) boards += m.kind === 'carcass' ? m.sheets * n('sheetCarcass') : m.kind === 'back' ? m.sheets * n('sheetBack') : m.kind === 'front' ? m.sheets * n('sheetFront') : m.kind === 'accent' ? m.sheets * n('sheetAccent') : m.kind === 'panel' ? m.sheets * n('sheetPanel') : m.kind === 'glass' ? m.area * n('glassM2') : m.kind === 'mirror' ? m.area * n('mirrorM2') : m.kind === 'stone' ? m.area * n('stoneM2') : 0;
-  const hwKey = {hinge: 'hinge', runner: 'runner', handle: 'handleU', leg: 'leg', lift: 'lift', rod: 'rod', gola: 'gola', bracket: 'bracket', flap: 'flap', tilt: 'tilt', led: 'led', legMetal: 'legMetal', cushion: 'cushion', floatbr: 'floatbr', hook: 'hook', upholstery: 'upholstery', slats: 'slats'};
+  const hwKey = {radius: 'radiusCost', hinge: 'hinge', runner: 'runner', handle: 'handleU', leg: 'leg', lift: 'lift', rod: 'rod', gola: 'gola', bracket: 'bracket', flap: 'flap', tilt: 'tilt', led: 'led', legMetal: 'legMetal', cushion: 'cushion', floatbr: 'floatbr', hook: 'hook', upholstery: 'upholstery', slats: 'slats'};
   let hwc = 0; for (const [k, q] of Object.entries(cl.hw)) if (hwKey[k]) hwc += q * n(hwKey[k]);
   const edge = cl.edgeM * n('edge'), top = cl.topM2 * n('topCost'), labor = cl.unitCount * n('labor');
   return {boards, edge, hw: hwc, top, labor, total: boards + edge + hwc + top + labor};
@@ -3900,7 +4039,7 @@ function renderCost(){
       <div class="prices">
         ${pin('sheetCarcass', 'لوح هيكل 18 مم') + pin('sheetFront', 'لوح واجهات 18 مم') + pin('sheetAccent', 'لوح خشب الديكور') + pin('sheetBack', 'لوح ظهر HDF') + pin('sheetPanel', 'لوح خلفي داكن') + pin('edge', 'متر شريط حواف', p.cur, .1) + pin('topCost', 'متر مربع سطح (تكلفة)') + pin('stoneM2', 'متر مربع رخام أو حجر')
           + pin('hinge', 'مفصلة', p.cur, .5) + pin('runner', 'سكة جارور (زوج)') + pin('handleU', 'مقبض', p.cur, .5) + pin('leg', 'رجل', p.cur, .5) + pin('legMetal', 'رجل معدنية', p.cur, .5) + pin('lift', 'آلية قلاب') + pin('flap', 'مسند باب قلاب') + pin('tilt', 'مفصلة جزامة') + pin('rod', 'قضيب تعليق') + pin('gola', 'متر بروفيل Gola')
-          + pin('bracket', 'حامل تعليق', p.cur, .5) + pin('floatbr', 'حامل رف مخفي', p.cur, .5) + pin('led', 'متر شريط LED', p.cur, .5) + pin('hook', 'شمّاعة', p.cur, .5) + pin('cushion', 'وسادة منجّدة') + pin('upholstery', 'متر مربع تنجيد') + pin('slats', 'قاعدة سرير شرائح')
+          + pin('radiusCost', 'قص زاوية مدوّرة', p.cur, .5) + pin('bracket', 'حامل تعليق', p.cur, .5) + pin('floatbr', 'حامل رف مخفي', p.cur, .5) + pin('led', 'متر شريط LED', p.cur, .5) + pin('hook', 'شمّاعة', p.cur, .5) + pin('cushion', 'وسادة منجّدة') + pin('upholstery', 'متر مربع تنجيد') + pin('slats', 'قاعدة سرير شرائح')
           + pin('glassM2', 'متر مربع زجاج') + pin('mirrorM2', 'متر مربع مرآة') + pin('labor', 'أجرة تصنيع الوحدة')}
       </div></details>
     <details class="grp det" data-det="fab" ${openDetails.fab ? 'open' : ''}><summary>إعدادات التصنيع</summary>
@@ -3910,6 +4049,7 @@ function renderCost(){
       <label class="sw-row"><input type="checkbox" data-fab="edgeDeduct" ${fab.edgeDeduct ? 'checked' : ''}> خصم سماكة الحافة من مقاس القص</label>
       <div class="ued-row"><button type="button" class="btn sm" data-fabreset>الرجوع للقيم الافتراضية</button></div>
       <p class="hint">تُطبّق على قائمة التقطيع ومخطط الألواح وملف CSV. المشهد ثلاثي الأبعاد يبقى تقريبياً ولا يتغير بها.</p></details>
+    ${cl.shaping.length ? `<div class="grp"><h3>زوايا مدوّرة <small>${cl.shaping.reduce((s, x) => s + x.rc.c.length, 0)}</small></h3>${cl.shaping.map(x => `<p>${esc(x.code)}: ${esc(x.msg)}</p>`).join('')}</div>` : ''}
     ${cl.checks.length ? `<div class="grp issues"><h3>تنبيهات قائمة التقطيع</h3>${cl.checks.map(x => `<p>${esc(x.code)}: ${esc(x.msg)}</p>`).join('')}</div>` : ''}
     <div class="grp"><h3>هوية الورشة <small>تظهر في المستندات ووضع العرض</small></h3>
       <div class="logo-row">${p.shopLogo ? `<img src="${p.shopLogo}" alt="شعار الورشة">` : '<span class="ph">الشعار</span>'}<label class="btn sm">${p.shopLogo ? 'تغيير الشعار' : 'رفع الشعار'}<input type="file" id="logoIn" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden></label>${p.shopLogo ? '<button type="button" class="btn sm ghost" data-logodel>إزالة</button>' : ''}</div>
@@ -4170,6 +4310,7 @@ async function buildWorkshop(){
   d.table([{label: '#', w: .05, align: 'center', f: 'm'}, {label: 'الوحدات', w: .16, f: 'm'}, {label: 'القطعة', w: .18}, {label: 'الطول', w: .09, align: 'center', f: 'm'}, {label: 'العرض', w: .09, align: 'center', f: 'm'}, {label: 'مم', w: .06, align: 'center', f: 'm'}, {label: 'العدد', w: .07, align: 'center', f: 'm'}, {label: 'الخامة', w: .14}, {label: 'العرق', w: .06, align: 'center'}, {label: 'الحواف', w: .1, align: 'center'}],
     cl.grouped.map((g, i) => [String(i + 1), g.codes.join(' '), g.kind, String(g.L), String(g.W), String(g.th), String(g.qty), matName(g.mat), g.grain === 'L' ? 'طول' : g.grain === 'W' ? 'عرض' : '-', edgeTxt(g)]), {sz: 15, pad: 8});
   d.text(`الحواف: ط = حافة على الطول، ع = حافة على العرض. العرق: اتجاه عرق الخشب في القطعة. ${fab.edgeDeduct ? `المقاسات مقاسات قص، خُصمت منها سماكة الحافة ${fab.edge} مم.` : 'المقاسات نهائية، ولم تُخصم منها سماكة الحافة.'} هيكل ${fab.t} مم، واجهات ${fab.tf} مم، ظهر ${fab.back} مم، فراغ الأبواب ${fab.gap} مم.`, {sz: 16, color: MUTED});
+  if (cl.shaping.length) { d.text('زوايا مدوّرة:', {sz: 18, w: 600}); for (const x of cl.shaping) d.text(`• ${x.code}: ${x.msg}`, {sz: 16}); }
   if (cl.checks.length) { d.text('تنبيهات على القائمة:', {sz: 18, w: 600}); for (const x of cl.checks) d.text(`• ${x.code}: ${x.msg}`, {sz: 16}); }
   { const nest = cl.nest; if (nest.length) { d.h2('مخطط التقطيع على الألواح', Math.round((PW - 2 * PM) * .8 * fab.sheetW / fab.sheetL) + 100); drawNest(d, nest); } }
   { const iss = checkIssues(); if (iss.length) { d.h2('ملاحظات الفحص'); for (const x of iss) d.text('• ' + x.msg, {sz: 18}); } }
@@ -4503,6 +4644,9 @@ async function importFile(file){
   renderClients(); toast(fail ? I18N.f('importedFail', {n, f: fail}) : I18N.f('imported', {n}));
 }
 document.addEventListener('click', e => { if (e.target.closest('#backupBtn')) exportFile(store.list, true); });
+document.addEventListener('click', e => { const b = e.target.closest('[data-rc]'); if (!b || !sel) return; const k = b.dataset.rc;
+  setRC(rc => { const c = new Set(rc?.c || []); c.has(k) ? c.delete(k) : c.add(k); return c.size ? {r: rc?.r || +($('#rcR')?.value) || 10, c: [...c]} : null; }); });
+document.addEventListener('change', e => { if (e.target.id !== 'rcR' || !sel) return; const r = Math.round(clamp(+e.target.value || 10, 1, 150)); setRC(rc => rc?.c?.length ? {r, c: rc.c} : null); });
 document.addEventListener('change', e => { if (e.target.id === 'noClash') { noClash = e.target.checked; lsSet('wr_noclash', noClash); toast(I18N.t(noClash ? 'منع التداخل' : 'التداخل مسموح، ويظهر بالأحمر')); } });
 document.addEventListener('change', e => { if (e.target.id === 'importIn' && e.target.files[0]) { importFile(e.target.files[0]); e.target.value = ''; } });
 
@@ -4744,7 +4888,7 @@ async function photoCompare(n){
     return {w, h, pixels: cnt, mean: +(sum / cnt / 3).toFixed(3), max};
   } finally { photoBusy = false; photoN = 0; dirty = true; }
 }
-window.__wr = {get clashes(){ return lastClashes.map(c => ({a: c.a, b: c.b.item ?? (c.b.mod ? 'unit' : 'top'), depth: Math.round(c.depth * 10) / 10})); }, set noClash(v){ noClash = v; }, settle: i => { const g = itemGroup(i); return g ? settleDrop({i, group: g}) : null; }, photoCompare, deviceTest: () => deviceTest(document.createElement('pre')), texReady, texStats, setPhoto, get photoN(){ return photoN; }, photoShot: async (w, h, n) => (await photoShot(w, h, n, false, false)), makeShot, get envReady(){ return envReady; }, openNow: v => { openT = openV = v; applyAnims(); renderer.shadowMap.needsUpdate = true; dirty = true; }, setQuality, get quality(){ return quality; }, dirty: () => { dirty = true; }, setCam, openDemo, DEMOS, exportFile, importFile, setPresent, get fab(){ return fab; }, set fab(v){ fab = WarshaFab.sanitizeFab(v); }, store, setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
+window.__wr = {get rcStats(){ return rcStats; }, setRC, get clashes(){ return lastClashes.map(c => ({a: c.a, b: c.b.item ?? (c.b.mod ? 'unit' : 'top'), depth: Math.round(c.depth * 10) / 10})); }, set noClash(v){ noClash = v; }, settle: i => { const g = itemGroup(i); return g ? settleDrop({i, group: g}) : null; }, photoCompare, deviceTest: () => deviceTest(document.createElement('pre')), texReady, texStats, setPhoto, get photoN(){ return photoN; }, photoShot: async (w, h, n) => (await photoShot(w, h, n, false, false)), makeShot, get envReady(){ return envReady; }, openNow: v => { openT = openV = v; applyAnims(); renderer.shadowMap.needsUpdate = true; dirty = true; }, setQuality, get quality(){ return quality; }, dirty: () => { dirty = true; }, setCam, openDemo, DEMOS, exportFile, importFile, setPresent, get fab(){ return fab; }, set fab(v){ fab = WarshaFab.sanitizeFab(v); }, store, setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
 })();
 </script>
 
