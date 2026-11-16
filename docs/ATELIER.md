@@ -92,7 +92,7 @@ docker compose build && docker compose up -d
 docker compose logs -f app                     # « listening on 0.0.0.0:8080 »
 ```
 
-Route à ajouter au reverse proxy (une seule) :
+Route à ajouter au reverse proxy (une seule). Pour nginx, le fichier prêt est `deploy/nginx/warsha-atelier.conf` (étapes en tête du fichier). Si nginx tourne lui-même dans un conteneur Docker, `127.0.0.1` désigne ce conteneur : il faut alors joindre l'app par un réseau Docker commun au lieu du port local.
 
 ```nginx
 server {
