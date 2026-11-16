@@ -76,6 +76,9 @@ export class SyncController {
     return r;
   }
 
+  @Get('projects')
+  list() { return this.sync.list(); }
+
   @Get('trash')
   trash() { return this.sync.trash(); }
 

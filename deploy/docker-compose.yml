@@ -1,0 +1,72 @@
+# One workshop, one installation. Its own project name, network and volumes: nothing here touches the other
+# projects of the server. The app listens on 127.0.0.1 only; the server's existing reverse proxy gets one route to it.
+name: warsha-atelier
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: warsha
+      POSTGRES_USER: warsha
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+    volumes:
+      - db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U warsha -d warsha"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    security_opt: ["no-new-privileges:true"]
+    shm_size: 128mb
+    # no port published: only the app and the backup job reach it
+
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: warsha-atelier:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://warsha:${POSTGRES_PASSWORD}@db:5432/warsha
+      BACKUP_STATUS_FILE: /backup-status/status.json
+    ports:
+      - "127.0.0.1:${APP_PORT:-8090}:8080"
+    volumes:
+      - backup-status:/backup-status:ro
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    mem_limit: 512m
+
+  backup:
+    build: ./backup
+    image: warsha-atelier-backup:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      PGHOST: db
+      PGUSER: warsha
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: warsha
+      STATUS_FILE: /backup-status/status.json
+    volumes:
+      - backup-status:/backup-status
+      - restic-cache:/root/.cache/restic
+      # SFTP key for the storage box (id_ed25519 and known_hosts), read only; see docs/ATELIER.md
+      - ./backup/ssh:/root/.ssh:ro
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 512m
+
+volumes:
+  db:
+  backup-status:
+  restic-cache:

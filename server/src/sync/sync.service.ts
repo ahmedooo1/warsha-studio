@@ -105,6 +105,12 @@ export class SyncService {
     });
   }
 
+  // a light list for the owner pages: no design data, no picture
+  async list() {
+    return this.db.select({id: projects.id, name: projects.name, phone: projects.phone, variant: projects.variant, rev: projects.rev, device: projects.device, updatedAt: projects.updatedAt, deletedAt: projects.deletedAt, user: users.name})
+      .from(projects).leftJoin(users, eq(users.id, projects.updatedBy)).orderBy(desc(projects.updatedAt)).limit(2000);
+  }
+
   async trash() {
     return this.db.select({id: projects.id, name: projects.name, variant: projects.variant, rev: projects.rev, deletedAt: projects.deletedAt, thumb: projects.thumb})
       .from(projects).where(isNotNull(projects.deletedAt)).orderBy(desc(projects.deletedAt));

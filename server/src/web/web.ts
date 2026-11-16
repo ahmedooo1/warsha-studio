@@ -44,15 +44,17 @@ export function mountWeb(app: Express, cfg: Config) {
     res.setHeader('Cache-Control', 'no-cache');
     res.type('html').send(get());
   };
-  const stat = (dir: string) => express.static(dir, {index: false, fallthrough: false, maxAge: '1h', dotfiles: 'deny'});
+  // scripts are checked again on every load (an update arrives at once); textures and three.js are kept a day
+  const stat = (dir: string, maxAge: string | number = 0) => express.static(dir, {index: false, fallthrough: false, maxAge, dotfiles: 'deny'});
   app.get('/', page(appHtml));
   app.get('/index.html', page(appHtml));
   app.get(/^\/v\/[A-Za-z0-9_-]{40,60}$/, (req, res, next) => { res.setHeader('Referrer-Policy', 'no-referrer'); res.setHeader('X-Robots-Tag', 'noindex'); page(viewHtml)(req, res); });
   app.get('/admin', (_req, res) => { res.setHeader('Content-Security-Policy', CSP); res.setHeader('Cache-Control', 'no-cache'); res.sendFile(path.join(cfg.publicDir, 'admin.html')); });
+  app.get('/sw.js', (_req, res) => { res.setHeader('Cache-Control', 'no-cache'); res.setHeader('Service-Worker-Allowed', '/'); res.sendFile(path.join(cfg.publicDir, 'sw.js')); });
   app.use('/cloud', stat(cfg.publicDir));
   app.use('/js', stat(path.join(cfg.editorDir, 'js')));
-  app.use('/assets', stat(path.join(cfg.editorDir, 'assets')));
-  if (existsSync(path.join(cfg.editorDir, 'vendor'))) app.use('/vendor', stat(path.join(cfg.editorDir, 'vendor')));
+  app.use('/assets', stat(path.join(cfg.editorDir, 'assets'), '1d'));
+  if (existsSync(path.join(cfg.editorDir, 'vendor'))) app.use('/vendor', stat(path.join(cfg.editorDir, 'vendor'), '1d'));
   app.get('/og.jpg', (_req, res) => res.sendFile(path.join(cfg.editorDir, 'og.jpg')));
   app.use((err: {status?: number}, req: Request, res: Response, next: NextFunction) => {
     const st = err.status && err.status >= 400 && err.status < 500 ? err.status : 500;

@@ -561,7 +561,7 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
-const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} try { window.WarshaCloud?.onLocal?.(k, v); } catch {} };
 // like lsSet, but says whether the write really happened (full storage, private mode)
 const lsSafeSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } };
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); }
@@ -3898,6 +3898,7 @@ function startItemDrag(i, f){
 }
 stageEl.addEventListener('pointerdown', e => {
   if (e.target !== canvas || e.button > 0) return;
+  if (VIEW_ONLY) return;
   stopTour();
   downAt = {x: e.clientX, y: e.clientY, t: performance.now()};
   const hit = pickAt(e), f = floorAt(e);
@@ -4377,6 +4378,7 @@ function renderCost(){
       <div class="prices"><label for="p-brand">لون الهوية</label><span class="num"><input id="p-brand" data-price="brand" type="color" value="${/^#[0-9a-f]{6}$/i.test(p.brand || '') ? p.brand : '#F4B400'}"></span>
         <label for="p-quoteDays">صلاحية عرض السعر</label><span class="num"><input id="p-quoteDays" data-price="quoteDays" type="number" min="1" value="${+p.quoteDays || 30}"><span>يوماً</span></span></div>
       <label class="field">شروط عرض السعر <small>سطر لكل شرط</small><textarea id="p-terms" data-price="terms" rows="4" placeholder="تُعتمد المقاسات النهائية بعد الكشف في الموقع.">${esc(p.terms || '')}</textarea></label>
+      <label class="field">البيانات القانونية للورشة <small>تظهر أسفل عرض السعر</small><textarea id="p-shopLegal" data-price="shopLegal" rows="3" dir="auto" placeholder="SIRET، رقم الضريبة، التأمين العشري، السجل التجاري">${esc(p.shopLegal || '')}</textarea></label>
       <p class="hint">الأسعار المكتوبة أمثلة، اكتب أسعار ورشتك مرة واحدة وتبقى محفوظة على هذا الجهاز.</p></div>`;
   updateCostNumbers();
 }
@@ -4583,9 +4585,9 @@ function quoteTerms(){
   const days = +prices.quoteDays || 30, own = String(prices.terms || '').split('\n').map(t => t.trim()).filter(Boolean);
   return [I18N.f('validity', {d: days}), ...(own.length ? own : ['تُعتمد المقاسات النهائية بعد الكشف في الموقع.', 'الصور توضيحية، وقد تختلف درجات الألوان قليلاً عن الخامات الحقيقية.'])];
 }
-async function buildQuote(){
+async function buildQuote(numOverride){
   await docFonts(); await logoReady();
-  const cl = cutList(cfg), q = saleLines(), num = 'Q' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '-' + (current?.id || 'x000').slice(-3).toUpperCase();
+  const cl = cutList(cfg), q = saleLines(), num = numOverride || 'Q' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '-' + (current?.id || 'x000').slice(-3).toUpperCase();
   const d = newDoc('عرض سعر'); docHeader(d, 'عرض سعر', num);
   const shot = snapshot(1700, 860, false, true); d.image(shot, PW - 2 * PM, Math.round((PW - 2 * PM) * 860 / 1700));
   d.h2('المواصفات'); d.table([{label: 'البند', w: .3}, {label: 'الاختيار', w: .7}], specRows(cl), {head: false});
@@ -4601,6 +4603,7 @@ async function buildQuote(){
   { const pl = await planImage(); d.h2('المخطط من الأعلى', pl.h + 20); d.image(pl.img, pl.w, pl.h, {border: false}); }
   d.h2('ملاحظات');
   for (const t of quoteTerms()) d.text('• ' + t, {sz: 19});
+  if (String(prices.shopLegal || '').trim()) { d.y += 6; for (const t of String(prices.shopLegal).split('\n').map(x => x.trim()).filter(Boolean)) d.text(t, {sz: 16, color: MUTED, gap: 4}); }
   d.need(150); d.y += 50; const x = d.x; x.fillStyle = RULE; x.fillRect(PW - PM - 380, d.y + 50, 380, 2); x.fillRect(PM, d.y + 50, 380, 2);
   d.set(18, 400, 'b', MUTED); x.textAlign = 'right'; x.fillText('توقيع الزبون', PW - PM, d.y + 80); x.fillText('توقيع الورشة', PM + 380, d.y + 80); d.y += 100;
   return {...(await d.finish()), name: `عرض سعر ${current?.name || 'تصميم'} ${num}.pdf`};
@@ -4656,6 +4659,7 @@ async function makeDoc(kind){
     $('#docPreview').src = docFile.preview.toDataURL('image/jpeg', .8);
     $('#docHint').textContent = kind === 'quote' ? 'أرسل الملف للزبون عبر واتساب أو اطبعه.' : 'اطبع الورقة وضعها في الورشة.';
     $('#docSheet').hidden = false;
+    try { window.WarshaCloud?.onDoc?.(kind); } catch {}
   } catch (e) { console.error(e); toast('تعذّر تجهيز الملف، حاول مرة أخرى'); }
   finally { if (btn) { btn.disabled = false; btn.innerHTML = label; } }
 }
@@ -4728,7 +4732,7 @@ document.addEventListener('input', e => {
   if (t.dataset.fab) { const k = t.dataset.fab; fab = WarshaFab.sanitizeFab({...fab, [k]: k === 'edgeDeduct' ? t.checked : +t.value}); lsSet('wr_fab', fab); updateCostNumbers(); }
   if (t.id === 'logoIn' && t.files[0]) loadLogo(t.files[0]);
   if (t.id === 'discIn') { record('disc'); cfg = {...cfg, disc: Math.round(clamp(+t.value || 0, 0, 50))}; updateCostNumbers(); }
-  if (t.dataset.price) { const k = t.dataset.price; prices[k] = ['cur', 'shop', 'shopPhone', 'shopAddr', 'shopEmail', 'terms', 'brand'].includes(k) ? t.value : (+t.value || 0); lsSet('wr_prices', prices); updateCostNumbers(); }
+  if (t.dataset.price) { const k = t.dataset.price; prices[k] = ['cur', 'shop', 'shopPhone', 'shopAddr', 'shopEmail', 'terms', 'brand', 'shopLegal', 'quotePrefix'].includes(k) ? t.value : (+t.value || 0); lsSet('wr_prices', prices); updateCostNumbers(); }
 });
 document.addEventListener('change', e => {
   const t = e.target;
@@ -4806,12 +4810,30 @@ document.addEventListener('touchend', () => {
 });
 window.addEventListener('pointerup', () => { const d = palDrag; palDrag = null; if (d && d.ghost && !d.made) { d.ghost.remove(); stageEl.classList.remove('dropping'); } });
 
+/* ================= host interface: what the workshop server's cloud.js may ask of the editor ================= */
+// Used only when the page is served by the workshop server (window.WarshaCloud). Nothing here runs otherwise.
+var VIEW_ONLY = false;
+window.WarshaHost = {
+  openDesign(d, client){ sel = null; resetHistory(); cfg = sanitize(d.cfg, DEFAULT); setClient(client === undefined ? (d.id ? {id: d.id, name: d.name, phone: d.phone || '', note: d.note || ''} : null) : client); if (!client && d.name) $('#clientName').textContent = d.name; renderAll(); build(); setCam('angle'); },
+  applySettings(p, f){ if (p && typeof p === 'object') { prices = {...PRICE_DEF, ...p}; try { localStorage.setItem('wr_prices', JSON.stringify(prices)); } catch {} }
+    if (f && typeof f === 'object') { fab = WarshaFab.sanitizeFab(f); try { localStorage.setItem('wr_fab', JSON.stringify(fab)); } catch {} }
+    logoImg = null; renderCost(); },
+  settings(){ return {prices: {...prices}, fab: {...fab}}; },
+  readOnly(){ VIEW_ONLY = true; select(null); },
+  present(on){ setPresent(!!on); },
+  current(){ if (!current?.id) return null; const d = store.list.find(x => x.id === current.id); return {...current, saved: !!d && JSON.stringify(sanitize(d.cfg, DEFAULT)) === JSON.stringify(sanitize(cfg, DEFAULT))}; },
+  figures(){ const q = saleLines(); return {lines: q.lines, sub: q.sub, vat: q.vat, total: q.total, deposit: q.deposit, vatRate: +prices.vat || 0, depositRate: +prices.deposit || 0, disc: +cfg.disc || 0, extras: cfg.extras || [], cur: prices.cur}; },
+  async issueQuote(number){ docFile = await buildQuote(number); $('#docTitle').textContent = I18N.t('عرض السعر') + ' ' + number; $('#docPreview').src = docFile.preview.toDataURL('image/jpeg', .8); return docFile; },
+  refreshClients(){ if (!$('#clientsSheet').hidden) renderClients(); },
+  toast(m){ toast(m); },
+  money(v){ return money(v); }
+};
 /* ================= storage: designs per client ================= */
 let current = null; // {id, name, phone, note}
 const store = {
   db: null, list: lsGet('wr_designs', []), unsub: null,
   async init(){
-    try { const db = await window.claude?.use?.('db'); if (!db) return; this.db = db;
+    try { const db = window.WarshaCloud ? await window.WarshaCloud.db() : await window.claude?.use?.('db'); if (!db) return; this.db = db;
       this.unsub = db.collection('designs').orderBy('updatedAt', 'desc').limit(300).onSnapshot(s => { this.list = s.docs.map(d => ({id: d.id, ...d.data()})); if (!$('#clientsSheet').hidden) renderClients(); }, () => { this.db = null; });
     } catch {}
   },
@@ -4838,7 +4860,7 @@ function renderClients(){
     : `<div class="empty">لا يوجد زبائن محفوظون بعد. صمّم لزبونك ثم اضغط «حفظ»، أو افتح أحد المشاريع التجريبية.</div>`)
     + `<div class="grp demos"><h3>مشاريع تجريبية للعرض</h3><div class="chips">${DEMOS.map((x, i) => `<button type="button" class="chip" data-demo="${i}">${x.name}</button>`).join('')}</div></div>`
     + `<div class="grp"><h3>النسخ الاحتياطي</h3><div class="ued-row"><button type="button" class="btn sm" id="backupBtn">تنزيل نسخة احتياطية كاملة</button><label class="btn sm">استيراد ملف<input type="file" id="importIn" accept=".json,application/json" hidden></label></div><p class="hint">النسخة الاحتياطية ملف واحد فيه كل التصاميم وأسعار الورشة وإعدادات التصنيع وهويتها. احفظها خارج الجهاز بانتظام. الاستيراد يقبل نسخة احتياطية كاملة أو مشروعاً واحداً.</p></div>`
-    + `<p class="hint">${store.db ? 'التصاميم محفوظة في هذه الصفحة، ويراها كل من تشاركه الرابط مع صلاحية التعديل.' : 'التصاميم محفوظة على هذا الجهاز فقط.'}</p>`
+    + `<p class="hint">${store.db ? (window.WarshaCloud ? 'التصاميم محفوظة على هذا الجهاز وعلى خادم الورشة، وتتزامن مع أجهزة الورشة الأخرى.' : 'التصاميم محفوظة في هذه الصفحة، ويراها كل من تشاركه الرابط مع صلاحية التعديل.') : 'التصاميم محفوظة على هذا الجهاز فقط.'}</p>`
     + `<div class="grp"><h3>فحص هذا الجهاز</h3><div class="ued-row"><button type="button" class="btn sm" id="diagBtn">ابدأ الفحص</button><button type="button" class="btn sm ghost" id="diagCopy" hidden>نسخ النتائج</button></div><pre class="diag" id="diagOut" data-notr hidden></pre><p class="hint">يقيس على هذا الجهاز سرعة الرسم في المستويات الثلاثة، والتصوير الواقعي، والصورة الكبيرة، وذاكرة الخامات. يستغرق من دقيقة إلى بضع دقائق، ولا يغيّر التصميم.</p></div>`;
 }
 /* ================= device test: measures this phone or computer, results to copy ================= */
@@ -5122,8 +5144,8 @@ document.addEventListener('keydown', e => {
 /* ================= AI: client request -> design ================= */
 let askImage = null, sampleFn = null;
 (async () => {
-  try { sampleFn = await window.claude?.use?.('sample'); } catch { sampleFn = null; }
-  if (!sampleFn) { $('#askGo').disabled = true; const n = $('#askNote'); n.hidden = false; n.textContent = 'مساعد التصميم يعمل عند فتح الصفحة داخل Claude.'; return; }
+  try { sampleFn = window.WarshaCloud ? await window.WarshaCloud.sample() : await window.claude?.use?.('sample'); } catch { sampleFn = null; }
+  if (!sampleFn) { $('#askGo').disabled = true; const n = $('#askNote'); n.hidden = false; n.textContent = window.WarshaCloud ? 'مساعد التصميم غير مفعّل على خادم الورشة.' : 'مساعد التصميم يعمل عند فتح الصفحة داخل Claude.'; return; }
   try { const lim = await sampleFn.limits(); if (lim?.images) { $('#attachLbl').hidden = false; $('#askFile').accept = lim.images.mediaTypes?.join(',') || 'image/*'; } } catch {}
 })();
 $('#askFile').onchange = e => { askImage = e.target.files[0] || null; $('#attachLbl').classList.toggle('has', !!askImage); $('#attachTxt').textContent = askImage ? 'أُرفقت صورة' : 'صورة أو رسمة'; };
