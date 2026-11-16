@@ -3683,7 +3683,9 @@ function shapeCorners(root, rc, span = null){
     const dx = b.max.x - b.min.x, dy = b.max.y - b.min.y, dz = b.max.z - b.min.z, cx = (b.min.x + b.max.x) / 2, cy = (b.min.y + b.max.y) / 2, cz = (b.min.z + b.max.z) / 2;
     // a board turned at an angle inside the piece cannot be redrawn as a straight prism: it is kept or removed whole
     const e = T.elements, aligned = [0, 4, 8].every(k => { const v = [Math.abs(e[k]), Math.abs(e[k + 1]), Math.abs(e[k + 2])], n = Math.hypot(...v); return Math.max(...v) > n * .999; });
-    const boxy = aligned && (m.geometry.type === 'BoxGeometry' || m.geometry.type === 'RoundedBoxGeometry'), slabby = aligned && !!m.userData.slab && !Array.isArray(m.material);
+    if (b.min.y >= H.max.y - .005) continue;   // standing on the top: not part of the piece
+    const decor = !!m.material?.userData?.decor;
+    const boxy = !decor && aligned && (m.geometry.type === 'BoxGeometry' || m.geometry.type === 'RoundedBoxGeometry'), slabby = !decor && aligned && !!m.userData.slab && !Array.isArray(m.material);
     // a board turned only about the vertical (the slanted ends of a TV unit): shaped from the front in its own plane
     const yUp = Math.abs(e[5]) > .999 * Math.hypot(e[4], e[5], e[6]);
     if (!aligned && yUp && S && m.geometry.type === 'BoxGeometry' && !Array.isArray(m.material)) {
@@ -3715,7 +3717,10 @@ function shapeCorners(root, rc, span = null){
     let x0 = b.min.x, x1 = b.max.x, y0 = b.min.y, y1 = b.max.y, z0 = b.min.z, z1 = b.max.z, shape = null, axis = null;
     if (thin === 'y') {                      // horizontal board: exact from above, cut back straight for a front corner
       if (F) { const c = clipPoly(plan, F); if (polyArea(c) < polyArea(plan) - 1e-7) { plan = c; shape = c; axis = 'y'; } }
-      if (S) { const iv = polyAt(S, 0, cy); if (iv && (iv[0] > x0 + 1e-4 || iv[1] < x1 - 1e-4)) { plan = clipPoly(plan, rrPoly(iv[0], iv[1], z0 - 1, z1 + 1, [0, 0, 0, 0])); shape = plan; axis = 'y'; } }
+      // seen from the front only: the board's ends follow the arc through its thickness, so a top or a bottom never
+      // ends square on the curve; with corners from above as well it is cut back straight
+      if (S && !F && !slabby) { const face = clipPoly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]], S); if (polyArea(face) < dx * dy - 1e-7) { shape = face; axis = 'z'; plan = null; } }
+      else if (S) { const iv = polyAt(S, 0, cy); if (iv && (iv[0] > x0 + 1e-4 || iv[1] < x1 - 1e-4)) { plan = clipPoly(plan, rrPoly(iv[0], iv[1], z0 - 1, z1 + 1, [0, 0, 0, 0])); shape = plan; axis = 'y'; } }
     } else if (thin === 'z') {               // front or back board: exact from the front, cut back straight for a plan corner
       let face = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
       if (S) { const c = clipPoly(face, S); if (polyArea(c) < polyArea(face) - 1e-7) { face = c; shape = c; axis = 'z'; } }
@@ -3728,7 +3733,7 @@ function shapeCorners(root, rc, span = null){
       if (za > z0 + 1e-4 || zb < z1 - 1e-4 || ya > y0 + 1e-4 || yb < y1 - 1e-4) { shape = [[za, ya], [zb, ya], [zb, yb], [za, yb]]; axis = 'x'; }
     }
     if (!shape) continue;
-    const full = thin === 'y' ? (slabby ? polyArea(m.userData.slab) : dx * dz) : thin === 'z' ? dx * dy : dz * dy;
+    const full = axis === 'z' ? dx * dy : thin === 'y' ? (slabby ? polyArea(m.userData.slab) : dx * dz) : dz * dy;
     if (shape.length < 3 || polyArea(shape) < full * .34) { m.visible = false; hidden.add(m); continue; }
     // the new board, built in the piece's frame and brought back into the mesh's own frame
     const sh = new THREE.Shape(); shape.forEach(([u, v], i) => i ? sh.lineTo(u, v) : sh.moveTo(u, v));
