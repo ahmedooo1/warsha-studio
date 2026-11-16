@@ -3721,6 +3721,8 @@ function shapeCorners(root, rc, span = null){
       // ends square on the curve; with corners from above as well it is cut back straight
       if (S && !F && !slabby) { const face = clipPoly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]], S); if (polyArea(face) < dx * dy - 1e-7) { shape = face; axis = 'z'; plan = null; } }
       else if (S) { const iv = polyAt(S, 0, cy); if (iv && (iv[0] > x0 + 1e-4 || iv[1] < x1 - 1e-4)) { plan = clipPoly(plan, rrPoly(iv[0], iv[1], z0 - 1, z1 + 1, [0, 0, 0, 0])); shape = plan; axis = 'y'; } }
+    } else if (F && !S) {                    // standing board, corners from above only: its footprint follows the arc, full height
+      const c = clipPoly(plan, F); if (polyArea(c) < polyArea(plan) - 1e-7) { plan = c; shape = c; axis = 'y'; }
     } else if (thin === 'z') {               // front or back board: exact from the front, cut back straight for a plan corner
       let face = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
       if (S) { const c = clipPoly(face, S); if (polyArea(c) < polyArea(face) - 1e-7) { face = c; shape = c; axis = 'z'; } }
@@ -3733,7 +3735,7 @@ function shapeCorners(root, rc, span = null){
       if (za > z0 + 1e-4 || zb < z1 - 1e-4 || ya > y0 + 1e-4 || yb < y1 - 1e-4) { shape = [[za, ya], [zb, ya], [zb, yb], [za, yb]]; axis = 'x'; }
     }
     if (!shape) continue;
-    const full = axis === 'z' ? dx * dy : thin === 'y' ? (slabby ? polyArea(m.userData.slab) : dx * dz) : dz * dy;
+    const full = axis === 'z' ? dx * dy : axis === 'y' ? (slabby ? polyArea(m.userData.slab) : dx * dz) : dz * dy;
     if (shape.length < 3 || polyArea(shape) < full * .34) { m.visible = false; hidden.add(m); continue; }
     // the new board, built in the piece's frame and brought back into the mesh's own frame
     const sh = new THREE.Shape(); shape.forEach(([u, v], i) => i ? sh.lineTo(u, v) : sh.moveTo(u, v));
