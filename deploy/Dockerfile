@@ -9,7 +9,7 @@ RUN npm run build && npm prune --omit=dev
 # three.js is served by the server itself, so the editor needs no outside CDN here
 WORKDIR /vendor
 RUN npm pack three@0.147.0 --silent && tar xzf three-0.147.0.tgz && mkdir -p /out/three \
- && cp package/build/three.min.js /out/three/ && cp -r package/examples /out/three/examples \
+ && mkdir -p /out/three/build && cp package/build/three.min.js /out/three/build/ && cp -r package/examples /out/three/examples \
  && find /out/three/examples -type f ! -name '*.js' -delete
 
 FROM node:22.12-alpine

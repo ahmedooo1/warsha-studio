@@ -12,6 +12,7 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:14.5px/1.55 var(--f-body)}
 header{position:sticky;top:0;z-index:5;background:var(--ink);color:#fff;display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:5px solid var(--tape)}
 header h1{font:700 21px var(--f-display);margin:0}header .who{margin-inline-start:auto;font-size:13px;opacity:.8}
+header select{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:5px 8px;font:inherit;font-size:13px}header select option{color:#14191E}
 header a{color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,.3);padding:6px 12px;border-radius:8px;font-size:13px}
 .wrap{display:grid;grid-template-columns:220px minmax(0,1fr);gap:18px;max-width:1240px;margin:0 auto;padding:18px}
 nav{display:flex;flex-direction:column;gap:3px;position:sticky;top:78px;align-self:start}
@@ -38,17 +39,24 @@ input,select{font:inherit;padding:8px 10px;border:1.5px solid #D5DADE;border-rad
 </style>
 </head>
 <body>
-<header><h1>إدارة الورشة</h1><span class="who" id="who"></span><a href="/">المحرر</a></header>
+<header><h1>إدارة الورشة</h1><span class="who" id="who" data-notr></span><select id="lang" aria-label="اللغة" data-notr><option value="ar">العربية</option><option value="fr">Français</option><option value="tr">Türkçe</option></select><a href="/">المحرر</a></header>
 <div class="wrap">
   <nav id="nav"></nav>
   <main id="main"><section><p class="empty">يحمّل…</p></section></main>
 </div>
+<script src="/js/i18n.js"></script>
+<script src="/cloud/admin-i18n.js"></script>
 <script>
 'use strict';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
-const dt = v => v ? new Date(v).toLocaleString('fr-FR', {dateStyle: 'short', timeStyle: 'short'}) : '-';
-const d0 = v => v ? new Date(v).toLocaleDateString('fr-FR') : '-';
+// what people typed (names, phones, devices) is never translated
+const ud = s => `<span data-notr>${esc(s)}</span>`;
+const tr = s => window.I18N ? I18N.t(s) : s;
+const LG = () => (window.I18N?.lang || 'ar');
+const loc = () => (LG() === 'tr' ? 'tr-TR' : 'fr-FR');
+const dt = v => v ? new Date(v).toLocaleString(loc(), {dateStyle: 'short', timeStyle: 'short'}) : '-';
+const d0 = v => v ? new Date(v).toLocaleDateString(loc()) : '-';
 const cid = () => 'a' + (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
 async function api(method, path, body){
   const h = {'x-warsha': '1', 'x-warsha-device': 'admin'}; if (body !== undefined) h['content-type'] = 'application/json';
@@ -60,13 +68,13 @@ async function api(method, path, body){
   return {data, headers: r.headers};
 }
 function download(blob, name){ const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }
-const STATUS = {reserved: 'رقم محجوز بلا PDF', sent: 'مُرسل', accepted: 'مقبول', cancelled: 'ملغى', replaced: 'مستبدل', active: 'فعّال', revoked: 'موقوف', expired: 'منتهٍ', locked: 'مقفل'};
-const KIND = {save: 'حفظ', restore: 'استرجاع', delete: 'حذف', settings: 'إعدادات'};
+const STATUS = {reserved: 'رقم محجوز دون ملف', sent: 'مُرسل', accepted: 'مقبول', cancelled: 'ملغى', replaced: 'مستبدل', active: 'فعّال', revoked: 'موقوف', expired: 'منتهٍ', locked: 'مقفل'};
+const KIND = {save: 'تعديل', restore: 'استرجاع', delete: 'حذف', settings: 'إعدادات'};
 let me = null;
 
 const PAGES = [
   ['projects', 'المشاريع', false], ['quotes', 'عروض الأسعار', false], ['links', 'روابط الزبائن', false], ['trash', 'سلة المحذوفات', false],
-  ['-'], ['users', 'المستخدمون والأجهزة', true], ['backup', 'النسخ الاحتياطي والتصدير', true], ['people', 'البيانات الشخصية', true], ['audit', 'السجل', true],
+  ['-'], ['settings', 'ترقيم العروض', true], ['users', 'المستخدمون والأجهزة', true], ['backup', 'النسخ الاحتياطي والتصدير', true], ['people', 'البيانات الشخصية', true], ['audit', 'السجل', true],
   ['-'], ['account', 'حسابي', false]
 ];
 function nav(cur){
@@ -82,19 +90,19 @@ const VIEWS = {
     $('#main').innerHTML = sec('المشاريع', 'كل تصاميم الورشة كما هي على الخادم. افتح سجل أي مشروع لترى نسخه وتعود إلى إحداها، أو لتنشئ رابطاً للزبون.',
       `<div class="row"><input id="q" placeholder="بحث بالاسم أو الهاتف" style="min-width:260px"></div>
       <table><thead><tr><th>الزبون</th><th>الهاتف</th><th>آخر تعديل</th><th>بواسطة</th><th>النسخة</th><th></th></tr></thead><tbody id="rows"></tbody></table><div id="detail"></div>`);
-    const draw = f => { $('#rows').innerHTML = live.filter(p => !f || (p.name + ' ' + p.phone).toLowerCase().includes(f)).map(p => `<tr><td>${esc(p.name)} ${p.variant ? `<span class="pill">${esc(p.variant)}</span>` : ''}</td><td class="num">${esc(p.phone)}</td><td>${dt(p.updatedAt)}</td><td>${esc(p.user || '')} <small>${esc(p.device)}</small></td><td class="num">${p.rev}</td><td><button class="b g" data-h="${esc(p.id)}">السجل والروابط</button></td></tr>`).join('') || '<tr><td colspan="6" class="empty">لا مشاريع</td></tr>'; };
+    const draw = f => { $('#rows').innerHTML = live.filter(p => !f || (p.name + ' ' + p.phone).toLowerCase().includes(f)).map(p => `<tr><td>${ud(p.name)} ${p.variant ? `<span class="pill">${ud(p.variant)}</span>` : ''}</td><td class="num">${ud(p.phone)}</td><td>${dt(p.updatedAt)}</td><td>${ud(p.user || '')} <small>${ud(p.device)}</small></td><td class="num">${p.rev}</td><td><button class="b g" data-h="${esc(p.id)}">السجل والروابط</button></td></tr>`).join('') || '<tr><td colspan="6" class="empty">لا مشاريع</td></tr>'; };
     draw(''); $('#q').oninput = e => draw(e.target.value.trim().toLowerCase());
     $('#rows').onclick = e => { const b = e.target.closest('[data-h]'); if (b) projectDetail(live.find(p => p.id === b.dataset.h)); };
   },
   async quotes(){
     const {data} = await api('GET', '/quotes?limit=500');
     $('#main').innerHTML = sec('سجل عروض الأسعار', 'كل عرض صدر برقمه، مجمّداً كما أُرسل: التصميم والأسعار والضريبة وهوية الورشة. لا يُعدَّل ولا يُحذف؛ القبول والإلغاء والاستبدال تُضاف إليه كأحداث.',
-      `<table><thead><tr><th>الرقم</th><th>التاريخ</th><th>الزبون</th><th>الإجمالي</th><th>الحالة</th><th></th></tr></thead><tbody>${data.map(q => `<tr><td class="num">${esc(q.number)}</td><td>${dt(q.createdAt)}</td><td>${esc(q.clientName)}</td><td class="num">${esc(q.total)} ${esc(q.currency)}</td><td><span class="pill ${q.status}">${STATUS[q.status] || q.status}</span></td>
+      `<table><thead><tr><th>الرقم</th><th>التاريخ</th><th>الزبون</th><th>الإجمالي</th><th>الحالة</th><th></th></tr></thead><tbody>${data.map(q => `<tr><td class="num">${esc(q.number)}</td><td>${dt(q.createdAt)}</td><td>${ud(q.clientName)}</td><td class="num">${esc(q.total)} ${esc(q.currency)}</td><td><span class="pill ${q.status}">${STATUS[q.status] || q.status}</span></td>
       <td><div class="row" style="margin:0">${q.hasPdf ? `<button class="b g" data-pdf="${q.id}" data-n="${esc(q.number)}">PDF</button>` : ''}${q.status === 'sent' ? `<button class="b g" data-ev="${q.id}:accepted">قبول</button>` : ''}${['sent', 'accepted'].includes(q.status) ? `<button class="b r" data-ev="${q.id}:cancelled">إلغاء</button>` : ''}</div></td></tr>`).join('') || '<tr><td colspan="6" class="empty">لا عروض بعد. تصدر العروض من المحرر: السعر، ثم عرض سعر للزبون، ثم «إصدار عرض سعر رسمي مرقّم».</td></tr>'}</tbody></table><p class="msg" id="m"></p>`);
     $('#main').onclick = async e => {
       const p = e.target.closest('[data-pdf]'); if (p) { const r = await api('GET', `/quotes/${p.dataset.pdf}/pdf`); download(r.data, p.dataset.n + '.pdf'); return; }
       const ev = e.target.closest('[data-ev]'); if (ev) {
-        const [id, type] = ev.dataset.ev.split(':'); const note = type === 'cancelled' ? prompt('سبب الإلغاء (اختياري)') : '';
+        const [id, type] = ev.dataset.ev.split(':'); const note = type === 'cancelled' ? prompt(tr('سبب الإلغاء (اختياري)')) : '';
         if (note === null) return;
         try { await api('POST', `/quotes/${id}/events`, {type, note: note || ''}); VIEWS.quotes(); } catch (err) { $('#m').className = 'msg err'; $('#m').textContent = err.message; }
       }
@@ -103,13 +111,13 @@ const VIEWS = {
   async links(){
     const {data} = await api('GET', '/share');
     $('#main').innerHTML = sec('روابط الزبائن', 'روابط للعرض فقط، لمدة محددة. أوقف أي رابط فوراً عند الحاجة. لا يحتفظ الخادم بالرابط نفسه، فلا يمكن عرضه مرة ثانية.',
-      `<table><thead><tr><th>المشروع</th><th>أُنشئ</th><th>ينتهي</th><th>رمز</th><th>المشاهدات</th><th>الحالة</th><th></th></tr></thead><tbody>${data.map(l => `<tr><td>${esc(l.name || l.projectId)} ${l.quoteId ? '<span class="pill">مع عرض سعر</span>' : ''}</td><td>${dt(l.createdAt)}</td><td>${d0(l.expiresAt)}</td><td>${l.pin ? 'نعم' : 'لا'}</td><td class="num">${l.views}</td><td><span class="pill ${l.state}">${STATUS[l.state]}</span></td><td>${l.state === 'active' ? `<button class="b r" data-rv="${l.id}">إيقاف</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="7" class="empty">لا روابط</td></tr>'}</tbody></table>`);
-    $('#main').onclick = async e => { const b = e.target.closest('[data-rv]'); if (b && confirm('إيقاف هذا الرابط الآن؟')) { await api('POST', `/share/${b.dataset.rv}/revoke`); VIEWS.links(); } };
+      `<table><thead><tr><th>المشروع</th><th>أُنشئ</th><th>ينتهي</th><th>رمز</th><th>المشاهدات</th><th>الحالة</th><th></th></tr></thead><tbody>${data.map(l => `<tr><td>${ud(l.name || l.projectId)} ${l.quoteId ? '<span class="pill">مع عرض سعر</span>' : ''}</td><td>${dt(l.createdAt)}</td><td>${d0(l.expiresAt)}</td><td>${l.pin ? 'نعم' : 'لا'}</td><td class="num">${l.views}</td><td><span class="pill ${l.state}">${STATUS[l.state]}</span></td><td>${l.state === 'active' ? `<button class="b r" data-rv="${l.id}">إيقاف</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="7" class="empty">لا روابط</td></tr>'}</tbody></table>`);
+    $('#main').onclick = async e => { const b = e.target.closest('[data-rv]'); if (b && confirm(tr('إيقاف هذا الرابط الآن؟'))) { await api('POST', `/share/${b.dataset.rv}/revoke`); VIEWS.links(); } };
   },
   async trash(){
     const {data} = await api('GET', '/trash');
     $('#main').innerHTML = sec('سلة المحذوفات', 'المشاريع المحذوفة تبقى هنا مع سجلها ثم تُحذف نهائياً بعد مدة السلة. المشاريع المرتبطة بعرض سعر لا تُحذف نهائياً أبداً.',
-      `<table><thead><tr><th>المشروع</th><th>حُذف</th><th></th></tr></thead><tbody>${data.map(p => `<tr><td>${esc(p.name)} ${p.variant ? `<span class="pill">${esc(p.variant)}</span>` : ''}</td><td>${dt(p.deletedAt)}</td><td><button class="b y" data-back="${esc(p.id)}">إرجاع</button></td></tr>`).join('') || '<tr><td colspan="3" class="empty">السلة فارغة</td></tr>'}</tbody></table><p class="msg" id="m"></p>`);
+      `<table><thead><tr><th>المشروع</th><th>حُذف</th><th></th></tr></thead><tbody>${data.map(p => `<tr><td>${ud(p.name)} ${p.variant ? `<span class="pill">${ud(p.variant)}</span>` : ''}</td><td>${dt(p.deletedAt)}</td><td><button class="b y" data-back="${esc(p.id)}">إرجاع</button></td></tr>`).join('') || '<tr><td colspan="3" class="empty">السلة فارغة</td></tr>'}</tbody></table><p class="msg" id="m"></p>`);
     $('#main').onclick = async e => {
       const b = e.target.closest('[data-back]'); if (!b) return;
       const {data: vs} = await api('GET', `/projects/${b.dataset.back}/versions`), v = vs.find(x => x.kind === 'delete') || vs[0];
@@ -120,16 +128,16 @@ const VIEWS = {
   async users(){
     const [{data: us}, {data: ss}] = await Promise.all([api('GET', '/users'), api('GET', '/users/sessions')]);
     $('#main').innerHTML = sec('المستخدمون', 'صاحب الورشة يدير الأسعار والمستخدمين والنسخ والبيانات الشخصية. العامل يصمّم ويحفظ ويصدر العروض. لا يُحذف حساب، بل يوقف، فيبقى السجل سليماً.',
-      `<table><thead><tr><th>الاسم</th><th>البريد</th><th>الدور</th><th>آخر دخول</th><th>الحالة</th><th></th></tr></thead><tbody>${us.map(u => `<tr><td>${esc(u.name)}</td><td class="num">${esc(u.email)}</td><td>${u.role === 'owner' ? 'صاحب الورشة' : 'عامل'}</td><td>${dt(u.lastLoginAt)}</td><td><span class="pill ${u.active ? 'ok' : 'bad'}">${u.active ? 'فعّال' : 'موقوف'}</span></td>
+      `<table><thead><tr><th>الاسم</th><th>البريد</th><th>الدور</th><th>آخر دخول</th><th>الحالة</th><th></th></tr></thead><tbody>${us.map(u => `<tr><td>${ud(u.name)}</td><td class="num">${esc(u.email)}</td><td>${u.role === 'owner' ? 'صاحب الورشة' : 'عامل'}</td><td>${dt(u.lastLoginAt)}</td><td><span class="pill ${u.active ? 'ok' : 'bad'}">${u.active ? 'فعّال' : 'موقوف'}</span></td>
         <td><div class="row" style="margin:0"><button class="b g" data-act="${u.id}:${u.active ? 0 : 1}">${u.active ? 'إيقاف' : 'تفعيل'}</button><button class="b g" data-pw="${u.id}">كلمة مرور جديدة</button></div></td></tr>`).join('')}</tbody></table>
       <form id="nu" class="sub"><b>مستخدم جديد</b><div class="row"><input name="name" placeholder="الاسم" required maxlength="80"><input name="email" type="email" placeholder="البريد" required dir="ltr"><select name="role"><option value="staff">عامل</option><option value="owner">صاحب الورشة</option></select><input name="password" type="password" placeholder="كلمة مرور (10 أحرف على الأقل)" minlength="10" required dir="ltr"><button class="b">إضافة</button></div></form><p class="msg" id="m"></p>`)
       + sec('الأجهزة المتصلة', 'كل جلسة مفتوحة على جهاز. أنهِ جلسة هاتف ضائع أو عامل ترك العمل فوراً.',
-      `<table><thead><tr><th>المستخدم</th><th>الجهاز</th><th>بدأت</th><th>آخر نشاط</th><th></th></tr></thead><tbody>${ss.map(s => `<tr><td class="num">${esc(s.email)}</td><td><small>${esc(s.device.slice(0, 80))}</small></td><td>${dt(s.createdAt)}</td><td>${dt(s.lastSeenAt)}</td><td>${s.current ? '<span class="pill ok">هذا الجهاز</span>' : `<button class="b r" data-end="${s.id}">إنهاء</button>`}</td></tr>`).join('')}</tbody></table>`);
+      `<table><thead><tr><th>المستخدم</th><th>الجهاز</th><th>بدأت</th><th>آخر نشاط</th><th></th></tr></thead><tbody>${ss.map(s => `<tr><td class="num">${esc(s.email)}</td><td><small>${ud(s.device.slice(0, 80))}</small></td><td>${dt(s.createdAt)}</td><td>${dt(s.lastSeenAt)}</td><td>${s.current ? '<span class="pill ok">هذا الجهاز</span>' : `<button class="b r" data-end="${s.id}">إنهاء</button>`}</td></tr>`).join('')}</tbody></table>`);
     const m = (t, ok) => { $('#m').className = 'msg ' + (ok ? 'ok' : 'err'); $('#m').textContent = t; };
     $('#nu').onsubmit = async e => { e.preventDefault(); try { await api('POST', '/users', Object.fromEntries(new FormData(e.target))); VIEWS.users(); } catch (err) { m(err.message); } };
     $('#main').onclick = async e => {
       const a = e.target.closest('[data-act]'); if (a) { const [id, on] = a.dataset.act.split(':'); try { await api('PATCH', `/users/${id}`, {active: on === '1'}); VIEWS.users(); } catch (err) { m(err.message); } return; }
-      const p = e.target.closest('[data-pw]'); if (p) { const pw = prompt('كلمة المرور الجديدة (10 أحرف على الأقل). تنتهي كل جلسات هذا المستخدم.'); if (!pw) return; try { await api('PATCH', `/users/${p.dataset.pw}`, {password: pw}); m('تغيّرت كلمة المرور', true); } catch (err) { m(err.message); } return; }
+      const p = e.target.closest('[data-pw]'); if (p) { const pw = prompt(tr('كلمة المرور الجديدة (10 أحرف على الأقل). تنتهي كل جلسات هذا المستخدم.')); if (!pw) return; try { await api('PATCH', `/users/${p.dataset.pw}`, {password: pw}); m('تغيّرت كلمة المرور', true); } catch (err) { m(err.message); } return; }
       const s = e.target.closest('[data-end]'); if (s) { await api('DELETE', `/users/sessions/${s.dataset.end}`); VIEWS.users(); }
     };
   },
@@ -140,7 +148,7 @@ const VIEWS = {
         <span>مكان النسخ</span><b class="num">${esc(b.repository || '-')}</b><span>آخر اختبار استرجاع</span><b>${dt(b.lastRestoreTestAt)} <span class="pill ${b.lastRestoreTestOk ? 'ok' : 'bad'}">${b.lastRestoreTestOk ? 'نجح' : 'فشل'}</span></b>
         <span>ما استُرجع في الاختبار</span><b>${esc(b.restoreTestDetail || '-')}</b><span>عدد النسخ المحفوظة</span><b class="num">${esc(b.snapshots ?? '-')}</b></div>`;
     $('#main').innerHTML = sec('النسخ الاحتياطي', 'نسخة مشفّرة من قاعدة البيانات كل ليلة إلى خادم تخزين خارج هذا الخادم، واختبار استرجاع آلي كل أسبوع في قاعدة مؤقتة.', st)
-      + sec('تصدير كل بيانات الورشة', 'ملف ZIP واحد فيه كل المشاريع والأسعار وهوية الورشة بصيغة النسخة الاحتياطية التي يستوردها المحرر نفسه، وكل عروض الأسعار PDF مع بصمتها، والسجل، ونسخ CSV للجداول. هذا الملف يكفي لمتابعة العمل بالنسخة المستقلة دون الخادم.',
+      + sec('تصدير كل بيانات الورشة', '<span>ملف مضغوط واحد فيه كل المشاريع والأسعار وهوية الورشة بصيغة النسخة الاحتياطية التي يستوردها المحرر نفسه، وكل عروض الأسعار مع بصمتها، والسجل، ونسخ للجداول تفتح في برنامج الجداول.</span> <span>هذا الملف يكفي لمتابعة العمل بالنسخة المستقلة دون الخادم.</span>',
       `<div class="row"><button class="b y" id="ex">تنزيل التصدير الكامل</button></div><p class="msg" id="m"></p>`);
     $('#ex').onclick = async () => { $('#ex').disabled = true; $('#m').textContent = 'يجهّز الملف…'; try { const r = await api('GET', '/admin/export'); download(r.data, `warsha-export-${new Date().toISOString().slice(0, 10)}.zip`); $('#m').className = 'msg ok'; $('#m').textContent = 'نُزّل الملف. احفظه في مكان آمن.'; } catch (err) { $('#m').className = 'msg err'; $('#m').textContent = err.message; } $('#ex').disabled = false; };
   },
@@ -151,7 +159,7 @@ const VIEWS = {
     $('#f').onsubmit = async e => {
       e.preventDefault(); const q = new FormData(e.target).get('q');
       const {data} = await api('GET', '/admin/people?q=' + encodeURIComponent(q));
-      $('#res').innerHTML = `<table><thead><tr><th><input type="checkbox" id="all"></th><th>المشروع</th><th>الهاتف</th><th>آخر تعديل</th><th></th></tr></thead><tbody>${data.designs.map(d => `<tr><td><input type="checkbox" value="${esc(d.id)}" class="pick"></td><td>${esc(d.name)} ${d.variant ? `<span class="pill">${esc(d.variant)}</span>` : ''} ${d.deletedAt ? '<span class="pill">في السلة</span>' : ''}</td><td class="num">${esc(d.phone)}</td><td>${d0(d.updatedAt)}</td><td>${d.legalHold ? '<span class="pill reserved">حجز قانوني: مرتبط بعرض سعر</span>' : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="empty">لا نتائج</td></tr>'}</tbody></table>
+      $('#res').innerHTML = `<table><thead><tr><th><input type="checkbox" id="all"></th><th>المشروع</th><th>الهاتف</th><th>آخر تعديل</th><th></th></tr></thead><tbody>${data.designs.map(d => `<tr><td><input type="checkbox" value="${esc(d.id)}" class="pick"></td><td>${ud(d.name)} ${d.variant ? `<span class="pill">${ud(d.variant)}</span>` : ''} ${d.deletedAt ? '<span class="pill">في السلة</span>' : ''}</td><td class="num">${ud(d.phone)}</td><td>${d0(d.updatedAt)}</td><td>${d.legalHold ? '<span class="pill reserved">حجز قانوني: مرتبط بعرض سعر</span>' : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="empty">لا نتائج</td></tr>'}</tbody></table>
         ${data.quotes.length ? `<p class="lead">عروض أسعار تحمل هذا الاسم أو الرقم: ${data.quotes.map(q => `<span class="num">${esc(q.number)}</span>`).join('، ')}</p>` : ''}
         <div class="row"><button class="b g" id="pex">تصدير بيانات المحدد</button><input id="conf" placeholder="اكتب ERASE للتأكيد" dir="ltr" style="width:180px"><button class="b r" id="per">محو المحدد نهائياً</button></div><p class="msg" id="m"></p>`;
       const picked = () => [...document.querySelectorAll('.pick:checked')].map(x => x.value);
@@ -160,23 +168,37 @@ const VIEWS = {
       $('#per').onclick = async () => {
         const ids = picked(), m = $('#m'); if (!ids.length) return;
         try { const {data: r} = await api('POST', '/admin/people/erase', {ids, confirm: $('#conf').value.trim()});
-          m.className = 'msg ok'; m.textContent = `مُحي ${r.erased.length} مشروع.` + (r.legalHold.length ? ` بقي ${r.legalHold.length} مرتبط بعرض سعر (حجز قانوني).` : ''); }
+          m.className = 'msg ok'; m.textContent = ({ar: `مُحي من المشاريع: ${r.erased.length}.`, fr: `Projets effacés : ${r.erased.length}.`, tr: `Silinen proje: ${r.erased.length}.`})[LG()] + (r.legalHold.length ? ({ar: ` بقي مرتبطاً بعرض سعر (حجز قانوني): ${r.legalHold.length}.`, fr: ` Conservés car liés à un devis (conservation légale) : ${r.legalHold.length}.`, tr: ` Teklife bağlı olduğu için saklanan (yasal saklama): ${r.legalHold.length}.`})[LG()] : ''); }
         catch (err) { m.className = 'msg err'; m.textContent = err.message; }
       };
     };
     const {data: r} = await api('GET', '/admin/retention');
-    $('#ret').innerHTML = `<div class="kv"><span>زبائن محتملون بلا عرض سعر</span><b>${r.rules.prospectYears} سنوات بعد آخر نشاط</b><span>زبائن لهم عرض سعر</span><b>${r.rules.clientYears} سنوات بعد آخر عرض أو حدث</b><span>عروض الأسعار</span><b>${r.rules.quotesYears} سنوات</b><span>سلة المحذوفات</span><b>${r.trashPurgedAfterDays} يوماً</b></div>
-      <h3>زبائن محتملون تجاوزوا المدة (${r.prospects.length})</h3>${r.prospects.length ? `<table><tbody>${r.prospects.map(p => `<tr><td>${esc(p.name)}</td><td>${d0(p.lastActivity)}</td></tr>`).join('')}</tbody></table><p class="lead">ابحث عنهم أعلاه بالاسم ثم صدّر أو امحُ.</p>` : '<p class="empty">لا أحد</p>'}
-      <h3>زبائن لهم عرض سعر تجاوزوا المدة (${r.clientsPastKeeping.length})</h3>${r.clientsPastKeeping.length ? `<table><tbody>${r.clientsPastKeeping.map(p => `<tr><td>${esc(p.name)}</td><td>${d0(p.lastActivity)}</td></tr>`).join('')}</tbody></table><p class="lead">تبقى مشاريعهم ما دام عرض السعر يجب حفظه.</p>` : '<p class="empty">لا أحد</p>'}
-      <p class="lead">عروض أسعار تجاوزت 10 سنوات: ${r.quotesPastTenYears}</p>`;
+    $('#ret').innerHTML = `<div class="kv"><span>زبائن محتملون بلا عرض سعر</span><b><span class="num">${r.rules.prospectYears}</span> سنوات بعد آخر نشاط</b><span>زبائن لهم عرض سعر</span><b><span class="num">${r.rules.clientYears}</span> سنوات بعد آخر عرض أو حدث</b><span>عروض الأسعار</span><b><span class="num">${r.rules.quotesYears}</span> سنوات</b><span>سلة المحذوفات</span><b><span class="num">${r.trashPurgedAfterDays}</span> يوماً</b></div>
+      <h3>زبائن محتملون تجاوزوا المدة <span class="num">${r.prospects.length}</span></h3>${r.prospects.length ? `<table><tbody>${r.prospects.map(p => `<tr><td>${ud(p.name)}</td><td>${d0(p.lastActivity)}</td></tr>`).join('')}</tbody></table><p class="lead">ابحث عنهم أعلاه بالاسم ثم صدّر أو امحُ.</p>` : '<p class="empty">لا أحد</p>'}
+      <h3>زبائن لهم عرض سعر تجاوزوا المدة <span class="num">${r.clientsPastKeeping.length}</span></h3>${r.clientsPastKeeping.length ? `<table><tbody>${r.clientsPastKeeping.map(p => `<tr><td>${ud(p.name)}</td><td>${d0(p.lastActivity)}</td></tr>`).join('')}</tbody></table><p class="lead">تبقى مشاريعهم ما دام عرض السعر يجب حفظه.</p>` : '<p class="empty">لا أحد</p>'}
+      <p class="lead">عروض أسعار تجاوزت عشر سنوات: <span class="num">${r.quotesPastTenYears}</span></p>`;
   },
   async audit(){
     const {data} = await api('GET', '/admin/audit?limit=300');
     $('#main').innerHTML = sec('السجل', 'من فعل ماذا ومتى. لا يحتوي بيانات شخصية للزبائن، ولا يمكن تعديله أو حذفه.',
-      `<table><thead><tr><th>الوقت</th><th>المستخدم</th><th>العملية</th><th>العنصر</th><th>تفاصيل</th></tr></thead><tbody>${data.map(a => `<tr><td>${dt(a.at)}</td><td>${esc(a.user || '-')}</td><td class="num">${esc(a.action)}</td><td class="num">${esc(a.entity)} ${esc(String(a.entityId).slice(0, 12))}</td><td class="num">${esc(JSON.stringify(a.meta)).slice(0, 120)}</td></tr>`).join('')}</tbody></table>`);
+      `<table><thead><tr><th>الوقت</th><th>المستخدم</th><th>العملية</th><th>العنصر</th><th>تفاصيل</th></tr></thead><tbody>${data.map(a => `<tr><td>${dt(a.at)}</td><td>${ud(a.user || '-')}</td><td class="num">${esc(a.action)}</td><td class="num">${esc(a.entity)} ${esc(String(a.entityId).slice(0, 12))}</td><td class="num">${esc(JSON.stringify(a.meta)).slice(0, 120)}</td></tr>`).join('')}</tbody></table>`);
+  },
+  async settings(){
+    const {data: st} = await api('GET', '/settings'), pr = st.prices || {}, year = new Date().getFullYear();
+    const {data: qs} = await api('GET', '/quotes?limit=1');
+    $('#main').innerHTML = sec('ترقيم العروض', 'حروف تسبق رقم كل عرض سعر، ثم السنة ثم رقم متسلسل يبدأ من 1 كل سنة. يتغير ما يأتي من العروض فقط؛ العروض التي صدرت تبقى بأرقامها.',
+      `<form id="qf" class="row"><label>البادئة <input name="p" value="${esc(pr.quotePrefix || 'D')}" maxlength="4" pattern="[A-Za-z]{1,4}" required dir="ltr" style="width:90px"></label><button class="b">حفظ</button></form>
+      <p class="lead">العرض التالي يشبه: <b class="num" id="qx"></b></p>${qs[0] ? `<p class="lead">آخر عرض صدر: <b class="num">${esc(qs[0].number)}</b></p>` : ''}<p class="msg" id="m"></p>`);
+    const show = () => { $('#qx').textContent = `${($('#qf [name=p]').value || 'D').replace(/[^A-Za-z]/g, '').slice(0, 4) || 'D'}${year}-0001`; };
+    show(); $('#qf [name=p]').oninput = show;
+    $('#qf').onsubmit = async e => {
+      e.preventDefault(); const p = new FormData(e.target).get('p').replace(/[^A-Za-z]/g, '').slice(0, 4);
+      try { await api('PUT', '/settings', {baseRev: st.rev, changeId: cid(), prices: {...pr, quotePrefix: p}, fab: st.fab || {}}); $('#m').className = 'msg ok'; $('#m').textContent = tr('حُفظ. يصل إلى أجهزة الورشة عند مزامنتها.'); }
+      catch (err) { $('#m').className = 'msg err'; $('#m').textContent = err.status === 409 ? tr('تغيّرت الإعدادات على جهاز آخر. أعد فتح الصفحة.') : err.message; }
+    };
   },
   async account(){
-    $('#main').innerHTML = sec('حسابي', `${esc(me.name)}، <span class="num">${esc(me.email)}</span>`,
+    $('#main').innerHTML = sec('حسابي', `${ud(me.name)} <span class="num">${esc(me.email)}</span>`,
       `<form id="pw" class="sub"><b>تغيير كلمة المرور</b><div class="row"><input name="current" type="password" placeholder="الحالية" required dir="ltr"><input name="next" type="password" placeholder="الجديدة (10 أحرف على الأقل)" minlength="10" required dir="ltr"><button class="b">تغيير</button></div><p class="lead">تنتهي جلساتك على الأجهزة الأخرى.</p></form><p class="msg" id="m"></p>
       <div class="row"><button class="b g" id="out">تسجيل الخروج من هذا الجهاز</button></div>`);
     $('#pw').onsubmit = async e => { e.preventDefault(); try { await api('POST', '/auth/password', Object.fromEntries(new FormData(e.target))); $('#m').className = 'msg ok'; $('#m').textContent = 'تغيّرت كلمة المرور.'; e.target.reset(); } catch (err) { $('#m').className = 'msg err'; $('#m').textContent = err.message; } };
@@ -186,8 +208,8 @@ const VIEWS = {
 
 async function projectDetail(p){
   const [{data: vs}, {data: ls}, {data: qs}] = await Promise.all([api('GET', `/projects/${p.id}/versions`), api('GET', `/share?projectId=${encodeURIComponent(p.id)}`), api('GET', `/quotes?projectId=${encodeURIComponent(p.id)}`)]);
-  $('#detail').innerHTML = `<div class="sub" id="det"><h2>${esc(p.name)}</h2>
-    <h3>النسخ (${vs.length})</h3><table><thead><tr><th>النسخة</th><th>العملية</th><th>الوقت</th><th>بواسطة</th><th></th></tr></thead><tbody>${vs.map(v => `<tr><td class="num">${v.rev}</td><td>${KIND[v.kind] || v.kind} ${v.pinned ? '<span class="pill sent">مرتبطة بعرض سعر</span>' : ''}</td><td>${dt(v.createdAt)}</td><td>${esc(v.user || '')} <small>${esc(v.device)}</small></td><td>${v.rev !== p.rev ? `<button class="b g" data-rs="${v.id}">العودة إليها</button>` : '<span class="pill ok">الحالية</span>'}</td></tr>`).join('')}</tbody></table>
+  $('#detail').innerHTML = `<div class="sub" id="det"><h2>${ud(p.name)}</h2>
+    <h3>النسخ <span class="num">${vs.length}</span></h3><table><thead><tr><th>النسخة</th><th>العملية</th><th>الوقت</th><th>بواسطة</th><th></th></tr></thead><tbody>${vs.map(v => `<tr><td class="num">${v.rev}</td><td>${KIND[v.kind] || v.kind} ${v.pinned ? '<span class="pill sent">مرتبطة بعرض سعر</span>' : ''}</td><td>${dt(v.createdAt)}</td><td>${ud(v.user || '')} <small>${ud(v.device)}</small></td><td>${v.rev !== p.rev ? `<button class="b g" data-rs="${v.id}">العودة إليها</button>` : '<span class="pill ok">الحالية</span>'}</td></tr>`).join('')}</tbody></table>
     <p class="lead">العودة إلى نسخة تنشئ نسخة جديدة بمحتواها؛ لا تضيع النسخة الحالية.</p>
     <h3>عروض الأسعار</h3>${qs.length ? qs.map(q => `<span class="num">${esc(q.number)}</span> <span class="pill ${q.status}">${STATUS[q.status]}</span>`).join('، ') : '<p class="empty">لا عروض</p>'}
     <h3>رابط للزبون</h3><div class="row"><select id="lq"><option value="">التصميم الحالي (يتحدث مع التعديلات)</option>${qs.filter(q => q.hasPdf).map(q => `<option value="${q.id}">عرض السعر ${esc(q.number)} (مجمّد)</option>`).join('')}</select>
@@ -195,10 +217,10 @@ async function projectDetail(p){
     ${ls.length ? `<p class="lead">روابط هذا المشروع: ${ls.map(l => `<span class="pill ${l.state}">${STATUS[l.state]}</span>`).join(' ')}</p>` : ''}<p class="msg" id="dm"></p></div>`;
   $('#det').scrollIntoView({behavior: 'smooth'});
   $('#det').onclick = async e => {
-    const r = e.target.closest('[data-rs]'); if (r) { if (!confirm('العودة إلى هذه النسخة؟')) return; await api('POST', `/projects/${p.id}/versions/${r.dataset.rs}/restore`, {changeId: cid()}); $('#dm').className = 'msg ok'; $('#dm').textContent = 'تمت العودة. تظهر على الأجهزة عند مزامنتها.'; p.rev++; setTimeout(() => projectDetail(p), 700); return; }
+    const r = e.target.closest('[data-rs]'); if (r) { if (!confirm(tr('العودة إلى هذه النسخة؟'))) return; await api('POST', `/projects/${p.id}/versions/${r.dataset.rs}/restore`, {changeId: cid()}); $('#dm').className = 'msg ok'; $('#dm').textContent = 'تمت العودة. تظهر على الأجهزة عند مزامنتها.'; p.rev++; setTimeout(() => projectDetail(p), 700); return; }
     if (e.target.id === 'lg') {
       const body = {projectId: p.id, days: +$('#ld').value || 30}; if ($('#lq').value) body.quoteId = $('#lq').value; if ($('#lp').value.trim()) body.pin = $('#lp').value.trim();
-      try { const {data} = await api('POST', '/share', body); $('#lo').innerHTML = `<div class="row"><input readonly value="${esc(data.url)}" dir="ltr" style="flex:1;min-width:0" id="lu"><button class="b g" id="lc">نسخ</button></div><p class="lead">انسخه الآن: لا يظهر مرة ثانية. ينتهي ${d0(data.expiresAt)}.</p>`; $('#lc').onclick = () => navigator.clipboard.writeText(data.url).then(() => $('#lc').textContent = 'نُسخ'); }
+      try { const {data} = await api('POST', '/share', body); $('#lo').innerHTML = `<div class="row"><input readonly value="${esc(data.url)}" dir="ltr" style="flex:1;min-width:0" id="lu"><button class="b g" id="lc">نسخ</button></div><p class="lead">انسخه الآن: لا يظهر مرة ثانية. ينتهي <span class="num">${d0(data.expiresAt)}</span></p>`; $('#lc').onclick = () => navigator.clipboard.writeText(data.url).then(() => $('#lc').textContent = 'نُسخ'); }
       catch (err) { $('#dm').className = 'msg err'; $('#dm').textContent = err.message; }
     }
   };
@@ -207,7 +229,10 @@ async function projectDetail(p){
 (async () => {
   const r = await fetch('/api/auth/state', {credentials: 'same-origin'}).then(x => x.json()).catch(() => null);
   if (!r?.user) { location.href = '/'; return; }
-  me = r.user; $('#who').textContent = `${me.name} · ${me.role === 'owner' ? 'صاحب الورشة' : 'عامل'}`;
+  me = r.user;
+  const who = () => { $('#who').textContent = `${me.name} · ${tr(me.role === 'owner' ? 'صاحب الورشة' : 'عامل')}`; };
+  if (window.I18N) { I18N.applyDoc(); I18N.start(); $('#lang').value = I18N.lang; $('#lang').onchange = e => { I18N.setLang(e.target.value); who(); go(location.hash.slice(1) || 'projects'); }; } else $('#lang').hidden = true;
+  who();
   go(location.hash.slice(1) || 'projects');
 })();
 </script>

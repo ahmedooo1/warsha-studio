@@ -1,0 +1,47 @@
+# Checks of the workshop edition: API tests on a real PostgreSQL, and a build of the Docker image the server will run.
+# Runs only for the atelier branch; it deploys nothing.
+name: atelier
+on:
+  push:
+    branches: [atelier]
+    paths: ['server/**', 'deploy/**', 'index.html', 'js/**', '.github/workflows/atelier.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  api:
+    runs-on: ubuntu-24.04
+    services:
+      pg:
+        image: postgres:16-alpine
+        env: {POSTGRES_USER: warsha, POSTGRES_PASSWORD: warsha, POSTGRES_DB: warsha_test}
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U warsha" --health-interval 5s --health-retries 20
+    defaults: {run: {working-directory: server}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22, cache: npm, cache-dependency-path: server/package-lock.json}
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
+        env: {TEST_DATABASE_URL: 'postgres://warsha:warsha@127.0.0.1:5432/warsha_test'}
+  image:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: build the app image
+        run: docker build -f deploy/Dockerfile -t warsha-atelier:ci .
+      - name: build the backup image
+        run: docker build -t warsha-atelier-backup:ci deploy/backup
+      - name: start the whole stack and check it answers
+        run: |
+          cd deploy
+          printf 'PUBLIC_URL=http://127.0.0.1:8090\nAPP_PORT=8090\nPOSTGRES_PASSWORD=ci-%s\nSETUP_TOKEN=ci-setup-token-0123456789\nRESTIC_REPOSITORY=/tmp/none\nRESTIC_PASSWORD=ci\nCOOKIE_SECURE=false\n' "$(openssl rand -hex 8)" > .env
+          docker compose up -d --build db app
+          for i in $(seq 1 60); do curl -fsS http://127.0.0.1:8090/api/health && break; sleep 2; done
+          curl -fsS http://127.0.0.1:8090/api/health
+          curl -fsS http://127.0.0.1:8090/ | grep -q 'cloud/cloud.js'
+          curl -fsS http://127.0.0.1:8090/ | grep -q 'vendor/three/'
+          curl -fsS -o /dev/null http://127.0.0.1:8090/vendor/three/build/three.min.js
+          docker compose logs app | tail -20
+          docker compose down -v

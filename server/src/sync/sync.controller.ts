@@ -91,6 +91,9 @@ export class SyncController {
     return r;
   }
 
+  @Get('settings')
+  async getSettings() { return this.sync.settings(); }
+
   @Get('settings/versions')
   settingsVersions() { return this.sync.versions(SETTINGS_ID); }
 

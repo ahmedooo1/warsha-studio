@@ -2,7 +2,7 @@
 // Run: npm run build && node test/browser.e2e.mjs   (needs Postgres with the warsha_test database, and three@0.147.0
 // installed in the repository's node_modules for the editor)
 import {createRequire} from 'node:module';
-import {spawn} from 'node:child_process';
+import {spawn, execFileSync} from 'node:child_process';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import assert from 'node:assert/strict';
@@ -15,8 +15,11 @@ const PORT = 8787, BASE = `http://127.0.0.1:${PORT}`;
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; console.log('  ok  ' + m); } else { fail++; console.log('  FAIL ' + m); } };
 
+// the editor is served from a fresh standalone build: three.js copied in, as in the Docker image (no CDN at all)
+execFileSync(process.execPath, [path.join(repo, 'scripts/build-standalone.mjs')], {stdio: 'ignore', env: {...process.env, THREE_DIR: threeDir}});
+const editorDir = path.join(repo, 'dist-standalone/warsha-studio');
 await resetDb();
-const srv = spawn(process.execPath, [path.join(here, '../dist/main.js')], {env: {...process.env, PORT: String(PORT), DATABASE_URL: TEST_DB, PUBLIC_URL: BASE, SETUP_TOKEN: SETUP, COOKIE_SECURE: 'false', LOGIN_PER_MIN: '100', BACKUP_STATUS_FILE: '/nonexistent'}, stdio: ['ignore', 'pipe', 'pipe']});
+const srv = spawn(process.execPath, [path.join(here, '../dist/main.js')], {env: {...process.env, PORT: String(PORT), DATABASE_URL: TEST_DB, PUBLIC_URL: BASE, SETUP_TOKEN: SETUP, COOKIE_SECURE: 'false', LOGIN_PER_MIN: '100', BACKUP_STATUS_FILE: '/nonexistent', EDITOR_DIR: editorDir}, stdio: ['ignore', 'pipe', 'pipe']});
 let log = ''; srv.stdout.on('data', d => log += d); srv.stderr.on('data', d => log += d);
 for (let i = 0; i < 60 && !log.includes('listening'); i++) await new Promise(r => setTimeout(r, 250));
 if (!log.includes('listening')) { console.log(log); process.exit(1); }
@@ -26,7 +29,6 @@ async function device(name, url = BASE + '/'){
   const ctx = await browser.newContext({viewport: {width: 1366, height: 860}, acceptDownloads: true});
   await ctx.route('**/*', r => {
     const u = r.request().url();
-    if (u.includes('three@0.147.0/')) return r.fulfill({path: path.join(threeDir, u.split('three@0.147.0/')[1].split('?')[0])});
     if (u.startsWith(BASE)) return r.continue();
     return r.abort();
   });
@@ -139,6 +141,34 @@ try {
   await C.page.waitForSelector('#wcAcc .wc-ok');
   ok((await sql("SELECT type FROM quote_events ORDER BY at")).map(r => r.type).join() === 'sent,accepted', 'acceptance recorded');
   ok(!(await C.page.evaluate(() => JSON.stringify(localStorage))).includes('777'), "the workshop's prices never reach the client");
+
+  console.log('owner pages');
+  const ad = await A.ctx.newPage(); ad.on('pageerror', e => A.errors.push('admin: ' + e));
+  await ad.goto(BASE + '/admin#quotes'); await ad.waitForSelector('main table');
+  ok((await ad.textContent('main')).includes(`D${year}-0001`), 'quote in the register');
+  ok((await ad.textContent('main')).includes('مقبول'), 'its acceptance shown');
+  await ad.selectOption('#lang', 'fr'); await ad.waitForTimeout(500);
+  ok((await ad.textContent('nav')).includes('Registre') || (await ad.textContent('nav')).includes('Devis'), 'owner pages in French');
+  ok(await ad.evaluate(() => document.documentElement.dir) === 'ltr', 'French reads left to right');
+  await ad.click('[data-p=settings]'); await ad.fill('#qf [name=p]', 'WS'); await ad.click('#qf button'); await ad.waitForSelector('#m.ok');
+  ok((await sql('SELECT prices FROM settings'))[0].prices.quotePrefix === 'WS', 'quote prefix saved');
+  await A.page.evaluate(() => window.WarshaCloud._sync()); await A.page.waitForTimeout(1000);
+  ok(await A.page.evaluate(() => window.WarshaHost.settings().prices.quotePrefix) === 'WS', 'and reaches the editor');
+  for (const v of ['projects', 'links', 'trash', 'users', 'backup', 'people', 'audit', 'account']) { await ad.click(`[data-p=${v}]`); await ad.waitForTimeout(300); }
+  ok(!(await ad.textContent('main')).includes('Error'), 'every owner page opens');
+  await ad.selectOption('#lang', 'ar'); await ad.close();
+
+  console.log('reopening without network');
+  await A.page.waitForFunction(() => navigator.serviceWorker?.controller, null, {timeout: 30000}).catch(() => {});
+  await A.page.reload({waitUntil: 'domcontentloaded'}); await ready(A.page);
+  await A.page.waitForFunction(() => navigator.serviceWorker?.controller, null, {timeout: 30000});
+  await A.ctx.setOffline(true);
+  await A.page.reload({waitUntil: 'domcontentloaded', timeout: 60000}); await ready(A.page);
+  await A.page.waitForFunction(() => window.WarshaCloud._S.designs.size > 0, null, {timeout: 30000});
+  ok((await names(A.page)).includes('Dupont'), 'the editor opens offline with the designs of this device');
+  await save(A.page, 'Dupont', 'modifie hors ligne apres reouverture');
+  await A.ctx.setOffline(false); await A.page.evaluate(() => window.dispatchEvent(new Event('online'))); await idle(A.page);
+  ok((await sql("SELECT note FROM projects WHERE name = 'Dupont' AND deleted_at IS NULL"))[0].note === 'modifie hors ligne apres reouverture', 'and the change reaches the server');
 
   console.log('page errors');
   ok(!A.errors.length, 'device A: ' + (A.errors.join(' | ') || 'none'));

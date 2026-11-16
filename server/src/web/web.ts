@@ -27,7 +27,7 @@ export function editorHtml(cfg: Config, mode: 'app' | 'view'): () => string {
     // read again at most every 10 s, so an update of the editor needs no restart
     if (!cache || Date.now() - at > 10_000) {
       let html = readFileSync(file, 'utf8');
-      const vendored = existsSync(path.join(cfg.editorDir, 'vendor/three/three.min.js'));
+      const vendored = existsSync(path.join(cfg.editorDir, 'vendor/three/build/three.min.js'));
       if (vendored) html = html.replace(/https:\/\/cdn\.jsdelivr\.net\/npm\/three@0\.147\.0\//g, 'vendor/three/');
       const inject = `<base href="/"><script>window.WARSHA_MODE=${JSON.stringify(mode)}</script><script src="/cloud/cloud.js"></script>`;
       html = html.replace(/<head>/i, m => m + inject);

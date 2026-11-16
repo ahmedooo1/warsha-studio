@@ -116,6 +116,11 @@ export class SyncService {
       .from(projects).where(isNotNull(projects.deletedAt)).orderBy(desc(projects.deletedAt));
   }
 
+  async settings() {
+    const [s] = await this.db.select({rev: settings.rev, prices: settings.prices, fab: settings.fab, updatedAt: settings.updatedAt}).from(settings).where(eq(settings.id, 1));
+    return s;
+  }
+
   async putSettings(baseRev: number, changeId: string, prices: Record<string, unknown>, fab: Record<string, unknown>, userId: string, device: string) {
     return this.db.transaction(async tx => {
       const again = await this.replay(tx, changeId); if (again) return again;
