@@ -85,6 +85,7 @@ try {
   await B.ctx.setOffline(false); await B.page.evaluate(() => window.dispatchEvent(new Event('online')));
   await B.page.waitForSelector('#wcSheet [data-r]', {timeout: 30000});
   ok((await names(B.page)).join() === ['Dupont', 'Dupont/تعارض'].join(), 'both versions kept, mine marked');
+  await B.page.waitForFunction(() => window.WarshaCloud.state.pending === 0, null, {timeout: 30000});
   const rows = await sql("SELECT note FROM projects WHERE name = 'Dupont' AND deleted_at IS NULL ORDER BY note");
   ok(rows.map(r => r.note).join('|') === 'version PC 2|version tablette', 'the server has both, nothing overwritten');
   await B.page.click('#wcSheet [data-r$=":mine"]'); await idle(B.page);

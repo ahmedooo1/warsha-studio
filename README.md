@@ -169,3 +169,7 @@ npx serve .
 ## المطوّر
 
 Ahmad Ahmad
+
+## Édition atelier (serveur privé d'un atelier)
+
+Le même éditeur, servi par le serveur de l'atelier : comptes, synchronisation entre appareils avec gestion des conflits, historique des versions, devis numérotés et figés, liens clients en lecture seule, sauvegardes chiffrées hors du serveur, outils RGPD, export complet et version autonome. Voir [docs/ATELIER.md](docs/ATELIER.md). Le code est dans `server/` et `deploy/` ; sans ce serveur, la page fonctionne exactement comme avant.
