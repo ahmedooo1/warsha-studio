@@ -645,6 +645,14 @@ const LIMITS = { wallA:[150,700], wallB:[150,600], wallC:[150,600], height:[220,
 
 /* ================= units (pieces fixed on a wall) ================= */
 // widths in cm. lvl b = standing on the floor (incl. tall columns), u = hung on the wall
+// Hood heights (cm). Chimney or box: the canopy, then a chimney up to the ceiling, shorter, or none (a recirculating
+// filter hood). Under a cabinet: a slim hood at 1.45 m with a wall cabinet above it up to 2.17 m. Built in: the cabinet
+// goes from 1.45 to 2.17 m and the pull-out visor is the strip at its bottom.
+function hoodSpan(o, Hc){
+  if (o.s === 'under' || o.s === 'tele') return {y0: 145, y1: 217, body: o.s === 'under' ? 152 : 145, cab: 152};
+  const base = o.s === 'box' ? 175 : 164, y0 = o.s === 'box' ? 150 : 158;
+  return {y0, base, y1: o.ch === 'none' ? base : o.ch === 'cut' ? Math.min(Hc, base + (+o.chH || 50)) : Hc};
+}
 // tall columns: height = the chosen height, at most 4 cm under the ceiling (230 cm by default, as before).
 // Top cabinet left unset = everything above 2.06 m (the old fixed split), so a taller column grows the top cabinet
 // and leaves the fridge niche alone; once set it is kept, between 12 cm and what leaves 1.30 m below it.
@@ -703,7 +711,10 @@ const UNIT = {
   glass:   {n:'باب زجاج', s:'زجاج', w:60, min:30, max:120, lvl:'u', cat:'upper', d:35},
   lift:    {n:'باب قلاب', s:'قلاب', w:80, min:40, max:120, lvl:'u', cat:'upper', d:35},
   uopen:   {n:'رف مفتوح', s:'رف', w:60, min:15, max:120, lvl:'u', cat:'upper', d:35},
-  hood:    {n:'شفاط', s:'شفاط', w:90, min:60, max:120, lvl:'u', cat:null, d:50, opts:[opt.seg('s', 'الشكل', {chimney:'مدخنة', box:'صندوق'}, 'chimney')]},
+  hood:    {n:'شفاط', s:'شفاط', w:90, min:60, max:120, lvl:'u', cat:null, d:50, opts:[opt.seg('s', 'الشكل', {chimney:'مدخنة', box:'صندوق', under:'تحت خزانة', tele:'مدمج يُسحب'}, 'chimney'),
+    {...opt.seg('ch', 'المدخنة', {full:'حتى السقف', cut:'أقصر', none:'بلا مدخنة (فلتر)'}, 'full'), if: v => v.s === 'chimney' || v.s === 'box'},
+    {...opt.num('chH', 'طول المدخنة', 10, 150, 50, 1), if: v => (v.s === 'chimney' || v.s === 'box') && v.ch === 'cut'},
+    {...opt.seg('cab', 'الخزانة فوقه', {flap:'قلاب', door:'باب'}, 'flap'), if: v => v.s === 'under' || v.s === 'tele'}]},
   mcab:    {n:'خزانة مرآة', s:'خزانة مرآة', w:80, min:40, max:180, lvl:'u', cat:'upper', d:15, opts:[opt.bool('led', 'إضاءة', true)]},
   shelf:   {n:'رفوف عائمة', s:'رفوف', w:100, min:30, max:300, lvl:'u', cat:'shelf', d:25, opts:[opt.num('n', 'عدد الرفوف', 1, 4, 2, 1), opt.num('y', 'ارتفاع الرف الأول', 80, 210, 140), opt.bool('led', 'إضاءة', false)]},
   clad:    {n:'ديكور جدار التلفزيون', s:'ديكور', w:220, min:60, max:600, lvl:'u', cat:'panel', d:4, opts:[opt.seg('s', 'الخامة', {slats:'شرائح خشب', flat:'ألواح ملساء', marble:'رخام', stone:'حجر'}, 'slats'), opt.seg('tv', 'الشاشة', {0:'بلا', 55:'55"', 65:'65"', 75:'75"', 85:'85"'}, '65'), opt.bool('led', 'إضاءة LED', true), opt.bool('full', 'من الأرض', false)]},
@@ -838,7 +849,7 @@ function layoutRun(c, r){
   const U = c.units?.[r.id] || {b: [], u: [], t: []};
   const pb = placeList(U.b || [], r.b, [], r.end), talls = pb.filter(m => m.fit && UNIT[m.t].tall).map(m => [m.s0, m.s1]);
   const pu = r.u ? placeList(U.u || [], r.u, talls, r.end) : [];
-  const hoods = pu.filter(m => m.fit && m.t === 'hood').map(m => [m.s0, m.s1]);
+  const hoods = pu.filter(m => m.fit && m.t === 'hood' && hoodSpan(optsOf(m), c.height).y1 >= c.height - 2).map(m => [m.s0, m.s1]);   // only a chimney up to the ceiling stops the top row
   return {U, pb, pu, talls, hoods, pt: r.u ? topRow(c, r, U.t || [], pb, pu, hoods) : []};
 }
 // The top row sits on whatever is under it: the wall cabinets (2.17 m), a tall column or a window, the highest of
@@ -1755,11 +1766,27 @@ function cooktop(parent, cx, w = .6){
     const m = new THREE.Mesh(new THREE.RingGeometry(r * k - .004, r * k, 48), ring); m.rotation.x = -Math.PI / 2; m.position.set(cx + dx * k, .9065, dz); parent.add(m);
   }
 }
-function hood(parent, c, cx, H, w = .9, style = 'chimney'){
-  const mat = c.handle === 'black' ? handleMat('black') : M.steel, hw = w / 2 - .01;
-  if (style === 'box') { box(parent, mat, cx - hw, cx + hw, 1.5, 1.75, .02, .5, {r: .01}); box(parent, mat, cx - .14, cx + .14, 1.75, H - .002, .02, .3); box(parent, glow('hoodled', '#FFE3B5', 4), cx - hw + .1, cx + hw - .1, 1.496, 1.5, .25, .4, {cast: false, recv: false}); return; }
+function hood(parent, c, cx, H, w = .9, style = 'chimney', o = {}, idx = 0){
+  const mat = c.handle === 'black' ? handleMat('black') : M.steel, hw = w / 2 - .01, sp = hoodSpan({...o, s: style}, H * 100), top = Math.min(H - .002, sp.y1 / 100);
+  if (style === 'under' || style === 'tele') {
+    const x0 = cx - w / 2, x1 = cx + w / 2, fid = c.upperFront === 'same' ? c.front : c.upperFront, t = o.cab === 'door' ? 'tdoor' : 'tlift';
+    topModule(parent, c, x0, x1, 1.52, 2.17, .35, idx, t);
+    if (style === 'under') {   // slim hood fixed under the cabinet, a little deeper than it, with its grille and controls
+      box(parent, mat, x0 + .005, x1 - .005, 1.45, 1.52, .02, .5, {r: .006});
+      for (let k = 0; k < 7; k++) box(parent, M.dark, cx - .2 + k * .026, cx - .2 + k * .026 + .012, 1.475, 1.495, .499, .503, {cast: false});
+      for (const dx of [.28, .32]) box(parent, M.dark, cx + dx, cx + dx + .02, 1.478, 1.492, .499, .503, {cast: false});
+      box(parent, glow('hoodled', '#FFE3B5', 4), x0 + .1, x1 - .1, 1.446, 1.45, .2, .4, {cast: false, recv: false});
+    } else {                   // built in: the bottom of the cabinet holds the hood, its visor front pulls out
+      box(parent, carcassMat(fid), x0, x1, 1.45, 1.52, 0, .35);
+      box(parent, frontMat(fid, c.finish), x0 + .002, x1 - .002, 1.452, 1.518, .35, .35 + FT, {tile: 1.1});
+      box(parent, mat, x0 + .03, x1 - .03, 1.446, 1.45, .03, .34, {cast: false});
+      box(parent, glow('hoodled', '#FFE3B5', 4), x0 + .1, x1 - .1, 1.443, 1.446, .12, .3, {cast: false, recv: false});
+    }
+    return;
+  }
+  if (style === 'box') { box(parent, mat, cx - hw, cx + hw, 1.5, 1.75, .02, .5, {r: .01}); if (top > 1.76) box(parent, mat, cx - .14, cx + .14, 1.75, top, .02, .3); box(parent, glow('hoodled', '#FFE3B5', 4), cx - hw + .1, cx + hw - .1, 1.496, 1.5, .25, .4, {cast: false, recv: false}); return; }
   box(parent, mat, cx - hw, cx + hw, 1.58, 1.64, .02, .5, {r: .006});
-  box(parent, mat, cx - .14, cx + .14, 1.64, H - .002, .02, .3);
+  if (top > 1.65) box(parent, mat, cx - .14, cx + .14, 1.64, top, .02, .3);
   box(parent, glow('hoodled', '#FFE3B5', 4), cx - Math.max(.1, hw - .15), cx + Math.max(.1, hw - .15), 1.576, 1.58, .3, .42, {cast: false, recv: false});
 }
 function plant(parent, x, z, y = .9){
@@ -2366,7 +2393,7 @@ function unitItem(g, c, it, i){
     case 'shoe': shoeUnit(p, c, a, b, it); break;
     case 'bench': benchUnit(p, c, a, b, it); break;
     case 'desk': deskUnit(p, c, a, b, it); break;
-    case 'hood': hood(p, c, w / 2, H, w, o.s); break;
+    case 'hood': hood(p, c, w / 2, H, w, o.s, o, i); break;
     case 'udoor': case 'glass': case 'lift': case 'uopen': upperModule(p, c, a, b, 1.45, i, it.t); break;
     case 'shelf': shelfUnit(p, c, a, b, it); break;
     case 'mcab': mirrorCabinet(p, c, a, b, it); break;
@@ -2513,7 +2540,7 @@ function buildRoom(c){
       if (!m.fit) continue;
       const a = m.s0 / 100, b = m.s1 / 100, mg = modGroup(g, r.id, 'u', m.i), o = optsOf(m);
       switch (m.t) {
-        case 'hood': hood(mg, c, (a + b) / 2, H, b - a, o.s); break;
+        case 'hood': hood(mg, c, (a + b) / 2, H, b - a, o.s, o, m.i); break;
         case 'window': {
           const y0 = (+o.y) / 100, y1 = K ? Math.min(2.2, H - .3) : Math.min(2.3, H - .25);
           wins[r.id].push({a, b, y0, y1}); if (o.c) curtains(mg, a, b, H);
@@ -2815,7 +2842,7 @@ function unitBox(m, Hc, Ht){
     case 'desk': return [0, 75];
     case 'rdoor': return [0, Math.min(217, Hc - 8)];
     case 'bgap': return [0, 86];
-    case 'hood': return [158, Hc];
+    case 'hood': { const h = hoodSpan(optsOf(m), Hc); return [h.y0, h.y1]; }
     case 'window': return [+o.y, Math.min(m.t && cfg.room === 'kitchen' ? 220 : 230, Hc - 25)];
     case 'shelf': return [+o.y, +o.y + (+o.n - 1) * 38 + 4];
     case 'mcab': return [112, 182];
@@ -2878,7 +2905,11 @@ function unitShape(m, x0, x1, Y, Hc, Ht){
     case 'glass': { const n = w > 64 ? 2 : 1; rect(x0, 145, x1, 217, 'f'); for (let i = 0; i < n; i++) { const a = x0 + w * i / n, b = a + w / n; rect(a + 5, 150, b - 5, 212, 'gl'); } for (let i = 1; i < n; i++) vl(x0 + w * i / n, 145, 217); break; }
     case 'lift': rect(x0, 145, x1, 217, 'f'); hh(cx, 150, Math.min(30, w * .5)); break;
     case 'uopen': rect(x0, 145, x1, 217, 'op'); hl(x0, x1, 181); break;
-    case 'hood': if (o.s === 'box') { rect(x0 + 2, 150, x1 - 2, 175, 'st'); rect(cx - 14, 175, cx + 14, Hc, 'st'); } else { out.push(`<path d="M${x0 + 1} ${Y(158)}H${x1 - 1}L${x1 - 3} ${Y(164)}H${x0 + 3}Z" class="f"/>`); rect(cx - 14, 164, cx + 14, Hc, 'f'); } break;
+    case 'hood': { const h = hoodSpan(o, Hc);
+      if (o.s === 'under' || o.s === 'tele') { rect(x0, 152, x1, 217, 'f'); if (o.cab === 'door') leaf(152, 217, 158, w > 64 ? 2 : 1, 10); else hh(cx, 157, Math.min(30, w * .5)); rect(x0 + (o.s === 'under' ? 1 : 0), 145, x1 - (o.s === 'under' ? 1 : 0), 152, o.s === 'under' ? 'st' : 'f'); break; }
+      if (o.s === 'box') { rect(x0 + 2, 150, x1 - 2, 175, 'st'); if (h.y1 > 176) rect(cx - 14, 175, cx + 14, h.y1, 'st'); }
+      else { out.push(`<path d="M${x0 + 1} ${Y(158)}H${x1 - 1}L${x1 - 3} ${Y(164)}H${x0 + 3}Z" class="f"/>`); if (h.y1 > 165) rect(cx - 14, 164, cx + 14, h.y1, 'f'); }
+      break; }
     case 'window': { const y0 = +o.y, y1 = Math.min(cfg.room === 'kitchen' ? 220 : 230, Hc - 25); rect(x0 + 5, y0, x1 - 5, y1, 'gl'); vl(cx, y0, y1); rect(x0 + 1, y0 - 3, x1 - 1, y0, 'f'); if (o.c) { rect(x0 - 8, 4, x0 + 6, Hc - 10, 'cu'); rect(x1 - 6, 4, x1 + 8, Hc - 10, 'cu'); } break; }
     case 'ugap': rect(x0, 145, x1, 217, 'gap'); break;
     case 'tdoor': case 'tlift': case 'topen': case 'tgap': { const y0 = m.ty0 ?? 217, y1 = m.ty1 ?? Hc - 2;
@@ -4016,7 +4047,9 @@ function saleLines(){
   for (const r of runsOf(c)) {
     const {pb, pu, pt} = layoutRun(c, r);
     for (const m of [...pb, ...pu, ...pt]) {
-      if (!m.fit) continue; const T = UNIT[m.t]; if (!T.cat) continue; const pc = PRICE_CAT[T.cat];
+      if (!m.fit) continue; const T = UNIT[m.t];
+      if (m.t === 'hood' && ['under', 'tele'].includes(optsOf(m).s)) { addTo('upper', m.w / 100); continue; }   // its cabinet sells as a wall cabinet
+      if (!T.cat) continue; const pc = PRICE_CAT[T.cat];
       addTo(T.cat, pc.u === 'm' ? m.w / 100 * (m.t === 'shelf' ? +optsOf(m).n : 1) : pc.u === 'm2' ? m.w / 100 * frontHeight(m, c) : 1);
     }
   }
@@ -4142,6 +4175,13 @@ function cutList(c){
     if (m.t === 'tlift') { add(code, 'باب قلاب', W - GAP, Hh - GAP, TF, 1, F(ufid), 2, 2); addHw('lift'); if (!gola) addHw('handle'); }
     else doors(code, W, Hh, n2, ufid);
   };
+  // the wall cabinet that holds or carries the hood: carcass 35 cm deep, a flap or doors, the visor strip when built in
+  const cutHoodCab = (m, code, ufid) => { const o = optsOf(m), W = m.w * 10, tele = o.s === 'tele', Hh = tele ? 720 : 650, fh = 650, n2 = W > 640 ? 2 : 1;
+    carcass(code, W, Hh, 350, {});
+    if (o.cab === 'door') doors(code, W, fh, n2, ufid); else { add(code, 'باب قلاب', W - GAP, fh - GAP, TF, 1, F(ufid), 2, 2); addHw('lift'); if (!gola) addHw('handle'); }
+    if (tele) add(code, 'واجهة الشفاط', W - GAP, 70 - GAP, TF, 1, F(ufid), 2, 2);
+    shaping.push({code, msg: tele ? 'شفاط مدمج: أرضية الخزانة مفتوحة لجسم الشفاط، وواجهة الشفاط تُركّب على درجه. المقاسات حسب دليل الجهاز.' : 'فتحة في أرضية الخزانة وظهرها لأنبوب الشفاط، حسب دليل الجهاز.'});
+  };
   const cutUpper = (m, code, ufid) => { const o = optsOf(m), W = m.w * 10, n2 = W > 640 ? 2 : 1;
       switch (m.t) {
         case 'udoor': carcass(code, W, 720, 350, {shelves: 1}); doors(code, W, 735, n2, ufid); break;
@@ -4171,7 +4211,7 @@ function cutList(c){
     if (plinth) add(r.id, 'وزرة أمامية', plinth, PL, T, 1, F(fid), 1, 0); if (gola) golaM += plinth;
     for (const m of pu) {
       if (!m.fit || UNIT[m.t].gap) continue;
-      if (m.t === 'hood') { addAp('hood'); continue; }
+      if (m.t === 'hood') { addAp('hood'); if (['under', 'tele'].includes(optsOf(m).s)) { units++; const cd = r.id + '^' + (++ui); cutHoodCab(m, cd, ufid); noteRC(c.units?.[r.id]?.u?.[m.i]?.rc, cd); } continue; }
       if (m.t === 'tv') { addAp('tv'); continue; }
       if (!UNIT[m.t].cat) continue;
       units++; { const cd = r.id + '^' + (++ui); cutUpper(m, cd, ufid); noteRC(c.units?.[r.id]?.u?.[m.i]?.rc, cd); }
@@ -4324,7 +4364,7 @@ function renderCost(){
       <label class="sw-row"><input type="checkbox" data-fab="edgeDeduct" ${fab.edgeDeduct ? 'checked' : ''}> خصم سماكة الحافة من مقاس القص</label>
       <div class="ued-row"><button type="button" class="btn sm" data-fabreset>الرجوع للقيم الافتراضية</button></div>
       <p class="hint">تُطبّق على قائمة التقطيع ومخطط الألواح وملف CSV. المشهد ثلاثي الأبعاد يبقى تقريبياً ولا يتغير بها.</p></details>
-    ${cl.shaping.length ? `<div class="grp"><h3>زوايا مدوّرة <small>${cl.shaping.reduce((s, x) => s + x.rc.c.length, 0)}</small></h3>${cl.shaping.map(x => `<p>${esc(x.code)}: ${esc(x.msg)}</p>`).join('')}</div>` : ''}
+    ${cl.shaping.length ? `<div class="grp"><h3>${cl.shaping.every(x => x.rc) ? 'زوايا مدوّرة' : 'ملاحظات التصنيع'} <small>${cl.shaping.every(x => x.rc) ? cl.shaping.reduce((s, x) => s + x.rc.c.length, 0) : cl.shaping.length}</small></h3>${cl.shaping.map(x => `<p>${esc(x.code)}: ${esc(x.msg)}</p>`).join('')}</div>` : ''}
     ${cl.checks.length ? `<div class="grp issues"><h3>تنبيهات قائمة التقطيع</h3>${cl.checks.map(x => `<p>${esc(x.code)}: ${esc(x.msg)}</p>`).join('')}</div>` : ''}
     <div class="grp"><h3>هوية الورشة <small>تظهر في المستندات ووضع العرض</small></h3>
       <div class="logo-row">${p.shopLogo ? `<img src="${p.shopLogo}" alt="شعار الورشة">` : '<span class="ph">الشعار</span>'}<label class="btn sm">${p.shopLogo ? 'تغيير الشعار' : 'رفع الشعار'}<input type="file" id="logoIn" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden></label>${p.shopLogo ? '<button type="button" class="btn sm ghost" data-logodel>إزالة</button>' : ''}</div>
@@ -4585,7 +4625,7 @@ async function buildWorkshop(){
   d.table([{label: '#', w: .05, align: 'center', f: 'm'}, {label: 'الوحدات', w: .16, f: 'm'}, {label: 'القطعة', w: .18}, {label: 'الطول', w: .09, align: 'center', f: 'm'}, {label: 'العرض', w: .09, align: 'center', f: 'm'}, {label: 'مم', w: .06, align: 'center', f: 'm'}, {label: 'العدد', w: .07, align: 'center', f: 'm'}, {label: 'الخامة', w: .14}, {label: 'العرق', w: .06, align: 'center'}, {label: 'الحواف', w: .1, align: 'center'}],
     cl.grouped.map((g, i) => [String(i + 1), g.codes.join(' '), g.kind, String(g.L), String(g.W), String(g.th), String(g.qty), matName(g.mat), g.grain === 'L' ? 'طول' : g.grain === 'W' ? 'عرض' : '-', edgeTxt(g)]), {sz: 15, pad: 8});
   d.text(`الحواف: ط = حافة على الطول، ع = حافة على العرض. العرق: اتجاه عرق الخشب في القطعة. ${fab.edgeDeduct ? `المقاسات مقاسات قص، خُصمت منها سماكة الحافة ${fab.edge} مم.` : 'المقاسات نهائية، ولم تُخصم منها سماكة الحافة.'} هيكل ${fab.t} مم، واجهات ${fab.tf} مم، ظهر ${fab.back} مم، فراغ الأبواب ${fab.gap} مم.`, {sz: 16, color: MUTED});
-  if (cl.shaping.length) { d.text('زوايا مدوّرة:', {sz: 18, w: 600}); for (const x of cl.shaping) d.text(`• ${x.code}: ${x.msg}`, {sz: 16}); }
+  if (cl.shaping.length) { d.text(cl.shaping.every(x => x.rc) ? 'زوايا مدوّرة:' : 'ملاحظات التصنيع:', {sz: 18, w: 600}); for (const x of cl.shaping) d.text(`• ${x.code}: ${x.msg}`, {sz: 16}); }
   if (cl.checks.length) { d.text('تنبيهات على القائمة:', {sz: 18, w: 600}); for (const x of cl.checks) d.text(`• ${x.code}: ${x.msg}`, {sz: 16}); }
   { const nest = cl.nest; if (nest.length) { d.h2('مخطط التقطيع على الألواح', Math.round((PW - 2 * PM) * .8 * fab.sheetW / fab.sheetL) + 100); drawNest(d, nest); } }
   { const iss = checkIssues(); if (iss.length) { d.h2('ملاحظات الفحص'); for (const x of iss) d.text('• ' + x.msg, {sz: 18}); } }

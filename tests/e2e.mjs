@@ -227,6 +227,18 @@ try {
   ok(tvm.cut, 'الزوايا تصير مائلة بدل القوس، مع ملاحظة القص');
   ok(tvm.unitHidden === 0 && tvm.unitNote, 'الزهرية فوق الطاولة تبقى، ونصف القطر في ورقة الورشة لا يزيد عن نصف الارتفاع (22 سم)');
   ok(tvm.models >= 15 && tvm.placed >= 13 && tvm.round, `مكتبة طاولات التلفزيون: ${tvm.models} موديلاً، وُضع منها ${tvm.placed}`);
+  console.log('الشفاط: تحت خزانة، مدمج، مدخنة أقصر، بلا مدخنة');
+  const hd = await page.evaluate(() => { const w = window.__wr, out = {}; w.openDemo(0);
+    const put = o => { const c = structuredClone(w.cfg); c.auto = false; c.units.B.u[1].o = o; w.set(c); return w.cutList(); };
+    const base = w.cutList().parts.length, price0 = w.sale().total;
+    let cl = put({s: 'under'}); out.under = cl.parts.length > base && cl.shaping.some(x => !x.rc) && w.sale().total > price0;
+    cl = put({s: 'tele', cab: 'door'}); out.tele = cl.parts.some(x => x.kind === 'واجهة الشفاط');
+    put({s: 'chimney', ch: 'cut', chH: 30}); const c = structuredClone(w.cfg); c.units.B.t = [{t: 'tdoor', w: 400}]; w.set(c);
+    out.topOver = w.cutList().parts.filter(x => /^BT/.test(x.code)).length > 0;
+    put({s: 'box', ch: 'none'}); out.none = w.cutList().parts.length >= base; out.err = 0; w.openDemo(0); return out; });
+  ok(hd.under, 'شفاط تحت خزانة: الخزانة في قائمة القص والسعر، مع ملاحظة فتحة الأنبوب');
+  ok(hd.tele, 'شفاط مدمج يُسحب: واجهته في قائمة القص');
+  ok(hd.topOver && hd.none, 'مدخنة أقصر تترك مكاناً للصف فوق العلوية، وشفاط بلا مدخنة يعمل');
   console.log('وضع العرض');
   await page.evaluate(() => window.__wr.setPresent(true)); await page.waitForTimeout(300);
   ok(await page.evaluate(() => getComputedStyle(document.querySelector('#panel')).display === 'none' && getComputedStyle(document.querySelector('.bar')).display === 'none'), 'الأدوات مخفية في وضع العرض');
