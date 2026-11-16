@@ -19,7 +19,9 @@ L'éditeur 3D est exactement celui du dépôt (`index.html`, `js/`, `assets/`) ;
                                                   Hetzner Storage Box ou Backblaze B2
 ```
 
-- `server/` : API et service des pages. NestJS 12, Drizzle ORM, PostgreSQL 16. Tests : `npm test` (API sur une vraie base) et `node test/browser.e2e.mjs` (deux appareils et un client dans de vrais navigateurs).
+- `server/` : API et service des pages. NestJS 12, Drizzle ORM, PostgreSQL 16. Tests : `npm test` (API sur une vraie base) et `npm run test:browser` (deux appareils, un client et les pages de gestion dans de vrais navigateurs, réouverture sans réseau comprise).
+- `.github/workflows/atelier.yml` : à chaque envoi sur la branche `atelier`, tests de l'API sur PostgreSQL, construction des images Docker et démarrage de toute la pile. Ne déploie rien.
+- Pages de gestion (`/admin`) en arabe, français et turc, avec le même dictionnaire que l'éditeur.
 - `deploy/` : image Docker, `docker-compose.yml`, sauvegardes.
 - `scripts/build-standalone.mjs` : version autonome (sortie de contrat, secours hors ligne).
 
