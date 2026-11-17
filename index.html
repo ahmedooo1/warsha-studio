@@ -5054,13 +5054,23 @@ function snapshot(w, h, withFooter, withDims = withFooter, src = null){
   camera.aspect = size.x / size.y; camera.updateProjectionMatrix(); dirty = true;
   if (withFooter) {
     x.fillStyle = '#14191E'; x.fillRect(0, h, w, foot); x.fillStyle = '#F4B400'; x.fillRect(0, h, w, Math.max(3, foot * .05));
-    const s = foot / 100; x.direction = 'rtl'; x.textAlign = 'right'; x.fillStyle = '#FFFFFF';
-    x.font = `600 ${34 * s}px "Reem Kufi","IBM Plex Sans Arabic",sans-serif`; x.fillText(current ? current.name : (cfg.room === 'kitchen' ? 'مطبخ' : 'غرفة نوم'), w - 40 * s, h + 46 * s);
-    x.font = `400 ${21 * s}px "IBM Plex Sans Arabic",sans-serif`; x.fillStyle = '#B9C1C7';
-    const c = cfg, mats = cfg.room === 'kitchen' ? `${frontDef(c.front).name}، ${byId(TOPS, c.worktop).name}، ${byId(HANDLES, c.handle).name}` : `${frontDef(c.front).name}، ${byId(FABRICS, c.fabric).name}`;
-    x.fillText(`${$('#tag').textContent.trim()} سم، ${mats}`, w - 40 * s, h + 82 * s);
+    const s = foot / 100, date = new Date().toLocaleDateString('en-GB'), shop = prices.shop || '';
+    // the workshop name and the date on the left, the design on the right: the right side never runs into the left one
+    x.font = `600 ${24 * s}px "Reem Kufi","IBM Plex Sans Arabic",sans-serif`; const wShop = shop ? x.measureText(shop).width : 0;
+    x.font = `400 ${18 * s}px "IBM Plex Mono",monospace`; const wDate = x.measureText(date).width;
+    const room = w - 80 * s - Math.max(wShop, wDate) - 32 * s;
+    const fit = (txt, wt, px, fam) => { let f = px; x.font = `${wt} ${f}px ${fam}`; while (x.measureText(txt).width > room && f > px * .72) { f -= px * .04; x.font = `${wt} ${f}px ${fam}`; }
+      if (x.measureText(txt).width <= room) return txt; let t = txt; while (t.length > 1 && x.measureText(t + '…').width > room) t = t.slice(0, -1); return t.trimEnd().replace(/[،,]$/, '') + '…'; };
+    x.direction = 'rtl'; x.textAlign = 'right'; x.fillStyle = '#FFFFFF';
+    const title = current ? current.name : (cfg.room === 'kitchen' ? 'مطبخ' : cfg.room === 'bedroom' ? 'غرفة نوم' : 'تصميم');
+    x.fillText(fit(title, 600, 34 * s, '"Reem Kufi","IBM Plex Sans Arabic",sans-serif'), w - 40 * s, h + 46 * s);
+    x.fillStyle = '#B9C1C7';
+    // what the design is made of: a fabric only where there is one (a bed), a worktop where there is one
+    const c = cfg, hasTop = c.room === 'kitchen' || c.room === 'free', mats = c.room === 'bedroom' ? `${frontDef(c.front).name}، ${byId(FABRICS, c.fabric).name}`
+      : hasTop ? `${frontDef(c.front).name}، ${byId(TOPS, c.worktop).name}، ${byId(HANDLES, c.handle).name}` : `${frontDef(c.front).name}، ${byId(HANDLES, c.handle).name}`;
+    x.fillText(fit(`${$('#tag').textContent.trim()} سم، ${mats}`, 400, 21 * s, '"IBM Plex Sans Arabic",sans-serif'), w - 40 * s, h + 82 * s);
     x.textAlign = 'left'; x.direction = 'ltr'; x.fillStyle = '#FFFFFF'; x.font = `600 ${24 * s}px "Reem Kufi","IBM Plex Sans Arabic",sans-serif`;
-    x.fillText(prices.shop || '', 40 * s, h + 46 * s); x.fillStyle = '#B9C1C7'; x.font = `400 ${18 * s}px "IBM Plex Mono",monospace`; x.fillText(new Date().toLocaleDateString('en-GB'), 40 * s, h + 80 * s);
+    x.fillText(shop, 40 * s, h + 46 * s); x.fillStyle = '#B9C1C7'; x.font = `400 ${18 * s}px "IBM Plex Mono",monospace`; x.fillText(date, 40 * s, h + 80 * s);
   }
   return out;
 }
@@ -5220,7 +5230,7 @@ async function photoCompare(n){
     return {w, h, pixels: cnt, mean: +(sum / cnt / 3).toFixed(3), max};
   } finally { photoBusy = false; photoN = 0; dirty = true; }
 }
-window.__wr = {tallOf, pieceRect: () => pieceRect(), get qbarPos(){ return qbarPos; }, get pixelRatio(){ return renderer.getPixelRatio(); }, get rcStats(){ return rcStats; }, setRC, get clashes(){ return lastClashes.map(c => ({a: c.a, b: c.b.item ?? (c.b.mod ? 'unit' : 'top'), depth: Math.round(c.depth * 10) / 10})); }, set noClash(v){ noClash = v; }, settle: i => { const g = itemGroup(i); return g ? settleDrop({i, group: g}) : null; }, photoCompare, deviceTest: () => deviceTest(document.createElement('pre')), texReady, texStats, setPhoto, get photoN(){ return photoN; }, photoShot: async (w, h, n) => (await photoShot(w, h, n, false, false)), makeShot, get envReady(){ return envReady; }, openNow: v => { openT = openV = v; applyAnims(); renderer.shadowMap.needsUpdate = true; dirty = true; }, setQuality, get quality(){ return quality; }, dirty: () => { dirty = true; }, setCam, openDemo, DEMOS, exportFile, importFile, setPresent, get fab(){ return fab; }, set fab(v){ fab = WarshaFab.sanitizeFab(v); }, store, setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
+window.__wr = {tallOf, pieceRect: () => pieceRect(), get qbarPos(){ return qbarPos; }, get pixelRatio(){ return renderer.getPixelRatio(); }, get rcStats(){ return rcStats; }, setRC, get clashes(){ return lastClashes.map(c => ({a: c.a, b: c.b.item ?? (c.b.mod ? 'unit' : 'top'), depth: Math.round(c.depth * 10) / 10})); }, set noClash(v){ noClash = v; }, settle: i => { const g = itemGroup(i); return g ? settleDrop({i, group: g}) : null; }, photoCompare, deviceTest: () => deviceTest(document.createElement('pre')), texReady, texStats, setPhoto, get photoN(){ return photoN; }, photoShot: async (w, h, n) => (await photoShot(w, h, n, false, false)), makeShot, get envReady(){ return envReady; }, openNow: v => { openT = openV = v; applyAnims(); renderer.shadowMap.needsUpdate = true; dirty = true; }, setQuality, get quality(){ return quality; }, dirty: () => { dirty = true; }, setCam, openDemo, DEMOS, exportFile, importFile, setPresent, get fab(){ return fab; }, set fab(v){ fab = WarshaFab.sanitizeFab(v); }, store, setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), snapFoot: (w, h) => snapshot(w, h, true, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
 })();
 </script>
 
