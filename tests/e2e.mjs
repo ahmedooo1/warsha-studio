@@ -208,6 +208,11 @@ try {
   ok(sp.right, 'نقل القطعة إلى مكان فارغ على الجدار الأيمن');
   ok(sp.deleted === 1 && sp.end === 0, 'زر «حذف» في فحص التصميم يحذف النسخة المتداخلة');
   ok(sp.unitTo && sp.unitTo !== 'A' && sp.unitA === 6, `نسخة وحدة لا مكان لها على الجدار الرئيسي تذهب إلى ${sp.unitTo}`);
+  console.log('وحدة مفصولة عن الصف: سماكات أرقام في ورقة الورشة، والعملة يورو');
+  const dt = await page.evaluate(() => { const w = window.__wr; w.openDemo(0); const k = w.detachUnit({run: 'A', lvl: 'b', i: 1}); const cl = w.cutList();
+    return {k, bad: cl.parts.filter(x => typeof x.th !== 'number' || !isFinite(x.th)).length + cl.mats.filter(m => typeof m.th !== 'number').length}; });
+  ok(dt.k >= 0 && dt.bad === 0, `وحدة سفلية مفصولة: كل السماكات أرقام (${dt.bad} خطأ)`);
+  ok(await page.evaluate(() => document.querySelector('#p-cur')?.value) === '€', 'العملة الافتراضية يورو');
   console.log('زوايا من الأمام وموديلات طاولات التلفزيون');
   const tvm = await page.evaluate(() => { const w = window.__wr, out = {}; w.openDemo(5); w.renderFree();
     const tv = w.cfg.items.findIndex(it => it.t === 'cab' && it.o?.endL); w.select({item: tv}, true);
