@@ -4025,8 +4025,11 @@ const PRICE_CAT = {
 };
 const COST_DEF = {radiusCost:10, sheetCarcass:70, sheetFront:140, sheetBack:22, sheetAccent:160, sheetPanel:60, edge:1, hinge:4, runner:16, handleU:6, leg:1.5, lift:40, rod:5, gola:12, glassM2:60, mirrorM2:70, stoneM2:110, topCost:90, labor:30,
   bracket:3, flap:8, tilt:12, led:8, legMetal:6, cushion:40, floatbr:4, hook:2, upholstery:35, slats:45};
-const PRICE_DEF = {cur:'$', shop:'', shopPhone:'', install:250, vat:0, deposit:50, ...Object.fromEntries(Object.entries(PRICE_CAT).map(([k, v]) => [k, v.def])), ...COST_DEF};
+const PRICE_DEF = {cur:'€', shop:'', shopPhone:'', install:250, vat:0, deposit:50, ...Object.fromEntries(Object.entries(PRICE_CAT).map(([k, v]) => [k, v.def])), ...COST_DEF};
 let prices = {...PRICE_DEF, ...lsGet('wr_prices', {})};
+// the currency used to start in dollars; the workshop works in euros: saved settings still on the old default move to
+// € once (a currency chosen after that, dollars included, stays as chosen)
+if (!lsGet('wr_cur_eur', false)) { if (prices.cur === '$') { prices.cur = '€'; lsSet('wr_prices', prices); } lsSet('wr_cur_eur', true); }
 const numLocale = () => I18N.lang === 'ar' ? 'en-US' : I18N.locale;
 const fmt = n => Math.round(n).toLocaleString(numLocale()).replace(/[\u202F\u00A0]/g, ' ');
 const openDetails = {sale: false, work: false};
@@ -4237,9 +4240,10 @@ function cutList(c){
       const fc = rc.c.some(k => ['tl', 'tr', 'dl', 'dr'].includes(k)) ? Math.min(hh, it.w) / 2 : Infinity, pc = rc.c.some(k => ['fl', 'fr', 'bl', 'br'].includes(k)) ? Math.min(it.w, itemDepth(it)) / 2 : Infinity;
       return {...rc, r: Math.min(rc.r, Math.floor(Math.min(fc, pc)))}; })(it.rc) : it.rc, code);
     if (isUnitItem(it)) {
-      const T = UNIT[it.t];
-      if (T.lvl === 'b') { if (T.deco || T.gap) return; plinth = 0; cutBase(it, code, f); if (plinth) add(code, 'وزرة أمامية', plinth, 100, T, 1, F(f), 1, 0); }
-      else if (it.t === 'hood') addAp('hood'); else if (it.t === 'tv') addAp('tv'); else if (T.cat) { units++; cutUpper(it, code, it.o?.col || ufid); }
+      // U, not T: T is the carcass thickness of the workshop settings, used just below for the plinth
+      const U = UNIT[it.t];
+      if (U.lvl === 'b') { if (U.deco || U.gap) return; plinth = 0; cutBase(it, code, f); if (plinth) add(code, 'وزرة أمامية', plinth, 100, T, 1, F(f), 1, 0); }
+      else if (it.t === 'hood') addAp('hood'); else if (it.t === 'tv') addAp('tv'); else if (U.cat) { units++; cutUpper(it, code, it.o?.col || ufid); }
       return;
     }
     if (it.t === 'cab') {
