@@ -557,6 +557,7 @@ body.present .pres-vars:not([hidden]){display:flex;position:absolute;bottom:84px
 <script src="js/fab.js"></script>
 <script src="js/cut.js"></script>
 <script src="js/i18n.js"></script>
+<script src="js/cut-i18n.js"></script>
 <script>
 (() => {
 'use strict';
@@ -4860,7 +4861,7 @@ function renderClients(){
     <div class="acts"><button class="btn" data-open="${esc(d.id)}">فتح</button><button class="btn ghost" data-variant="${esc(d.id)}">نسخة بديلة</button><button class="btn ghost" data-exp="${esc(d.id)}">تصدير</button><button class="btn ghost" data-del="${esc(d.id)}">حذف</button></div></div></div>`).join('')
     : `<div class="empty">لا يوجد زبائن محفوظون بعد. صمّم لزبونك ثم اضغط «حفظ»، أو افتح أحد المشاريع التجريبية.</div>`)
     + `<div class="grp demos"><h3>مشاريع تجريبية للعرض</h3><div class="chips">${DEMOS.map((x, i) => `<button type="button" class="chip" data-demo="${i}">${x.name}</button>`).join('')}</div></div>`
-    + `<div class="grp"><h3>مخطط التقطيع</h3><div class="ued-row"><button type="button" class="btn sm" data-cutjobs>مهام التقطيع (${store.list.filter(d => d.cfg?.kind === 'cut').length})</button></div><p class="hint">قوائم قطع يكتبها النجار أو يأخذها من تصميم، مع الألواح والبقايا وترتيب القص.</p></div>`
+    + `<div class="grp"><h3>مخطط التقطيع</h3><div class="ued-row"><button type="button" class="btn sm" data-cutjobs>مهام التقطيع <b>${store.list.filter(d => d.cfg?.kind === 'cut').length}</b></button></div><p class="hint">قوائم قطع يكتبها النجار أو يأخذها من تصميم، مع الألواح والبقايا وترتيب القص.</p></div>`
     + `<div class="grp"><h3>النسخ الاحتياطي</h3><div class="ued-row"><button type="button" class="btn sm" id="backupBtn">تنزيل نسخة احتياطية كاملة</button><label class="btn sm">استيراد ملف<input type="file" id="importIn" accept=".json,application/json" hidden></label></div><p class="hint">النسخة الاحتياطية ملف واحد فيه كل التصاميم وأسعار الورشة وإعدادات التصنيع وهويتها. احفظها خارج الجهاز بانتظام. الاستيراد يقبل نسخة احتياطية كاملة أو مشروعاً واحداً.</p></div>`
     + `<p class="hint">${store.db ? 'التصاميم محفوظة في هذه الصفحة، ويراها كل من تشاركه الرابط مع صلاحية التعديل.' : 'التصاميم محفوظة على هذا الجهاز فقط.'}</p>`
     + `<div class="grp"><h3>فحص هذا الجهاز</h3><div class="ued-row"><button type="button" class="btn sm" id="diagBtn">ابدأ الفحص</button><button type="button" class="btn sm ghost" id="diagCopy" hidden>نسخ النتائج</button></div><pre class="diag" id="diagOut" data-notr hidden></pre><p class="hint">يقيس على هذا الجهاز سرعة الرسم في المستويات الثلاثة، والتصوير الواقعي، والصورة الكبيرة، وذاكرة الخامات. يستغرق من دقيقة إلى بضع دقائق، ولا يغيّر التصميم.</p></div>`;

@@ -116,9 +116,11 @@
     return {sheets: open, unplaced};
   }
 
-  // fewer parts left out, then fewer new boards, then fewer leftover pieces of offcut used, then the leftovers in few big pieces
+  // fewer parts left out, then fewer new boards, then as much as possible cut from the offcuts (the new boards keep
+  // more of themselves), then the leftovers in few big pieces
   function score(res, opt) {
-    const newB = res.sheets.filter(s => s.kind === 'new').length, offB = res.sheets.length - newB;
+    const newB = res.sheets.filter(s => s.kind === 'new').length;
+    const offB = -res.sheets.filter(s => s.kind === 'off').reduce((a, s) => a + s.parts.reduce((b, q) => b + q.w * q.h, 0), 0);
     let spread = 0;
     for (const s of res.sheets) for (const f of s.free) if (Math.min(f.w, f.h) >= opt.minW && Math.max(f.w, f.h) >= opt.minL) spread += (f.w * f.h) ** 1.5;
     return [res.unplaced.length, newB, offB, -spread];

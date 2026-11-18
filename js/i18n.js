@@ -136,5 +136,6 @@
     const T = TPL[key]; if (!T) return key;
     return (T[lang] || T.ar).replace(/\{(\w+)\}/g, (_, k) => { const v = vars[k]; return v === undefined ? '' : raw.includes(k) ? String(v) : t(String(v)); });
   }
-  root.I18N = {t, f, setLang, get lang() { return lang; }, get locale() { return LANGS[lang].locale; }, get rtl() { return LANGS[lang].dir === 'rtl'; }, LANGS, start, applyDoc};
+  // extend: pages built on the same dictionary (the workshop server's pages) add their own phrases
+  root.I18N = {extend: d => Object.assign(D, d), t, f, setLang, get lang() { return lang; }, get locale() { return LANGS[lang].locale; }, get rtl() { return LANGS[lang].dir === 'rtl'; }, LANGS, start, applyDoc};
 })(typeof globalThis !== 'undefined' ? globalThis : this);

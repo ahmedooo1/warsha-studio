@@ -60,11 +60,11 @@
       if (E.NOSHEET.includes(String(m.mat).split(':')[0]) || E.NOSHEET.includes(m.mat)) continue;
       const id = 's' + (stocks.length + 1), grain = cl.grouped.some(g => g.mat === m.mat && g.th === m.th && g.grain);
       key[m.mat + '|' + m.th] = id;
-      stocks.push({id, name: `${m.name || E.matName(m.mat)}`, L: E.fab.sheetL, W: E.fab.sheetW, th: m.th, grain, price: +E.prices[PRICE_KEY[m.kind]] || 0});
+      stocks.push({id, name: T(m.name || E.matName(m.mat)), L: E.fab.sheetL, W: E.fab.sheetW, th: m.th, grain, price: +E.prices[PRICE_KEY[m.kind]] || 0});
     }
     cl.grouped.forEach((g, i) => {
       const st = key[g.mat + '|' + g.th]; if (!st) return;
-      parts.push({id: 'p' + (i + 1), name: g.kind, note: (g.codes || []).join(' '), L: g.L, W: g.W, qty: g.qty, stock: st, grain: g.grain || '', e: [g.ea >= 1, g.ea >= 2, g.eb >= 1, g.eb >= 2].map(Number)});
+      parts.push({id: 'p' + (i + 1), name: T(g.kind), note: (g.codes || []).join(' '), L: g.L, W: g.W, qty: g.qty, stock: st, grain: g.grain || '', e: [g.ea >= 1, g.ea >= 2, g.eb >= 1, g.eb >= 2].map(Number)});
     });
     const name = (E.current?.name ? E.current.name + '، ' : '') + T('من التصميم');
     return C.sanitizeJob({id: uid(), name, from: E.current?.id || '', stocks: stocks.length ? stocks : defaultStocks(), parts, offcuts: [], opt: {kerf: E.fab.kerf, trim: E.fab.trim, minL: 300, minW: 100}});
@@ -138,7 +138,7 @@
 .cz-svg .cutn circle{fill:#D93025}.cz-svg .cutn text{fill:#fff;font-family:"IBM Plex Mono",monospace;text-anchor:middle;dominant-baseline:central;font-weight:600}
 .cz-svg .ghost{fill:rgba(244,180,0,.25);stroke:#F4B400;stroke-width:4;stroke-dasharray:16 8}
 .cz-svg .ghost+text{fill:#14191E;font-family:"IBM Plex Mono",monospace;text-anchor:middle;dominant-baseline:central;font-weight:600}
-.cz-cuts{margin:0;padding:10px 12px 12px;columns:2 240px;font-size:13px;line-height:1.7}
+.cz-cuts{margin:0;padding:10px 12px 12px;padding-inline-start:34px;columns:2 240px;font-size:13px;line-height:1.7}
 .cz-cuts li{break-inside:avoid}
 .cz-tray{display:flex;gap:6px;flex-wrap:wrap}
 .cz-chip{border:1px dashed var(--muted);background:var(--panel);border-radius:999px;padding:6px 12px;font-size:13px}
@@ -213,8 +213,8 @@
   function partsPane() {
     const n = job.parts.reduce((s, p) => s + p.qty, 0), area = job.parts.reduce((s, p) => s + p.qty * p.L * p.W, 0);
     return `<div class="cz-row"><button class="btn primary" type="button" data-cz="addPart">+ قطعة</button><button class="btn" type="button" data-cz="fromDesign">من التصميم الحالي</button><button class="btn" type="button" data-cz="paste">لصق من جدول</button>
-        <label class="btn">استيراد CSV<input type="file" accept=".csv,text/csv,text/plain" id="czCsv" hidden></label><span class="grow" style="flex:1"></span><span class="cz-status"><b class="cz-nb">${n}</b> قطعة، <b class="cz-nb">${m2(area)}</b> م²</span></div>
-      <div id="czPaste" hidden class="cz-card"><h3>الصق الأسطر من جدول</h3><p class="hint">كل سطر: الاسم، الطول، العرض، العدد. يقبل النسخ من Excel أو Google Sheets أو أعمدة مفصولة بفاصلة منقوطة.</p>
+        <label class="btn">استيراد ملف<input type="file" accept=".csv,text/csv,text/plain" id="czCsv" hidden></label><span class="grow" style="flex:1"></span><span class="cz-status"><b class="cz-nb">${n}</b> قطعة، <b class="cz-nb">${m2(area)}</b> م²</span></div>
+      <div id="czPaste" hidden class="cz-card"><h3>الصق الأسطر من جدول</h3><p class="hint">كل سطر: الاسم، الطول، العرض، العدد. يقبل النسخ من برامج الجداول أو أعمدة مفصولة بفاصلة منقوطة.</p>
         <textarea id="czPasteIn" rows="6" dir="auto" placeholder="جانب&#9;720&#9;560&#9;4"></textarea><div class="cz-row"><button class="btn primary" type="button" data-cz="pasteGo">أضف الأسطر</button><button class="btn" type="button" data-cz="pasteX">إلغاء</button></div></div>
       <div class="cz-parts"><div class="cz-p head"><span>#</span><span>القطعة</span><span>الطول مم</span><span>العرض مم</span><span>العدد</span><span>اللوح</span><span>العرق</span><span>الحواف</span><span></span></div>
       ${job.parts.map((p, i) => `<div class="cz-p" data-pi="${i}">
@@ -268,7 +268,7 @@
     if (!pl) return `<div class="cz-warn">تعذّر حساب المخطط.</div>`;
     if (!job.parts.some(p => p.qty > 0 && p.L > 0 && p.W > 0)) return `<div class="empty">أضف القطع أولاً من تبويب «القطع».</div>`;
     return `<div id="czPlanTop">${planTop()}</div><div id="czSheets">${pl.sheets.map((s, i) => sheetBox(i)).join('')}</div>
-      <div class="cz-bar"><button class="btn primary" type="button" data-cz="pdf">طباعة المخطط PDF</button><button class="btn" type="button" data-cz="labels">ملصقات القطع</button><button class="btn" type="button" data-cz="csv">CSV</button>
+      <div class="cz-bar"><button class="btn primary" type="button" data-cz="pdf">طباعة المخطط</button><button class="btn" type="button" data-cz="labels">ملصقات القطع</button><button class="btn" type="button" data-cz="csv">CSV</button>
         <span style="flex:1"></span>${pl.per.some(x => x.keep.length) ? `<button class="btn ghost" type="button" data-cz="keepToInv">احفظ البقايا الصالحة في المخزون</button>` : ''}</div>`;
   }
   function planTop() {
@@ -564,7 +564,7 @@
       const d = E.newDoc(labels ? 'ملصقات القطع' : 'مخطط التقطيع');
       head(d, labels ? 'ملصقات القطع' : 'مخطط التقطيع');
       if (labels) drawLabels(d); else drawPlan(d);
-      E.showDoc({...(await d.finish()), name: `${T(labels ? 'ملصقات القطع' : 'مخطط التقطيع')} ${job.name}.pdf`}, T(labels ? 'ملصقات القطع' : 'مخطط التقطيع'), T(labels ? 'اطبع على ورق ملصقات A4، ثلاثة في كل سطر.' : 'اطبع المخطط وضعه عند المنشار.'));
+      E.showDoc({...(await d.finish()), name: `${T(labels ? 'ملصقات القطع' : 'مخطط التقطيع')} ${job.name}.pdf`}, T(labels ? 'ملصقات القطع' : 'مخطط التقطيع'), T(labels ? 'اطبع على ورق ملصقات بحجم الورقة العادية، ثلاثة في كل سطر.' : 'اطبع المخطط وضعه عند المنشار.'));
     } catch (e) { console.error(e); E.toast(T('تعذّر تجهيز الملف، حاول مرة أخرى')); }
     finally { if (btn) btn.disabled = false; }
   }
@@ -578,7 +578,9 @@
     d.text(job.name, {sz: 24, w: 600});
     d.text(`${T('المنشار')} ${job.opt.kerf} ${T('مم')}، ${T('تشذيب')} ${job.opt.trim} ${T('مم')} ${T('من كل حافة')}، ${T('أصغر بقية تُحفظ')} ${job.opt.minL}×${job.opt.minW} ${T('مم')}`, {sz: 17, color: E.MUTED, gap: 6});
   }
-  const edgeCode = p => [p.e[0] + p.e[1] ? 'ط' + (p.e[0] + p.e[1]) : '', p.e[2] + p.e[3] ? 'ع' + (p.e[2] + p.e[3]) : ''].filter(Boolean).join(' ') || '-';
+  // edge letters: length and width, in the language of the page
+  const EL = () => ({fr: ['L', 'l'], tr: ['U', 'G']})[window.I18N?.lang] || ['ط', 'ع'];
+  const edgeCode = p => [p.e[0] + p.e[1] ? EL()[0] + (p.e[0] + p.e[1]) : '', p.e[2] + p.e[3] ? EL()[1] + (p.e[2] + p.e[3]) : ''].filter(Boolean).join(' ') || '-';
   function drawPlan(d) {
     const t = pl.totals;
     d.h2('الخلاصة');
@@ -590,7 +592,7 @@
     d.h2('القطع');
     d.table([{label: '#', w: .06, align: 'center', f: 'm'}, {label: 'القطعة', w: .26}, {label: 'الطول', w: .1, align: 'center', f: 'm'}, {label: 'العرض', w: .1, align: 'center', f: 'm'}, {label: 'العدد', w: .08, align: 'center', f: 'm'}, {label: 'اللوح', w: .2}, {label: 'العرق', w: .09, align: 'center'}, {label: 'الحواف', w: .11, align: 'center'}],
       job.parts.filter(p => p.qty > 0).map(p => [String(numOf(p.id)), p.name + (p.note ? ` (${p.note})` : ''), String(p.L), String(p.W), String(p.qty), `${stockOf(p.stock).name} ${stockOf(p.stock).th}`, p.grain === 'L' ? 'طول' : p.grain === 'W' ? 'عرض' : '-', edgeCode(p)]), {sz: 16, pad: 8});
-    d.text('الحواف: ط = على الطول، ع = على العرض، والرقم عدد الجهات. الأرقام على الرسوم أرقام هذه القائمة، والدوائر الحمراء ترتيب القص.', {sz: 15, color: E.MUTED});
+    d.text(`${T('الحواف')}: ${EL()[0]} ${T('على الطول')}، ${EL()[1]} ${T('على العرض')}، ${T('والرقم عدد الجهات. الأرقام على الرسوم أرقام هذه القائمة، والدوائر الحمراء ترتيب القص.')}`, {sz: 15, color: E.MUTED});
     pl.sheets.forEach((s, i) => {
       const r = pl.read[i], st = stockOf(s.stock), w = E.PW - 2 * E.PM, k = w / s.L, hh = Math.round(s.W * k);
       d.need(hh + 200);
@@ -617,7 +619,7 @@
     s.parts.forEach(pq => {
       const p = partOf(pq.pid); if (!p) return; const dd = C.dims(p, pq.rot), px = Xp(pq.x, dd.w), py = y0 + pq.y * k, pw = dd.w * k, ph = dd.h * k;
       x.fillStyle = '#FFFFFF'; x.fillRect(px, py, pw, ph); x.strokeStyle = E.INK; x.lineWidth = 1.3; x.strokeRect(px, py, pw, ph);
-      x.fillStyle = E.TAPE; const e = p.e, b = Math.max(2, 4 * k * 10);
+      x.fillStyle = E.TAPE; const e = p.e, b = 3;
       const sides = pq.rot ? [[px, py, b, ph, e[1]], [px + pw - b, py, b, ph, e[0]], [px, py, pw, b, e[2]], [px, py + ph - b, pw, b, e[3]]] : [[px, py, pw, b, e[0]], [px, py + ph - b, pw, b, e[1]], [px + pw - b, py, b, ph, e[2]], [px, py, b, ph, e[3]]];
       for (const [a1, a2, a3, a4, on] of sides) if (on) x.fillRect(a1, a2, a3, a4);
       x.direction = 'ltr'; x.textAlign = 'center'; x.fillStyle = E.INK;
@@ -663,7 +665,9 @@
   }
 
   /* ---------- entry points ---------- */
-  window.WarshaCutUI = {open: j => open(j || newJob()), openLast, fromDesign: () => open(jobFromDesign()), get job() { return job; }, get plan() { return pl; }, render};
+  // for the tests: the pages of the plan or of the labels, as pictures
+  async function pages(labels, n = 3) { await E.docFonts(); await E.logoReady(); const d = E.newDoc(labels ? 'ملصقات القطع' : 'مخطط التقطيع'); head(d, labels ? 'ملصقات القطع' : 'مخطط التقطيع'); if (labels) drawLabels(d); else drawPlan(d); return d.pages.slice(0, n).map(cv => cv.toDataURL('image/jpeg', .8)); }
+  window.WarshaCutUI = {pages, open: j => open(j || newJob()), openLast, fromDesign: () => open(jobFromDesign()), get job() { return job; }, get plan() { return pl; }, render};
   document.addEventListener('click', e => {
     if (e.target.closest('[data-cutplan]')) { tab = 'plan'; const j = jobFromDesign(); if (j.parts.length) open(j); else { tab = 'parts'; openLast(); } }
     if (e.target.closest('[data-cutjobs]')) { const cs = q('#clientsSheet'); if (cs) cs.hidden = true; tab = 'parts'; openLast(); jobsSheet(); }
