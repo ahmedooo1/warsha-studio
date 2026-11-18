@@ -555,6 +555,7 @@ body.present .pres-vars:not([hidden]){display:flex;position:absolute;bottom:84px
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/ShaderPass.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/SSAOPass.js"></script>
 <script src="js/fab.js"></script>
+<script src="js/cut.js"></script>
 <script src="js/i18n.js"></script>
 <script>
 (() => {
@@ -4355,6 +4356,7 @@ function renderCost(){
       <div class="docs">
         <button type="button" class="doc" data-doc="quote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2h9l4 4v16H6z"/><path d="M15 2v4h4M9 12h7M9 16h7M9 8h3"/></svg><span><b>عرض سعر للزبون</b><small>PDF بالصورة والمواصفات والسعر</small></span></button>
         <button type="button" class="doc" data-doc="work"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 9h18M9 9v11M15 9v11"/></svg><span><b>ورقة الورشة</b><small>PDF بقائمة التقطيع والإكسسوارات والربح</small></span></button>
+        <button type="button" class="doc" data-cutplan><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 11h11M14 4v16M14 15h7"/></svg><span><b>مخطط التقطيع للنجار</b><small>الألواح والبقايا وترتيب القص، ويعدّله النجار بإصبعه</small></span></button>
         <button type="button" class="doc" data-doc="csv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4zM4 10h16M4 15h16M10 4v16"/></svg><span><b>قائمة التقطيع CSV</b><small>لبرامج تحسين التقطيع وExcel</small></span></button>
       </div></div>
     <div class="grp"><h3>الألواح المطلوبة <small>حسب مخطط التقطيع</small></h3><div class="list" id="boardList"></div></div>
@@ -4827,6 +4829,8 @@ window.addEventListener('pointerup', () => { const d = palDrag; palDrag = null; 
 
 /* ================= storage: designs per client ================= */
 let current = null; // {id, name, phone, note}
+// cutting planner jobs and the offcut stock live in the same storage as the designs, kept apart by their kind
+const isCutDoc = d => d?.cfg?.kind === 'cut' || d?.cfg?.kind === 'cutstock';
 const store = {
   db: null, list: lsGet('wr_designs', []), unsub: null,
   async init(){
@@ -4849,13 +4853,14 @@ function setClient(c){
 }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 function renderClients(){
-  const L = [...store.list].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  const L = [...store.list].filter(d => !isCutDoc(d)).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
   $('#clientList').innerHTML = (L.length ? L.map(d => `<div class="cl" data-id="${esc(d.id)}">${d.thumb ? `<img src="${esc(d.thumb)}" alt="">` : '<div class="ph"></div>'}
     <div style="min-width:0"><h4 data-notr>${esc(d.name)}${d.variant ? ` <span class="vtag">${esc(d.variant)}</span>` : ''}${d.demo ? ' <span class="vtag">تجريبي</span>' : ''}</h4><p>${ROOMS[d.cfg?.room] || ''}، ${LAYOUTS[d.cfg?.layout] || ''}، ${new Date(d.updatedAt || Date.now()).toLocaleDateString('ar')}</p>
     ${d.phone ? `<p class="tel">${esc(d.phone)}</p>` : ''}${d.note ? `<p>${esc(d.note)}</p>` : ''}
     <div class="acts"><button class="btn" data-open="${esc(d.id)}">فتح</button><button class="btn ghost" data-variant="${esc(d.id)}">نسخة بديلة</button><button class="btn ghost" data-exp="${esc(d.id)}">تصدير</button><button class="btn ghost" data-del="${esc(d.id)}">حذف</button></div></div></div>`).join('')
     : `<div class="empty">لا يوجد زبائن محفوظون بعد. صمّم لزبونك ثم اضغط «حفظ»، أو افتح أحد المشاريع التجريبية.</div>`)
     + `<div class="grp demos"><h3>مشاريع تجريبية للعرض</h3><div class="chips">${DEMOS.map((x, i) => `<button type="button" class="chip" data-demo="${i}">${x.name}</button>`).join('')}</div></div>`
+    + `<div class="grp"><h3>مخطط التقطيع</h3><div class="ued-row"><button type="button" class="btn sm" data-cutjobs>مهام التقطيع (${store.list.filter(d => d.cfg?.kind === 'cut').length})</button></div><p class="hint">قوائم قطع يكتبها النجار أو يأخذها من تصميم، مع الألواح والبقايا وترتيب القص.</p></div>`
     + `<div class="grp"><h3>النسخ الاحتياطي</h3><div class="ued-row"><button type="button" class="btn sm" id="backupBtn">تنزيل نسخة احتياطية كاملة</button><label class="btn sm">استيراد ملف<input type="file" id="importIn" accept=".json,application/json" hidden></label></div><p class="hint">النسخة الاحتياطية ملف واحد فيه كل التصاميم وأسعار الورشة وإعدادات التصنيع وهويتها. احفظها خارج الجهاز بانتظام. الاستيراد يقبل نسخة احتياطية كاملة أو مشروعاً واحداً.</p></div>`
     + `<p class="hint">${store.db ? 'التصاميم محفوظة في هذه الصفحة، ويراها كل من تشاركه الرابط مع صلاحية التعديل.' : 'التصاميم محفوظة على هذا الجهاز فقط.'}</p>`
     + `<div class="grp"><h3>فحص هذا الجهاز</h3><div class="ued-row"><button type="button" class="btn sm" id="diagBtn">ابدأ الفحص</button><button type="button" class="btn sm ghost" id="diagCopy" hidden>نسخ النتائج</button></div><pre class="diag" id="diagOut" data-notr hidden></pre><p class="hint">يقيس على هذا الجهاز سرعة الرسم في المستويات الثلاثة، والتصوير الواقعي، والصورة الكبيرة، وذاكرة الخامات. يستغرق من دقيقة إلى بضع دقائق، ولا يغيّر التصميم.</p></div>`;
@@ -4948,7 +4953,7 @@ addEventListener('pagehide', flushDraft); document.addEventListener('visibilityc
 const newId = () => 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const PROJECT_FILE = {app: 'warsha-studio', v: 1};
 async function makeVariant(d){
-  const same = store.list.filter(x => x.name === d.name), used = same.map(x => x.variant || 'أ');
+  const same = store.list.filter(x => x.name === d.name && !isCutDoc(x)), used = same.map(x => x.variant || 'أ');
   const letters = ['أ', 'ب', 'ج', 'د', 'هـ', 'و', 'ز', 'ح', 'ط', 'ي'], v = letters.find(l => !used.includes(l)) || String(same.length + 1);
   if (!d.variant) { const base = {...d, variant: 'أ'}; delete base.id; try { await store.save(d.id, base); } catch {} }
   const row = {...d, variant: v, updatedAt: Date.now()}; delete row.id;
@@ -5024,7 +5029,7 @@ function presInfo(){
   $('#presInfo').innerHTML = `<h3>${I18N.t('المواد')}</h3>${rows.map(([k, v, st]) => `<div class="pi-row">${st ? `<i style="${st}"></i>` : '<i class="none"></i>'}<span>${k}</span><b>${I18N.t(v)}</b></div>`).join('')}<div class="pi-total"><span>${I18N.t('السعر النهائي')}</span><b>${money(q.total)}</b></div>${+prices.vat ? `<small>${I18N.t('شامل الضريبة')}</small>` : ''}`;
 }
 function presVariants(){
-  const box = $('#presVars'), same = current ? store.list.filter(d => d.name === current.name) : [];
+  const box = $('#presVars'), same = current ? store.list.filter(d => d.name === current.name && !isCutDoc(d)) : [];
   if (same.length < 2) { box.hidden = true; return; }
   box.hidden = false;
   box.innerHTML = `<span>${I18N.t('البدائل')}</span>` + same.sort((a, b) => String(a.variant || '').localeCompare(String(b.variant || ''))).map(d => `<button type="button" data-pvar="${esc(d.id)}" aria-pressed="${d.id === current.id}">${d.thumb ? `<img src="${esc(d.thumb)}" alt="">` : ''}<b data-notr>${esc(d.variant || 'أ')}</b></button>`).join('');
@@ -5245,9 +5250,16 @@ async function photoCompare(n){
     return {w, h, pixels: cnt, mean: +(sum / cnt / 3).toFixed(3), max};
   } finally { photoBusy = false; photoN = 0; dirty = true; }
 }
+// what the cutting planner (js/cutui.js) may use of the editor: read only views and the document tools
+window.WarshaEd = {
+  get cfg(){ return cfg; }, get current(){ return current; }, get fab(){ return fab; }, get prices(){ return prices; }, get logoImg(){ return logoImg; }, get TAPE(){ return TAPE; },
+  store, cutList, NOSHEET, matName, toast, money, saveFile, newDoc, docFonts, logoReady, today, PW, PH, PM, INK, MUTED, RULE, FF,
+  showDoc(file, title, hint){ docFile = file; $('#docTitle').textContent = title; $('#docPreview').src = file.preview.toDataURL('image/jpeg', .8); $('#docHint').textContent = hint; $('#docSheet').hidden = false; }
+};
 window.__wr = {tallOf, pieceRect: () => pieceRect(), get qbarPos(){ return qbarPos; }, get pixelRatio(){ return renderer.getPixelRatio(); }, get rcStats(){ return rcStats; }, setRC, get clashes(){ return lastClashes.map(c => ({a: c.a, b: c.b.item ?? (c.b.mod ? 'unit' : 'top'), depth: Math.round(c.depth * 10) / 10})); }, set noClash(v){ noClash = v; }, settle: i => { const g = itemGroup(i); return g ? settleDrop({i, group: g}) : null; }, photoCompare, deviceTest: () => deviceTest(document.createElement('pre')), texReady, texStats, setPhoto, get photoN(){ return photoN; }, photoShot: async (w, h, n) => (await photoShot(w, h, n, false, false)), makeShot, get envReady(){ return envReady; }, openNow: v => { openT = openV = v; applyAnims(); renderer.shadowMap.needsUpdate = true; dirty = true; }, setQuality, get quality(){ return quality; }, dirty: () => { dirty = true; }, setCam, openDemo, DEMOS, exportFile, importFile, setPresent, get fab(){ return fab; }, set fab(v){ fab = WarshaFab.sanitizeFab(v); }, store, setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), snapFoot: (w, h) => snapshot(w, h, true, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
 })();
 </script>
+<script src="js/cutui.js"></script>
 
 </body>
 </html>
