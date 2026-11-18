@@ -5,9 +5,10 @@
   "description": "3D room and furniture visualiser for furniture workshops, with quotes, cut lists and cutting plans",
   "author": "Ahmad Ahmad",
   "scripts": {
-    "test": "node --test tests/fab.test.mjs tests/syntax.test.mjs tests/i18n.test.mjs",
+    "test": "node --test tests/fab.test.mjs tests/cut.test.mjs tests/syntax.test.mjs tests/i18n.test.mjs",
     "test:e2e": "node tests/e2e.mjs",
-    "serve": "npx serve ."
+    "serve": "npx serve .",
+    "test:cutting": "node tests/cutting.mjs"
   },
   "devDependencies": {
     "three": "0.147.0",
