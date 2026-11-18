@@ -40,7 +40,7 @@ async function device(name, url = BASE + '/'){
 }
 const ready = p => p.waitForFunction(() => window.__wr && window.WarshaCloud, null, {timeout: 180000});
 const idle = p => p.waitForFunction(() => { const s = window.WarshaCloud.state; return s.pending === 0 && s.status === 'synced'; }, null, {timeout: 60000});
-const names = p => p.evaluate(() => [...window.WarshaCloud._S.designs.values()].filter(r => !r.deleted).map(r => r.data.name + (r.data.variant ? '/' + r.data.variant : '')).sort());
+const names = p => p.evaluate(() => [...window.WarshaCloud._S.designs.values()].filter(r => !r.deleted && !['cut', 'cutstock'].includes(r.data.cfg?.kind)).map(r => r.data.name + (r.data.variant ? '/' + r.data.variant : '')).sort());
 async function save(p, name, note){
   await p.click('#saveBtn'); await p.fill('#fName', name); await p.fill('#fNote', note);
   await p.click('#saveGo'); await p.waitForSelector('#saveSheet', {state: 'hidden'});
@@ -70,6 +70,14 @@ try {
   await login(B.page); await ready(B.page); await idle(B.page);
   ok((await names(B.page)).includes('Dupont'), 'design arrives on the other device');
   await B.page.click('#clientBtn'); ok(await B.page.isVisible('#clientList [data-open]'), 'shown in the client list'); await B.page.keyboard.press('Escape');
+
+  console.log('cutting job travels');
+  await A.page.evaluate(() => WarshaCutUI.open({name: 'Débit cuisine Dupont', parts: [{id: 'p1', name: 'côté', L: 720, W: 560, qty: 4}, {id: 'p2', name: 'étagère', L: 564, W: 540, qty: 3}]}));
+  await A.page.waitForTimeout(1500); await A.page.evaluate(() => { document.querySelector('#cutSheet').hidden = true; }); await idle(A.page);
+  ok((await sql("SELECT count(*)::int AS n FROM projects WHERE cfg->>'kind' = 'cut'"))[0].n === 1, 'cutting job saved on the server');
+  await B.page.evaluate(() => window.WarshaCloud._sync()); await B.page.waitForTimeout(800);
+  ok(await B.page.evaluate(() => window.WarshaEd.store.list.some(d => d.cfg?.kind === 'cut' && d.cfg.job.parts.length === 2)), 'and arrives on the other device');
+  ok(await B.page.evaluate(() => { document.querySelector('#clientBtn').click(); const t = document.querySelector('#clientList').textContent; document.querySelector('#clientsSheet').hidden = true; return !t.includes('Débit cuisine'); }), 'not listed among the clients');
 
   console.log('price change travels');
   await A.page.click('[data-tab=cost]'); await A.page.locator('details[data-det=sale] summary').click();
