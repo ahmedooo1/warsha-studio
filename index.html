@@ -433,6 +433,7 @@ body.present .pres-vars:not([hidden]){display:flex;position:absolute;bottom:84px
         <button id="dimBtn" aria-pressed="true" title="المقاسات"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 8v8M21 8v8"/></svg><span class="lbl">المقاسات</span></button>
       </div>
       <div class="seg" role="group" aria-label="التحريك والعرض">
+        <button id="lockBtn" aria-pressed="false" title="قفل التصميم: تدور الغرفة بالإصبع ولا تتحرك القطع"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span class="lbl">قفل</span></button>
         <button id="snapBtn" aria-pressed="true" title="التصاق القطع بالجدران وببعضها"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v9a6 6 0 0 0 12 0V3"/><path d="M6 7h4M14 7h4"/></svg><span class="lbl">التصاق</span></button>
         <button id="openBtn" aria-pressed="false" title="فتح أبواب وجوارير الخزائن المخصصة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h9v16H4z"/><path d="M13 4l7 3v14l-7-1"/></svg><span class="lbl">فتح</span></button>
         <button id="qualityBtn" title="جودة العرض"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg><span class="lbl" id="qualityLbl">عادية</span></button>
@@ -450,6 +451,7 @@ body.present .pres-vars:not([hidden]){display:flex;position:absolute;bottom:84px
       <button type="button" data-qy="-5" title="إنزال 5 سم (PageDown)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button>
       <i></i>
       <button type="button" data-open title="فتح الأبواب والجوارير"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h9v16H4z"/><path d="M13 4l7 3v14l-7-1"/></svg></button>
+      <button type="button" data-it="ul" class="ulk" title="هذه القطعة تتحرك رغم قفل التصميم" aria-pressed="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/></svg></button>
       <button type="button" data-it="spot" title="انقل إلى مكان فارغ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v6M12 15v6M3 12h6M15 12h6M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg></button>
       <button type="button" data-it="dup" title="نسخ (Ctrl+D)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg></button>
       <button type="button" data-it="del" class="del" title="حذف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
@@ -1049,7 +1051,7 @@ function cleanRC(rc){
 function sanitizeUnits(u){
   if (!u || typeof u !== 'object') return null;
   const cleanO = (t, o) => { if (!o || typeof o !== 'object') return undefined; const out = {}; for (const d of UNIT[t].opts || []) { const v = o[d.k]; if (v === undefined) continue; if (d.type === 'bool') out[d.k] = !!v; else if (d.type === 'num') { const n = Number(v); if (isFinite(n)) out[d.k] = Math.round(clamp(n, d.min, d.max)); } else if (String(v) in d.vals) out[d.k] = String(v); } return Object.keys(out).length ? out : undefined; };
-  const clean = (arr, allowed) => Array.isArray(arr) ? arr.slice(0, 40).map(x => { if (!x || typeof x !== 'object' || !allowed.includes(x.t)) return null; const m = {t: x.t, w: Math.round(clamp(Number(x.w) || UNIT[x.t].w, UNIT[x.t].min, UNIT[x.t].max))}; const o = cleanO(x.t, x.o); if (o) m.o = o; const rc = cleanRC(x.rc); if (rc) m.rc = rc; return m; }).filter(Boolean) : [];
+  const clean = (arr, allowed) => Array.isArray(arr) ? arr.slice(0, 40).map(x => { if (!x || typeof x !== 'object' || !allowed.includes(x.t)) return null; const m = {t: x.t, w: Math.round(clamp(Number(x.w) || UNIT[x.t].w, UNIT[x.t].min, UNIT[x.t].max))}; const o = cleanO(x.t, x.o); if (o) m.o = o; if (x.ul === true) m.ul = true; const rc = cleanRC(x.rc); if (rc) m.rc = rc; return m; }).filter(Boolean) : [];
   const out = {};
   for (const r of RUN_IDS) out[r] = {b: clean(u[r]?.b, ALL_B), u: clean(u[r]?.u, ALL_U), t: clean(u[r]?.t, ALL_T)};
   if (u.W?.b && !out.B.b.length) out.B.b = clean(u.W.b, ALL_B);   // designs saved before the room system
@@ -1064,6 +1066,7 @@ function sanitizeItems(arr, c){
     const it = {t: x.t, w: num(x.w, I.min ?? I.w, I.max ?? I.w, I.w), x: num(x.x, -150, c.wallA + 150, 0), z: num(x.z, -150, maxZ, 0), r: ((num(x.r, -720, 720, 0) % 360) + 360) % 360};
     if (x.y) it.y = num(x.y, -100, 400, 0);
     if (x.sy) it.sy = num(x.sy, 0, 400, 0);
+    if (x.ul === true) it.ul = true;   // free to move while the design is locked
     if (CUST[x.t]) { const L = CUST[x.t]; it.h = num(x.h, L.h[0], L.h[1], L.h[2]); it.d = num(x.d, L.d[0], L.d[1], L.d[2]); }
     const o = {}; for (const d of I.opts || []) { const v = x.o?.[d.k]; if (v === undefined) continue; if (d.type === 'bool') o[d.k] = !!v; else if (d.type === 'num') { const n = Number(v); if (isFinite(n)) o[d.k] = Math.round(clamp(n, d.min, d.max)); } else if (String(v) in d.vals) o[d.k] = String(v); }
     { const rc = cleanRC(x.rc); if (rc) it.rc = rc; }
@@ -3039,7 +3042,7 @@ function renderUnits(){
       <div class="ued-row"><span>العرض</span><span class="stepper"><button type="button" data-u="w-5" aria-label="أنقص 5 سم">−</button><input id="uw" type="number" min="${T.min}" max="${T.max}" value="${sm.w}" inputmode="numeric" aria-label="العرض بالسنتيمتر"><button type="button" data-u="w+5" aria-label="زد 5 سم">+</button></span><span class="hint">من ${T.min} إلى ${T.max} سم</span></div>
       ${T.opts ? `<div class="opts">${optControls(T.opts, optsOf(sm), 'uo')}</div>` : ''}${tallNote(sm)}
       ${UNIT[sm.t]?.gap || UNIT[sm.t]?.deco ? '' : cornersUI(sm.rc)}
-      <div class="ued-row"><button type="button" class="btn sm" data-u="right" ${sel.i >= L.length - 1 ? 'disabled' : ''}>${arrowR} لليمين</button><button type="button" class="btn sm" data-u="left" ${sel.i === 0 ? 'disabled' : ''}>لليسار ${arrowL}</button><button type="button" class="btn sm" data-u="dup">تكرار</button>${FREE_UNITS.includes(sm.t) ? '<button type="button" class="btn sm" data-u="free">تحريك حر</button>' : ''}<button type="button" class="btn sm danger" data-u="del">حذف</button></div>
+      <div class="ued-row"><button type="button" class="btn sm" data-u="right" ${sel.i >= L.length - 1 ? 'disabled' : ''}>${arrowR} لليمين</button><button type="button" class="btn sm" data-u="left" ${sel.i === 0 ? 'disabled' : ''}>لليسار ${arrowL}</button><button type="button" class="btn sm" data-u="dup">تكرار</button>${designLock && FREE_UNITS.includes(sm.t) ? `<button type="button" class="btn sm" data-u="ul" aria-pressed="${!!sm.ul}">${sm.ul ? 'تتحرك رغم القفل' : 'فك قفل هذه الوحدة'}</button>` : ''}${FREE_UNITS.includes(sm.t) ? '<button type="button" class="btn sm" data-u="free">تحريك حر</button>' : ''}<button type="button" class="btn sm danger" data-u="del">حذف</button></div>
       <div class="grp"><h3>تغيير النوع</h3><div class="ugrid sm">${palFor(r.id, sel.lvl).map(t => `<button type="button" data-type="${t}" aria-pressed="${t === sm.t}">${unitIcon(t)}<span>${UNIT[t].s}</span></button>`).join('')}</div></div></div>`;
   }
   const lvlSw = `<div class="choice" data-uv="lvl"><button type="button" data-v="b" aria-pressed="${view.lvl === 'b'}">على الأرض</button><button type="button" data-v="u" aria-pressed="${view.lvl === 'u'}">على الجدار</button>${palFor(r.id, 't').length ? `<button type="button" data-v="t" aria-pressed="${view.lvl === 't'}">فوق العلوية</button>` : ''}</div>`;
@@ -3231,6 +3234,7 @@ function syncQbar(){
   requestAnimationFrame(placeQbar);
   q.querySelector('[data-open]').hidden = false;
   q.querySelector('[data-open]').setAttribute('aria-pressed', !!openT);
+  { const u = q.querySelector('[data-it="ul"]'); u.hidden = !designLock; u.setAttribute('aria-pressed', !!it.ul); }
   q.querySelector('[data-it="spot"]').classList.toggle('warn', lastClashes.some(c => c.a === sel.item || c.b.item === sel.item));
 }
 function openTab(name){ $$('[data-tab]').forEach(t => t.setAttribute('aria-selected', t.dataset.tab === name)); for (const p of ['space', 'units', 'free', 'mat', 'cost']) $('#pane-' + p).hidden = p !== name; }
@@ -3279,6 +3283,7 @@ function unitAction(act){
       toast('لا مكان للنسخة على أي جدار: تظهر بالأحمر، احذفها أو صغّر وحدة');
     }
   }
+  if (act === 'ul') { let on = false; editUnits(u => { const m = u[run][lvl][i]; if (!m) return; on = !m.ul; if (on) m.ul = true; else delete m.ul; }); renderUnits(); toast(on ? 'هذه الوحدة تتحرك الآن رغم القفل' : 'هذه الوحدة مقفلة مع التصميم'); return; }
   editUnits(u => {
     const L = u[run][lvl], m = L[i]; if (!m) return;
     if (act === 'del') {
@@ -3358,7 +3363,7 @@ function placePiece(key, at){
   const it = pieceOf(key); if (!it) return;
   const P = PIECES[key] || {};
   record();
-  const L = JSON.parse(JSON.stringify(cfg.items || [])); it.x = 0; it.z = 0; it.r = it.r || 0; L.push(it);
+  const L = JSON.parse(JSON.stringify(cfg.items || [])); it.x = 0; it.z = 0; it.r = it.r || 0; if (designLock) it.ul = true; L.push(it);
   cfg = {...cfg, itemsAuto: false, items: sanitizeItems(L, cfg)}; build();
   const i = cfg.items.length - 1, g = itemGroup(i); if (!g) return;
   const lb = localBox(g), obs = obstacles(i), d = itemDepth(it); let q;
@@ -3413,11 +3418,12 @@ function nudge(k, v){
 function itemAction(act){
   if (!sel || sel.item === undefined) return; const i = sel.item, it0 = cfg.items[i]; if (!it0) return;
   if (act === 'close') { select(null); return; }
+  if (act === 'ul') { const on = !it0.ul; editItems(L => { if (on) L[i].ul = true; else delete L[i].ul; }); syncQbar(); toast(on ? 'هذه القطعة تتحرك الآن رغم القفل' : 'هذه القطعة مقفلة مع التصميم'); return; }
   if (act === 'del') { editItems(L => { L.splice(i, 1); }); sel = null; drawSel(); renderUnits(); toast('حُذفت القطعة، ويمكنك التراجع'); return; }
   if (act === 'dup') {
     // the copy goes next to the original; if it lands on something it moves to the nearest free place, on the same
     // wall first, then on the others; if the room has none at that height it stays selected, red, to delete or move
-    editItems(L => { const c0 = JSON.parse(JSON.stringify(L[i])), [fw] = footprint(c0), th = -c0.r * Math.PI / 180; c0.x += Math.round(Math.cos(th) * fw); c0.z += Math.round(-Math.sin(th) * fw); L.push(c0); }, true, false);
+    editItems(L => { const c0 = JSON.parse(JSON.stringify(L[i])), [fw] = footprint(c0), th = -c0.r * Math.PI / 180; c0.x += Math.round(Math.cos(th) * fw); c0.z += Math.round(-Math.sin(th) * fw); if (designLock) c0.ul = true; L.push(c0); }, true, false);
     const k = cfg.items.length - 1; select({item: k}, true);
     if (lastClashes.some(c => c.a === k || c.b.item === k)) {
       const home = wallOfItem(it0), q = toFreeSpot(k, null, home === 'A' || home === 'D' ? it0.x : it0.z);
@@ -3488,6 +3494,8 @@ function undoUnits(){ undoStep(); }
 /* tap a piece in the 3D view to edit it; drag any piece anywhere: it snaps to walls and neighbours and lands on top of what is under it */
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 let downAt = null, drag = null, snapOn = lsGet('wr_snap', true) !== false;
+// the design lock: when on, no swipe can move a piece (remembered on the device)
+let designLock = lsGet('wr_lock', false) === true, lockHit = null, lockToast = false;
 function setRay(e){ const rc = canvas.getBoundingClientRect(); ndc.set((e.clientX - rc.left) / rc.width * 2 - 1, -((e.clientY - rc.top) / rc.height) * 2 + 1); ray.setFromCamera(ndc, camera); }
 function pickAt(e){
   setRay(e);
@@ -3886,7 +3894,7 @@ function detachUnit(mod){
   const rr = Math.round(((-g.rotation.y * 180 / Math.PI) % 360 + 360) % 360);
   record();
   const u = JSON.parse(JSON.stringify(cfg.units)); u[mod.run][mod.lvl][mod.i] = {t: GAP_T[mod.lvl], w: m.w};
-  const L = JSON.parse(JSON.stringify(cfg.items || [])), rc0 = cfg.units[mod.run]?.[mod.lvl]?.[mod.i]?.rc; L.push({t: m.t, w: m.w, x: Math.round(v.x * 100), z: Math.round(v.z * 100), r: rr, ...(m.o ? {o: m.o} : {}), ...(rc0 ? {rc: rc0} : {})});
+  const L = JSON.parse(JSON.stringify(cfg.items || [])), rc0 = cfg.units[mod.run]?.[mod.lvl]?.[mod.i]?.rc; L.push({t: m.t, w: m.w, x: Math.round(v.x * 100), z: Math.round(v.z * 100), r: rr, ...(m.o ? {o: m.o} : {}), ...(m.ul ? {ul: true} : {}), ...(rc0 ? {rc: rc0} : {})});
   cfg = {...cfg, auto: false, itemsAuto: false, units: sanitizeUnits(u), items: sanitizeItems(L, cfg)};
   sel = null; build(); renderSpace();
   return cfg.items.length - 1;
@@ -3900,11 +3908,15 @@ stageEl.addEventListener('pointerdown', e => {
   if (e.target !== canvas || e.button > 0) return;
   stopTour();
   downAt = {x: e.clientX, y: e.clientY, t: performance.now()};
+  // locked: the finger turns the room; a tap still selects, nothing moves
+  if (designLock) { const h = pickAt(e), free = h && (h.item !== undefined ? cfg.items[h.item]?.ul : h.mod ? cfg.units?.[h.mod.run]?.[h.mod.lvl]?.[h.mod.i]?.ul : false);
+    if (!free) { lockHit = h && (h.item !== undefined || h.mod) ? {x: e.clientX, y: e.clientY} : null; return; } }
   const hit = pickAt(e), f = floorAt(e);
   if (hit && hit.item !== undefined && f && cfg.items[hit.item]) { controls.enabled = false; drag = {pending: true, item: hit.item, f}; }
   else if (hit && hit.mod && f && sel && sel.item === undefined && sel.run === hit.mod.run && sel.lvl === hit.mod.lvl && sel.i === hit.mod.i) { const r = runsOf(cfg).find(x => x.id === hit.mod.run), L = r && layoutRun(cfg, r), m = L && atLvl(L, hit.mod.lvl)[hit.mod.i]; if (m && FREE_UNITS.includes(m.t)) { controls.enabled = false; drag = {pending: true, mod: hit.mod, f}; } }
 }, true);
 window.addEventListener('pointermove', e => {
+  if (lockHit && Math.hypot(e.clientX - lockHit.x, e.clientY - lockHit.y) > 14) { lockHit = null; if (!lockToast) { lockToast = true; toast('التصميم مقفل: افتح القفل لتحريك القطع'); } }
   if (!drag || !downAt) return;
   if (drag.pending) {
     if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) < 6) return;
@@ -3935,6 +3947,7 @@ function dropDrag(){
   editItems(L => { const it = L[d.i]; if (it) { it.x = d.x; it.z = d.z; it.r = d.rr ?? it.r; it.sy = d.sy; } }, false, false); select({item: d.i}, true);
 }
 window.addEventListener('pointerup', e => {
+  lockHit = null;
   if (drag) {
     if (!drag.pending) { dropDrag(); return; }
     drag = null; controls.enabled = true; liveDims = [];
@@ -3949,7 +3962,7 @@ window.addEventListener('pointerup', e => {
 });
 // keyboard: arrows move 1 cm (Shift 10), Q E turn 15°, PageUp PageDown lift, Ctrl+D copy
 document.addEventListener('keydown', e => {
-  if (!sel || sel.item === undefined || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || $$('.sheet').some(s => !s.hidden)) return;
+  if (!sel || sel.item === undefined || (designLock && !cfg.items[sel.item]?.ul) || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || $$('.sheet').some(s => !s.hidden)) return;
   const st = e.shiftKey ? 10 : 1, k = e.key;
   const mv = {ArrowLeft: ['x', -st], ArrowRight: ['x', st], ArrowUp: ['z', -st], ArrowDown: ['z', st], PageUp: ['y', st], PageDown: ['y', -st]}[k];
   if (mv) { e.preventDefault(); nudge(mv[0], mv[1]); return; }
@@ -4759,6 +4772,8 @@ document.addEventListener('change', e => {
 $('#lightBtn').onclick = () => set('light', cfg.light === 'day' ? 'evening' : 'day');
 $('#dimBtn').onclick = () => { showDims = !showDims; $('#dimBtn').setAttribute('aria-pressed', showDims); dirty = true; };
 $('#snapBtn').setAttribute('aria-pressed', snapOn);
+$('#lockBtn').setAttribute('aria-pressed', designLock);
+$('#lockBtn').onclick = () => { designLock = !designLock; lockToast = false; lsSet('wr_lock', designLock); $('#lockBtn').setAttribute('aria-pressed', designLock); if (designLock && drag) { drag = null; controls.enabled = true; } syncQbar(); if (sel && sel.item === undefined) renderUnits(); toast(designLock ? 'التصميم مقفل: تدور الغرفة ولا تتحرك إلا القطع التي تفك قفلها' : 'القفل مفتوح: يمكن تحريك القطع'); };
 $('#snapBtn').onclick = () => { snapOn = !snapOn; lsSet('wr_snap', snapOn); $('#snapBtn').setAttribute('aria-pressed', snapOn); toast(snapOn ? 'القطع تلتصق بالجدران وببعضها' : 'تحريك حر بلا التصاق'); };
 $('#openBtn').onclick = () => setOpen(!openT);
 $('#tourBtn').onclick = () => tourOn ? stopTour() : startTour();
