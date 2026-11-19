@@ -130,10 +130,12 @@ try {
   ok(await page.evaluate(() => window.__wr.envReady), 'بيئة الإضاءة HDR محمّلة');
   const gr = await page.evaluate(() => { const w = window.__wr; w.set({...w.cfg, front: 'wenge', worktop: 'nero', floor: 'herring'}); const cl = w.cutList(), mine = cl.grouped.filter(x => x.mat === 'front:wenge'), d = mine.filter(x => x.kind === 'باب'), r = mine.filter(x => x.kind === 'واجهة جارور'); return {ok: mine.every(x => x.grain), n: d.length + r.length}; });
   ok(gr.n > 0 && gr.ok, 'الخشب الداكن الجديد له اتجاه عرق في قائمة التقطيع');
-  const ph = await page.evaluate(async () => { const w = window.__wr; w.openDemo(0); const cv = await w.photoShot(480, 300, 3); const px = cv.getContext('2d').getImageData(240, 150, 1, 1).data; return {w: cv.width, lit: px[0] + px[1] + px[2] > 0, deep: w.ssao?.beautyRenderTarget.stencilBuffer === true}; });
+  const ph = await page.evaluate(async () => { const w = window.__wr; w.openDemo(0); const cv = await w.photoShot(480, 300, 3); const px = cv.getContext('2d').getImageData(240, 150, 1, 1).data; return {w: cv.width, lit: px[0] + px[1] + px[2] > 0, deep: w.ssao?.beautyRenderTarget.stencilBuffer === true, hp: w.renderer.capabilities.precision !== 'highp' || [w.ssao?.ssaoMaterial, w.ssao?.blurMaterial, ...w.photoMats].filter(Boolean).every(m => m.fragmentShader.startsWith('precision highp sampler2D'))}; });
   ok(ph.w === 480 && ph.lit, 'التصوير الواقعي ينتج صورة');
   // 16-bit depth in the photo buffers printed stripes where faces sit millimetres apart (fronts, hob, wall cladding)
   ok(ph.deep, 'مخازن التصوير الواقعي بعمق 24 بت، فلا خطوط متعرجة على الواجهات والجدران');
+  // phone GPUs read textures at lowp unless asked: the depth read by ambient occlusion then prints bands on ceilings and walls
+  ok(ph.hp, 'مرشحات التصوير تقرأ العمق والصور بدقة عالية على الهاتف، فلا أشرطة على السقف والجدران');
   await page.evaluate(() => window.__wr.setQuality('performance'));
   console.log('تداخل القطع');
   const cl = await page.evaluate(() => { const w = window.__wr, out = {demos: []};

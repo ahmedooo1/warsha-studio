@@ -1227,6 +1227,12 @@ const QUALITY = {
 let quality = lsGet('wr_quality', mobile ? 'performance' : 'standard'); if (!QUALITY[quality]) quality = 'standard';
 let composer = null, ssao = null;
 const canMSAA = renderer.capabilities.isWebGL2;
+// three r147 leaves texture samplers at the GLSL default, lowp. Phone GPUs then read the depth buffer and the photo
+// buffers with about 10 bits, and the ambient occlusion prints bands along lines of equal distance (ceiling, side walls).
+// Desktop GPUs read everything at full precision, which hides it. Every post-process shader here asks for highp samplers;
+// a GPU without highp in fragment shaders gets the photo without ambient occlusion rather than with bands.
+const HP_SAMPLERS = renderer.capabilities.precision === 'highp' ? 'precision highp sampler2D;\n' : '';
+const hpTex = m => { if (HP_SAMPLERS && !m.fragmentShader.startsWith(HP_SAMPLERS)) { m.fragmentShader = HP_SAMPLERS + m.fragmentShader; m.needsUpdate = true; } return m; };
 function buildComposer(){
   if (composer) return;
   // stencilBuffer gives these buffers a 24-bit depth (three.js otherwise uses 16 bits for render targets): with 16 bits,
@@ -1237,12 +1243,15 @@ function buildComposer(){
   ssao.beautyRenderTarget.dispose(); ssao.beautyRenderTarget = rt();
   // radius in metres for a room; depth limits are fractions of the camera range (80 m)
   ssao.kernelRadius = .5; ssao.minDistance = .00008; ssao.maxDistance = .012;
+  for (const m of [ssao.ssaoMaterial, ssao.blurMaterial, ssao.depthRenderMaterial, ssao.copyMaterial]) if (m) hpTex(m);
+  if (!HP_SAMPLERS) ssao.output = THREE.SSAOPass.OUTPUT.Beauty;
   composer.addPass(ssao);
   // HDR to screen: the tone mapping and sRGB conversion the renderer would do on its own
-  composer.addPass(new THREE.ShaderPass({uniforms: {tDiffuse: {value: null}},
+  composer.addPass(hpPass(new THREE.ShaderPass({uniforms: {tDiffuse: {value: null}},
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-    fragmentShader: 'uniform sampler2D tDiffuse; varying vec2 vUv; void main(){ gl_FragColor = texture2D(tDiffuse, vUv);\n#include <tonemapping_fragment>\n#include <encodings_fragment>\n}'}));
+    fragmentShader: 'uniform sampler2D tDiffuse; varying vec2 vUv; void main(){ gl_FragColor = texture2D(tDiffuse, vUv);\n#include <tonemapping_fragment>\n#include <encodings_fragment>\n}'})));
 }
+function hpPass(p){ hpTex(p.material); return p; }
 function sizeComposer(w, h, pr){ if (!composer) return; composer.setPixelRatio(pr); composer.setSize(w, h); }
 function renderNow(){ clashGroup.visible = clashShown(); if (QUALITY[quality].ao && composer) composer.render(); else renderer.render(scene, camera); }
 // a still view is redrawn once at the screen's own sharpness (phones have 2 to 3 pixels per point); while the view
@@ -1277,11 +1286,11 @@ function photoTargets(w, h){
   photoSmp = new THREE.WebGLRenderTarget(w, h, {type: THREE.HalfFloatType});
   if (photoQuad) return;
   const vs = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }';
-  photoAdd = new THREE.ShaderMaterial({uniforms: {t: {value: null}}, vertexShader: vs, fragmentShader: 'uniform sampler2D t; varying vec2 vUv; void main(){ gl_FragColor = texture2D(t, vUv); }',
-    blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneFactor, depthTest: false, depthWrite: false, toneMapped: false});
-  photoShow = new THREE.ShaderMaterial({uniforms: {t: {value: null}, k: {value: 1}}, vertexShader: vs,
+  photoAdd = hpTex(new THREE.ShaderMaterial({uniforms: {t: {value: null}}, vertexShader: vs, fragmentShader: 'uniform sampler2D t; varying vec2 vUv; void main(){ gl_FragColor = texture2D(t, vUv); }',
+    blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneFactor, depthTest: false, depthWrite: false, toneMapped: false}));
+  photoShow = hpTex(new THREE.ShaderMaterial({uniforms: {t: {value: null}, k: {value: 1}}, vertexShader: vs,
     // average of the frames, with the light fall-off of a camera lens toward the corners (about 10 %)
-    fragmentShader: 'uniform sampler2D t; uniform float k; varying vec2 vUv; void main(){ vec2 q = vUv - .5; gl_FragColor = texture2D(t, vUv) * k; gl_FragColor.rgb *= 1.0 - .38 * dot(q, q);\n#include <tonemapping_fragment>\n#include <encodings_fragment>\n}', depthTest: false, depthWrite: false});
+    fragmentShader: 'uniform sampler2D t; uniform float k; varying vec2 vUv; void main(){ vec2 q = vUv - .5; gl_FragColor = texture2D(t, vUv) * k; gl_FragColor.rgb *= 1.0 - .38 * dot(q, q);\n#include <tonemapping_fragment>\n#include <encodings_fragment>\n}', depthTest: false, depthWrite: false}));
   photoQuad = new THREE.FullScreenQuad(photoAdd);
 }
 function photoClear(){ const c = renderer.getClearColor(new THREE.Color()), a = renderer.getClearAlpha(); renderer.setRenderTarget(photoAcc); renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.setClearColor(c, a); renderer.setRenderTarget(null); photoN = 0; }
@@ -1309,7 +1318,7 @@ function photoSample(w, h){
 // target and read back: a large export never resizes the visible canvas (and its multisampled buffers) to 4K
 let photoOut = null, photoOutMat = null;
 function photoReadback(w, h){
-  if (!photoOutMat) photoOutMat = new THREE.ShaderMaterial({uniforms: {t: {value: null}, k: {value: 1}, exposure: {value: 1}},
+  if (!photoOutMat) photoOutMat = hpTex(new THREE.ShaderMaterial({uniforms: {t: {value: null}, k: {value: 1}, exposure: {value: 1}},
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
     fragmentShader: `uniform sampler2D t; uniform float k; uniform float exposure; varying vec2 vUv;
       vec3 wrFit(vec3 v){ vec3 a = v * (v + 0.0245786) - 0.000090537; vec3 b = v * (0.983729 * v + 0.4329510) + 0.238081; return a / b; }
@@ -1320,7 +1329,7 @@ function photoReadback(w, h){
       void main(){ vec2 q = vUv - .5; vec4 c = texture2D(t, vUv) * k; c.rgb *= 1.0 - .38 * dot(q, q);
         // the canvas keeps straight (not premultiplied) colour: undo the coverage of silhouette edges before tone mapping
         if (c.a > 0.0) c.rgb /= c.a;
-        gl_FragColor = vec4(wrSRGB(wrAces(c.rgb)), c.a); }`, depthTest: false, depthWrite: false, toneMapped: false});
+        gl_FragColor = vec4(wrSRGB(wrAces(c.rgb)), c.a); }`, depthTest: false, depthWrite: false, toneMapped: false}));
   if (!photoOut || photoOut.width !== w || photoOut.height !== h) { photoOut?.dispose(); photoOut = new THREE.WebGLRenderTarget(w, h); }
   photoOutMat.uniforms.t.value = photoAcc.texture; photoOutMat.uniforms.k.value = 1 / Math.max(1, photoN); photoOutMat.uniforms.exposure.value = renderer.toneMappingExposure;
   photoQuad.material = photoOutMat; renderer.setRenderTarget(photoOut); photoQuad.render(renderer); renderer.setRenderTarget(null);
@@ -5259,7 +5268,7 @@ window.WarshaEd = {
   store, cutList, NOSHEET, matName, toast, money, saveFile, newDoc, docFonts, logoReady, today, PW, PH, PM, INK, MUTED, RULE, FF,
   showDoc(file, title, hint){ docFile = file; $('#docTitle').textContent = title; $('#docPreview').src = file.preview.toDataURL('image/jpeg', .8); $('#docHint').textContent = hint; $('#docSheet').hidden = false; }
 };
-window.__wr = {get ssao(){ return ssao; }, tallOf, pieceRect: () => pieceRect(), get qbarPos(){ return qbarPos; }, get pixelRatio(){ return renderer.getPixelRatio(); }, get rcStats(){ return rcStats; }, setRC, get clashes(){ return lastClashes.map(c => ({a: c.a, b: c.b.item ?? (c.b.mod ? 'unit' : 'top'), depth: Math.round(c.depth * 10) / 10})); }, set noClash(v){ noClash = v; }, settle: i => { const g = itemGroup(i); return g ? settleDrop({i, group: g}) : null; }, photoCompare, deviceTest: () => deviceTest(document.createElement('pre')), texReady, texStats, setPhoto, get photoN(){ return photoN; }, photoShot: async (w, h, n) => (await photoShot(w, h, n, false, false)), makeShot, get envReady(){ return envReady; }, openNow: v => { openT = openV = v; applyAnims(); renderer.shadowMap.needsUpdate = true; dirty = true; }, setQuality, get quality(){ return quality; }, dirty: () => { dirty = true; }, setCam, openDemo, DEMOS, exportFile, importFile, setPresent, get fab(){ return fab; }, set fab(v){ fab = WarshaFab.sanitizeFab(v); }, store, setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), snapFoot: (w, h) => snapshot(w, h, true, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
+window.__wr = {get ssao(){ return ssao; }, get photoMats(){ return [photoAdd, photoShow, photoOutMat]; }, tallOf, pieceRect: () => pieceRect(), get qbarPos(){ return qbarPos; }, get pixelRatio(){ return renderer.getPixelRatio(); }, get rcStats(){ return rcStats; }, setRC, get clashes(){ return lastClashes.map(c => ({a: c.a, b: c.b.item ?? (c.b.mod ? 'unit' : 'top'), depth: Math.round(c.depth * 10) / 10})); }, set noClash(v){ noClash = v; }, settle: i => { const g = itemGroup(i); return g ? settleDrop({i, group: g}) : null; }, photoCompare, deviceTest: () => deviceTest(document.createElement('pre')), texReady, texStats, setPhoto, get photoN(){ return photoN; }, photoShot: async (w, h, n) => (await photoShot(w, h, n, false, false)), makeShot, get envReady(){ return envReady; }, openNow: v => { openT = openV = v; applyAnims(); renderer.shadowMap.needsUpdate = true; dirty = true; }, setQuality, get quality(){ return quality; }, dirty: () => { dirty = true; }, setCam, openDemo, DEMOS, exportFile, importFile, setPresent, get fab(){ return fab; }, set fab(v){ fab = WarshaFab.sanitizeFab(v); }, store, setSpan, mirrorItem, checkIssues, nestSheets, planSvg, get extras(){ return cfg.extras; }, placePiece, select, itemAction, setItemField, setItemOpt, setGrid, setCell, setOpen, detachUnit, alignItem, poseAt, get sel(){ return sel; }, get boxes(){ return itemBoxes; }, get anims(){ return anims.length; }, renderFree, cutList: () => cutList(cfg), sale: () => saleLines(), snap: (w, h) => snapshot(w, h, false, false), snapFoot: (w, h) => snapshot(w, h, true, false), bq: buildQuote, bw: buildWorkshop, csv: () => buildCSV().blob.text(), get cfg(){ return cfg; }, set: (o) => { cfg = sanitize(o, cfg); renderAll(); build(); setCam(camMode, true); }, setCam, renderer, scene, camera};
 })();
 </script>
 <script src="js/cutui.js"></script>
