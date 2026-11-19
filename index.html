@@ -720,8 +720,16 @@ const UNIT = {
     {...opt.num('chH', 'طول المدخنة', 10, 150, 50, 1), if: v => (v.s === 'chimney' || v.s === 'box') && v.ch === 'cut'},
     {...opt.seg('cab', 'الخزانة فوقه', {flap:'قلاب', door:'باب'}, 'flap'), if: v => v.s === 'under' || v.s === 'tele'}]},
   mcab:    {n:'خزانة مرآة', s:'خزانة مرآة', w:80, min:40, max:180, lvl:'u', cat:'upper', d:15, opts:[opt.bool('led', 'إضاءة', true)]},
-  shelf:   {n:'رفوف عائمة', s:'رفوف', w:100, min:30, max:300, lvl:'u', cat:'shelf', d:25, opts:[opt.num('n', 'عدد الرفوف', 1, 4, 2, 1), opt.num('y', 'ارتفاع الرف الأول', 80, 210, 140), opt.bool('led', 'إضاءة', false)]},
-  clad:    {n:'ديكور جدار التلفزيون', s:'ديكور', w:220, min:60, max:600, lvl:'u', cat:'panel', d:4, opts:[opt.seg('s', 'الخامة', {slats:'شرائح خشب', flat:'ألواح ملساء', marble:'رخام', stone:'حجر'}, 'slats'), opt.seg('tv', 'الشاشة', {0:'بلا', 55:'55"', 65:'65"', 75:'75"', 85:'85"'}, '65'), opt.bool('led', 'إضاءة LED', true), opt.bool('full', 'من الأرض', false)]},
+  shelf:   {n:'رفوف عائمة', s:'رفوف', w:100, min:30, max:300, lvl:'u', cat:'shelf', d:25, opts:[opt.seg('s', 'الشكل', {flat:'مستقيمة', round:'بأطراف مدوّرة', ledge:'بحافة أمامية', bracket:'على حوامل معدنية', stagger:'متدرجة يمين ويسار', cube:'مكعبات مفتوحة'}, 'flat'),
+    opt.seg('mat', 'الخامة', {wood:'خشب', front:'لون الواجهات', glass:'زجاج'}, 'wood'), opt.num('n', 'عدد الرفوف', 1, 6, 2, 1), opt.num('y', 'ارتفاع الرف الأول', 20, 230, 140), opt.num('sp', 'المسافة بين الرفوف', 20, 70, 38, 1),
+    opt.num('dp', 'العمق', 12, 40, 25, 1), {...opt.num('t', 'السماكة', 2, 6, 4, 1), if: v => v.mat !== 'glass'}, opt.bool('deco', 'كتب وديكور', true), opt.bool('led', 'إضاءة', false)]},
+  clad:    {n:'ديكور جدار التلفزيون', s:'ديكور', w:220, min:60, max:600, lvl:'u', cat:'panel', d:4, opts:[opt.seg('s', 'الخامة', {slats:'شرائح خشب', flat:'ألواح ملساء', wood:'خشب أملس', fluted:'محفور طولياً', frames:'ألواح بإطارات', marble:'رخام', stone:'حجر'}, 'slats'),
+    {...opt.seg('pitch', 'عرض الشرائح', {fine:'رفيعة', std:'عادية', wide:'عريضة'}, 'std'), if: v => v.s === 'slats' || v.s === 'fluted'},
+    opt.seg('sh', 'الشكل من فوق', {rect:'مستقيم', arch:'قوس'}, 'rect'),
+    opt.seg('tv', 'الشاشة', {0:'بلا', 43:'43"', 50:'50"', 55:'55"', 65:'65"', 75:'75"', 85:'85"', 98:'98"'}, '65'),
+    opt.bool('led', 'إضاءة LED', true), opt.bool('full', 'من الأرض', false), {...opt.num('y0', 'يبدأ من ارتفاع', 1, 200, 50, 1), if: v => !v.full},
+    opt.bool('ceil', 'حتى السقف', true), {...opt.num('h', 'الارتفاع', 40, 300, 200, 5), if: v => !v.ceil},
+    {...opt.num('ty', 'منتصف الشاشة من الأرض', 60, 220, 120, 1), if: v => +v.tv > 0, auto: v => cladTvY(v)}]},
   tv:      {n:'شاشة', s:'شاشة', w:145, min:95, max:190, lvl:'u', cat:null, d:6, deco:true, opts:[opt.num('y', 'ارتفاع المنتصف', 90, 170, 120)]},
   mirror:  {n:'مرآة جدار', s:'مرآة', w:80, min:30, max:240, lvl:'u', cat:'mirror', d:2, opts:[opt.num('h', 'الارتفاع', 40, 200, 90), opt.num('y', 'من الأرض', 20, 160, 110)]},
   frame:   {n:'لوحة ديكور', s:'لوحة', w:90, min:30, max:240, lvl:'u', cat:null, d:4, deco:true, opts:[opt.seg('s', 'النوع', {art:'لوحة', photo:'إطارات صور', round:'مرآة دائرية'}, 'art'), opt.num('h', 'الارتفاع', 30, 150, 60), opt.num('y', 'المنتصف من الأرض', 80, 220, 150)]},
@@ -737,14 +745,14 @@ const UNIT = {
 const ALL_B = Object.keys(UNIT).filter(t => UNIT[t].lvl === 'b'), ALL_U = Object.keys(UNIT).filter(t => UNIT[t].lvl === 'u'), ALL_T = Object.keys(UNIT).filter(t => UNIT[t].lvl === 't');
 // the three heights of a wall: on the floor, on the wall, and the top row above
 const LV = {b: 'pb', u: 'pu', t: 'pt'}, atLvl = (L, lvl) => (L && L[LV[lvl]]) || [], GAP_T = {b: 'bgap', u: 'ugap', t: 'tgap'};
-const unitDepth = m => UNIT[m.t]?.lvl === 't' ? +optsOf(m).d : (UNIT[m.t]?.d || 4);
+const unitDepth = m => UNIT[m.t]?.lvl === 't' ? +optsOf(m).d : m.t === 'shelf' ? +optsOf(m).dp || 25 : (UNIT[m.t]?.d || 4);
 const ROOM_UNITS = {
   kitchen:  {b:['door','drawers','sink','cook','dw','bopen','fridge','pantry','oventall','washer','rdoor','bgap'], u:['udoor','glass','lift','uopen','hood','shelf','window','ugap'], t:['tdoor','tlift','topen','tgap']},
   laundry:  {b:['door','drawers','sink','washer','wcol','pantry','bopen','rdoor','bgap'], u:['udoor','uopen','shelf','hooks','window','ugap'], t:['tdoor','tlift','topen','tgap']},
   bedroom:  {b:['wdoor','wmirror','wdrawer','wopen','bookcase','desk','sideboard','rdoor','bgap'], u:['frame','shelf','tv','mirror','window','ugap'], t:['tdoor','tlift','topen','tgap']},
   dressing: {b:['wdoor','wmirror','wdrawer','wopen','shoe','bench','rdoor','bgap'], u:['shelf','mirror','frame','window','ugap'], t:['tdoor','tlift','topen','tgap']},
   kids:     {b:['wdoor','wdrawer','wopen','desk','bookcase','bench','rdoor','bgap'], u:['shelf','udoor','uopen','frame','window','ugap'], t:['tdoor','tlift','topen','tgap']},
-  living:   {b:['tvbase','bookcase','vitrine','sideboard','bench','rdoor','bgap'], u:['clad','tv','shelf','uopen','udoor','frame','mirror','window','ugap'], t:['tdoor','tlift','topen','tgap']},
+  living:   {b:['tvbase','bookcase','vitrine','wdoor','wdrawer','wopen','sideboard','bench','rdoor','bgap'], u:['clad','tv','shelf','uopen','udoor','glass','lift','frame','mirror','window','ugap'], t:['tdoor','tlift','topen','tgap']},
   dining:   {b:['sideboard','vitrine','bookcase','rdoor','bgap'], u:['mirror','frame','shelf','glass','uopen','window','ugap'], t:['tdoor','tlift','topen','tgap']},
   office:   {b:['desk','bookcase','wdoor','wopen','sideboard','rdoor','bgap'], u:['shelf','uopen','udoor','glass','frame','window','ugap'], t:['tdoor','tlift','topen','tgap']},
   bathroom: {b:['vanity','btall','washer','rdoor','bgap'], u:['mcab','mirror','shelf','window','ugap'], t:['tdoor','tlift','topen','tgap']},
@@ -766,7 +774,10 @@ const ITEM = {
   dresser: {n:'تسريحة بمرآة', w:120, min:80, max:180, d:45, cat:'dresser'},
   commode: {n:'كومودا جوارير', w:100, min:60, max:200, d:50, cat:'commode'},
   dtable:  {n:'طاولة سفرة', w:200, min:120, max:320, d:100, cat:'dtable', opts:[opt.seg('s', 'الشكل', {rect:'مستطيلة', oval:'بيضاوية'}, 'rect'), opt.bool('ch', 'كراسي', true)]},
-  ctable:  {n:'طاولة وسط', w:110, min:60, max:180, d:60, cat:'ctable'},
+  ctable:  {n:'طاولة وسط', w:110, min:40, max:200, d:60, cat:'ctable', opts:[opt.seg('s', 'الشكل', {rect:'مستطيلة', square:'مربعة', round:'دائرية', oval:'بيضاوية', nest:'طاولتان متداخلتان'}, 'rect'),
+    opt.seg('top', 'السطح', {wood:'خشب', marble:'رخام', glass:'زجاج', color:'باللون المختار'}, 'wood'), opt.seg('leg', 'الأرجل', {metal:'معدن رفيع', wood:'خشب', pedestal:'قاعدة في الوسط', sled:'إطار معدني', solid:'جانبان مصمتان'}, 'metal'),
+    {...opt.num('dp', 'العمق', 35, 110, 60, 5), if: v => v.s === 'rect' || v.s === 'oval'}, opt.num('h', 'الارتفاع', 25, 60, 40, 1), opt.bool('shelf', 'رف سفلي', true),
+    opt.seg('deco', 'فوق الطاولة', {set:'كتب ومزهرية', tray:'صينية وشموع', plant:'نبتة صغيرة', none:'بلا شيء'}, 'set')]},
   sofa:    {n:'كنبة', w:240, min:150, max:360, d:95, deco:true, opts:[opt.seg('s', 'الشكل', {line:'مستقيمة', L:'زاوية'}, 'line')]},
   armchair:{n:'كرسي استرخاء', w:80, min:70, max:100, d:82, deco:true},
   chair:   {n:'كرسي مكتب', w:60, min:60, max:60, d:60, deco:true},
@@ -780,7 +791,9 @@ const ITEM = {
   cab:     {n:'خزانة مخصصة', w:120, min:20, max:480, d:45, cat:'custom', custom:true, opts:[
     opt.seg('base', 'تحت الخزانة', {plinth:'قاعدة', legs:'أرجل', hang:'معلّقة', none:'بلا'}, 'plinth'),
     opt.seg('endL', 'الطرف الأيسر من فوق', {sq:'مستقيم', ang:'مائل', rnd:'مدوّر'}, 'sq'), opt.seg('endR', 'الطرف الأيمن من فوق', {sq:'مستقيم', ang:'مائل', rnd:'مدوّر'}, 'sq'),
-    opt.num('ew', 'عرض الطرف', 15, 90, 35, 5), opt.seg('top', 'السطح', {none:'من الخشب نفسه', stone:'حجر', wood:'خشب', glass:'زجاج'}, 'none'), opt.bool('led', 'إضاءة LED', false)]},
+    opt.num('ew', 'عرض الطرف', 15, 90, 35, 5), {...opt.seg('endC', 'واجهة الطرف المائل أو المدوّر', {open:'رفوف مفتوحة', closed:'مسكّرة بلوح', door:'بباب'}, 'open'), if: v => v.endL !== 'sq' || v.endR !== 'sq'},
+    opt.seg('top', 'السطح', {none:'من الخشب نفسه', stone:'حجر', wood:'خشب', glass:'زجاج'}, 'none'), opt.bool('led', 'إضاءة LED', false),
+    opt.seg('fs', 'شكل الواجهات', {flat:'ملساء', shaker:'بإطار', fluted:'محفورة طولياً', slats:'شرائح خشب'}, 'flat')]},
   bar:     {n:'بار ومطبخ أمريكي', w:180, min:80, max:480, d:90, cat:'custom', custom:true, opts:[
     opt.seg('base', 'تحت السطح', {cab:'خزائن', open:'رفوف مفتوحة', legs:'أرجل', water:'جانبا شلال'}, 'cab'),
     opt.seg('endL', 'الطرف الأيسر', {sq:'مستقيم', ang:'مائل', rnd:'مدوّر'}, 'sq'), opt.seg('endR', 'الطرف الأيمن', {sq:'مستقيم', ang:'مائل', rnd:'مدوّر'}, 'rnd'),
@@ -802,15 +815,21 @@ const isUnitItem = it => !!UNIT[it.t] && !ITEM[it.t];
 // height and depth of custom pieces, cm: [min, max, default]
 const CUST = {cab: {h: [10, 300, 85], d: [10, 100, 45]}, bar: {h: [70, 120, 90], d: [30, 140, 90]}, panel: {h: [2, 300, 80], d: [1, 20, 2]}};
 const CELLS = {door:'باب', doorL:'باب مفصلة يسار', doorR:'باب مفصلة يمين', double:'بابان', drawer:'جارور', flap:'قلاب', glass:'زجاج', open:'مفتوح', panel:'لوح ثابت'};
+// cells that can hold loose shelves inside; n is how many, sg makes them glass. A glass door cell had one shelf
+// from the start, so it keeps one when n was never chosen.
+const SHELF_K = ['open', 'glass', 'door', 'doorL', 'doorR', 'double'];
+const cellShelves = c => SHELF_K.includes(c.k) ? (c.n !== undefined ? c.n : c.k === 'glass' ? 1 : 0) : 0;
 const CELL_S = {door:'باب', doorL:'مفصلة يسار', doorR:'مفصلة يمين', double:'بابان', drawer:'جارور', flap:'قلاب', glass:'زجاج', open:'مفتوح', panel:'ثابت'};
 const iopts = it => optVals(DEF(it.t)?.opts, it);
 const itemH = it => CUST[it.t] ? (it.h ?? CUST[it.t].h[2]) : null;
-const itemDepth = it => it.t === 'rug' ? +iopts(it).d : CUST[it.t] ? (it.t === 'panel' && iopts(it).or === 'h' ? itemH(it) : (it.d ?? CUST[it.t].d[2])) : (DEF(it.t)?.d || 40);
+const itemDepth = it => it.t === 'rug' ? +iopts(it).d : it.t === 'ctable' ? ctDims(it).d : it.t === 'shelf' ? +iopts(it).dp || 25 : CUST[it.t] ? (it.t === 'panel' && iopts(it).or === 'h' ? itemH(it) : (it.d ?? CUST[it.t].d[2])) : (DEF(it.t)?.d || 40);
 // grid of a custom cabinet: columns, rows and what fills every cell (row 0 is the top row)
 function cabGrid(it){
   const o = it.o || {}, h = itemH(it), cols = clamp(Math.round(+o.cols || Math.max(1, Math.round(it.w / 60))), 1, 10), rows = clamp(Math.round(+o.rows || (h > 150 ? 3 : 1)), 1, 10);
   const def = h > 150 ? 'door' : h <= 50 ? 'flap' : 'door', cells = [];
-  for (let i = 0; i < cols * rows; i++) { const c = Array.isArray(o.cells) ? o.cells[i] : null; cells.push({k: c && CELLS[c.k] ? c.k : def, ...(c && (isHex(c.c) || (c.c && FRONTS.some(f => f.id === c.c))) ? {c: c.c} : {})}); }
+  for (let i = 0; i < cols * rows; i++) { const c = Array.isArray(o.cells) ? o.cells[i] : null, k = c && CELLS[c.k] ? c.k : def;
+    const n = c && SHELF_K.includes(k) && c.n !== undefined && isFinite(+c.n) ? clamp(Math.round(+c.n), 0, 8) : undefined;
+    cells.push({k, ...(c && (isHex(c.c) || (c.c && FRONTS.some(f => f.id === c.c))) ? {c: c.c} : {}), ...(n !== undefined ? {n} : {}), ...(c && c.sg === true && SHELF_K.includes(k) ? {sg: true} : {})}); }
   // column widths and row heights (cm, any scale); equal when not set
   const okArr = (a, n) => Array.isArray(a) && a.length === n && a.every(v => +v > 0) ? a.map(v => +v) : null;
   const cw = okArr(o.cw, cols), rh = okArr(o.rh, rows);
@@ -1607,7 +1626,18 @@ function frontPanel(parent, c, x0, x1, y0, y1, z, opts = {}){
   const mat = opts.mat || frontMat(opts.fid || c.front, c.finish), wood = frontDef(opts.fid || c.front).wood;
   // grain as in the cut list: up the door, across a drawer front (a drawer pivot or a low, wide face)
   const drawer = parent.userData?.drawer || (y1 - y0 <= .32 && x1 - x0 > y1 - y0);
-  return box(parent, mat, x0 + G, x1 - G, y0 + G, y1 - G, z, z + FT, {r: .0025, tile: wood ? 1.1 : 1, grain: drawer ? 'x' : 'y'});
+  const X0 = x0 + G, X1 = x1 - G, Y0 = y0 + G, Y1 = y1 - G, fw = X1 - X0, fh = Y1 - Y0, st = opts.mat ? null : c.fstyle, o2 = {r: .0025, tile: wood ? 1.1 : 1, grain: drawer ? 'x' : 'y'};
+  // shaker: a frame 6.5 cm wide around a centre routed 6 mm lower
+  if (st === 'shaker' && fw > .16 && fh > .16) { const f = Math.min(.065, fw * .2, fh * .2), m0 = box(parent, mat, X0, X1, Y0, Y1, z, z + FT - .006, o2), fo = {...o2, r: .002};
+    box(parent, mat, X0, X1, Y1 - f, Y1, z + FT - .006, z + FT, fo); box(parent, mat, X0, X1, Y0, Y0 + f, z + FT - .006, z + FT, fo);
+    box(parent, mat, X0, X0 + f, Y0 + f, Y1 - f, z + FT - .006, z + FT, fo); box(parent, mat, X1 - f, X1, Y0 + f, Y1 - f, z + FT - .006, z + FT, fo); return m0; }
+  // fluted: rounded ribs 2.2 cm apart routed into the face
+  if (st === 'fluted' && fw > .06) { const m0 = box(parent, mat, X0, X1, Y0, Y1, z, z + FT - .004, o2), n = Math.max(2, Math.floor(fw / .022));
+    for (let i = 0; i < n; i++) { const x = X0 + (i + .5) * fw / n; box(parent, mat, x - fw / n * .42, x + fw / n * .42, Y0, Y1, z + FT - .004, z + FT, {r: .0035, cast: false, tile: o2.tile}); } return m0; }
+  // wood slats glued on the face, 2.8 cm wide every 4.5 cm
+  if (st === 'slats' && fw > .06) { const m0 = box(parent, mat, X0, X1, Y0, Y1, z, z + FT, o2), am = accentMat(), n = Math.max(2, Math.floor(fw / .045));
+    for (let i = 0; i < n; i++) { const x = X0 + (i + .5) * fw / n; box(parent, am, x - .014, x + .014, Y0, Y1, z + FT, z + FT + .008, {r: .002, cast: false, tile: 1.2, ou: i * .37}); } return m0; }
+  return box(parent, mat, X0, X1, Y0, Y1, z, z + FT, o2);
 }
 // open carcass built from boards; returns the top surface height of the bottom board and of each shelf
 function openBox(p, c, a, b, y0, y1, depth, n, fid = c.front){
@@ -2081,9 +2111,26 @@ function roomDoor(p, c, a, b, H){
   const lh = handleMat(cfg.handle === 'gola' ? 'black' : cfg.handle);
   cyl(p, lh, .028, .015, b - fw - .07, 1.0, .03, {rx: Math.PI / 2}); box(p, lh, b - fw - .2, b - fw - .07, .99, 1.01, .03, .05, {r: .006});
 }
+// wall shelves: a run of n shelves, sp apart, in one of several shapes; a cube is an open box hung on the wall
+const shelfDims = o => ({n: +o.n, y: +o.y, sp: +o.sp || 38, d: +o.dp || 25, t: o.mat === 'glass' ? 1 : +o.t || 4, ch: Math.max(12, Math.min(34, (+o.sp || 38) - 8))});
+function shelfSpan(o, w){ const S = shelfDims(o), i0 = o.s === 'stagger' && S.n > 1 ? .35 : 0; return Array.from({length: S.n}, (_, i) => ({y: S.y + i * S.sp, a: o.s === 'stagger' && i % 2 ? w * i0 : 0, b: o.s === 'stagger' && i % 2 === 0 && S.n > 1 ? w * (1 - i0) : w})); }
 function shelfUnit(p, c, a, b, u){
-  const o = optsOf(u), n = +o.n, y0 = (+o.y) / 100, am = accentMat();
-  for (let i = 0; i < n; i++) { const y = y0 + i * .38; box(p, am, a, b, y, y + .04, 0, .25, {r: .004, tile: 1.4}); if (i < n - 0) shelfDecorBooks(p, a, b, y + .04, .23, Math.round(a * 100) + i * 13); if (o.led) ledStrip(p, a + .02, b - .02, y, .2, 3); }
+  const o = optsOf(u), S = shelfDims(o), w = b - a, d = S.d / 100, th = S.t / 100;
+  const mat = o.mat === 'front' ? frontMat(c.front, c.finish) : o.mat === 'glass' ? std('shelfglass', {color: col('#CFE0E4'), roughness: .05, transparent: true, opacity: .4, depthWrite: false}) : accentMat();
+  shelfSpan(o, w * 100).forEach((r, i) => {
+    const xa = a + r.a / 100, xb = a + r.b / 100, y = r.y / 100, seed = Math.round(a * 100) + i * 13;
+    if (o.s === 'cube') {   // open box: bottom, top, two sides and a back
+      const h = S.ch / 100, t = .018, fm = o.mat === 'glass' ? accentMat() : mat;
+      box(p, fm, xa, xb, y, y + t, 0, d, {tile: 1.2}); box(p, fm, xa, xb, y + h - t, y + h, 0, d, {tile: 1.2});
+      box(p, fm, xa, xa + t, y + t, y + h - t, 0, d, {tile: 1.2}); box(p, fm, xb - t, xb, y + t, y + h - t, 0, d, {tile: 1.2});
+      if (o.deco && h > .15) shelfDecorBooks(p, xa + t, xb - t, y + t, d - .02, seed);
+      if (o.led) ledStrip(p, xa + .03, xb - .03, y + h - t - .006, d * .8, 3); return; }
+    if (o.s === 'round') slab(p, mat, rrPoly(xa, xb, 0, d, [0, 0, Math.min(d * .9, (xb - xa) / 4), Math.min(d * .9, (xb - xa) / 4)], 10), y, y + th, 1.4);
+    else box(p, mat, xa, xb, y, y + th, 0, d, {r: o.mat === 'glass' ? .002 : .004, tile: 1.4, ...(o.mat === 'glass' ? {cast: false} : {})});
+    if (o.s === 'ledge') box(p, mat, xa, xb, y + th, y + th + .04, d - .018, d, {r: .003, tile: 1.4});
+    if (o.s === 'bracket') for (const x of [xa + Math.min(.12, (xb - xa) * .15), xb - Math.min(.12, (xb - xa) * .15)]) { box(p, XM.metalBlack, x - .012, x + .012, y - .16, y, 0, .01, {cast: false}); box(p, XM.metalBlack, x - .012, x + .012, y - .012, y, 0, d * .85, {cast: false}); }
+    if (o.deco) shelfDecorBooks(p, xa, xb, y + th, d - .02, seed);
+    if (o.led) ledStrip(p, xa + .02, xb - .02, y, d * .8, 3); });
 }
 function mirrorCabinet(p, c, a, b, u){
   const o = optsOf(u), w = b - a, y0 = 1.12, y1 = 1.82, d = .15, n = w > .64 ? 2 : 1;
@@ -2101,23 +2148,62 @@ function tvScreen(p, cx, cy, wid, z){
   const s = new THREE.Mesh(new THREE.PlaneGeometry(wid - .012, h - .012), screenMaterial()); s.position.set(cx, cy, z + .031); p.add(s);
   return h;
 }
+// TV wall decor: bottom and top in cm (from the floor or a set height; to the ceiling or a set height)
+function cladSpan(o, Hc){ const y0 = o.full ? 0 : clamp(+o.y0 || 0, 0, Hc - 40), y1 = o.ceil === false ? Math.min(Hc, y0 + (+o.h || 200)) : Hc; return [y0, Math.max(y0 + 20, y1)]; }
+// slats and flutes: [pitch, slat width] in cm
+const CLAD_PITCH = {fine: [3.5, 2], std: [5.5, 3.2], wide: [10, 6]};
+// where the screen's centre sits when it was never set: as it always was, a third of the screen above the decor's foot, at least 115 cm
+const cladTvY = v => Math.round(Math.max(115, (v.full ? 0 : +v.y0 || 0) + (+v.tv) * 2.214 * 9 / 32 + 30));
+// top of the decor at x (cm or m alike): straight, or an arch over the whole width
+function cladTop(o, a, b, y0, y1, x){
+  if (o.sh !== 'arch') return y1;
+  const rx = (b - a) / 2, ry = Math.min(rx, (y1 - y0) * .45), u = (x - (a + b) / 2) / rx;
+  return y1 - ry + ry * Math.sqrt(Math.max(0, 1 - u * u));
+}
+// a flat board in the arch outline, thickness along z
+function archSlab(p, mat, a, b, y0, y1, z0, z1){
+  const rx = (b - a) / 2, ry = Math.min(rx, (y1 - y0) * .45), sh = new THREE.Shape();
+  sh.moveTo(a, y0); sh.lineTo(b, y0); sh.lineTo(b, y1 - ry); sh.absellipse((a + b) / 2, y1 - ry, rx, ry, 0, Math.PI, false); sh.lineTo(a, y0);
+  const g = new THREE.ExtrudeGeometry(sh, {depth: z1 - z0, bevelEnabled: false, curveSegments: 48}), m = new THREE.Mesh(g, mat);
+  m.position.z = z0; m.receiveShadow = true; p.add(m); return m;
+}
 function cladUnit(p, c, a, b, u, H){
-  const o = optsOf(u), w = b - a, y0 = o.full ? 0 : .5, y1 = H - .005;
+  const o = optsOf(u), w = b - a, [c0, c1] = cladSpan(o, H * 100), y0 = c0 / 100, y1 = o.ceil === false ? c1 / 100 : H - .005, arch = o.sh === 'arch';
+  const top = x => cladTop(o, a, b, y0, y1, x), board = (mat, z0, z1, tile) => arch ? archSlab(p, mat, a, b, y0, y1, z0, z1) : box(p, mat, a, b, y0, y1, z0, z1, {tile, cast: false});
+  const [pc, sw] = (CLAD_PITCH[o.pitch] || CLAD_PITCH.std).map(v => v / 100);
   if (o.s === 'slats') {
-    box(p, XM.panelDark, a, b, y0, y1, 0, .012, {cast: false});
-    const am = accentMat(), pitch = .055, n = Math.max(2, Math.floor(w / pitch));
-    for (let i = 0; i < n; i++) { const x = a + (i + .5) * w / n; box(p, am, x - .016, x + .016, y0, y1, .012, .036, {tile: 1.2, ou: i * .37}); }
-  } else if (o.s === 'marble') box(p, XM.marbleWall, a, b, y0, y1, 0, .025, {tile: 2.2});
-  else if (o.s === 'stone') box(p, XM.stone, a, b, y0, y1, 0, .03, {tile: 1.4});
-  else { box(p, frontMat(c.front, c.finish), a, b, y0, y1, 0, .025, {tile: 1.1}); const n = Math.max(2, Math.round(w / .6)); for (let i = 1; i < n; i++) box(p, XM.panelDark, a + w * i / n - .002, a + w * i / n + .002, y0, y1, .02, .026, {cast: false}); }
-  const z = o.s === 'slats' ? .036 : .03;
+    board(XM.panelDark, 0, .012);
+    const am = accentMat(), n = Math.max(2, Math.floor(w / pc));
+    for (let i = 0; i < n; i++) { const x = a + (i + .5) * w / n, yt = Math.min(top(x - sw / 2), top(x + sw / 2)); if (yt - y0 > .02) box(p, am, x - sw / 2, x + sw / 2, y0, yt, .012, .036, {tile: 1.2, ou: i * .37}); }
+  } else if (o.s === 'fluted') {
+    const fm = frontMat(c.front, c.finish); board(fm, 0, .02, 1.1);
+    const n = Math.max(2, Math.floor(w / pc));
+    for (let i = 0; i < n; i++) { const x = a + (i + .5) * w / n, yt = Math.min(top(x - sw / 2), top(x + sw / 2)) - .005; if (yt - y0 > .02) box(p, fm, x - sw * .4, x + sw * .4, y0 + .005, yt, .02, .03, {r: .004, cast: false}); }
+  } else if (o.s === 'marble') board(XM.marbleWall, 0, .025, 2.2);
+  else if (o.s === 'stone') board(XM.stone, 0, .03, 1.4);
+  else if (o.s === 'wood') board(accentMat(), 0, .025, 1.2);
+  else if (o.s === 'frames') {
+    const fm = frontMat(c.front, c.finish); board(fm, 0, .02, 1.1);
+    // raised frames: columns about 60 cm wide, two rows below the arch start, a 6 cm margin
+    const n = Math.max(1, Math.round(w / .6)), yTop = arch ? y1 - Math.min(w / 2, (y1 - y0) * .45) : y1, hb = yTop - y0, rows = hb > 1.6 ? 2 : 1, mg = .06, fw = .02;
+    for (let i = 0; i < n; i++) for (let r = 0; r < rows; r++) {
+      const fx0 = a + w * i / n + mg, fx1 = a + w * (i + 1) / n - mg, split = y0 + hb * (rows === 2 ? .38 : 0), fy0 = (r ? split : y0) + mg, fy1 = (rows === 2 && !r ? split : yTop) - mg;
+      if (fx1 - fx0 < .1 || fy1 - fy0 < .1) continue;
+      box(p, fm, fx0, fx1, fy1 - fw, fy1, .02, .032, {r: .003, cast: false}); box(p, fm, fx0, fx1, fy0, fy0 + fw, .02, .032, {r: .003, cast: false});
+      box(p, fm, fx0, fx0 + fw, fy0 + fw, fy1 - fw, .02, .032, {r: .003, cast: false}); box(p, fm, fx1 - fw, fx1, fy0 + fw, fy1 - fw, .02, .032, {r: .003, cast: false}); }
+  }
+  else { board(frontMat(c.front, c.finish), 0, .025, 1.1); const n = Math.max(2, Math.round(w / .6)); for (let i = 1; i < n; i++) { const x = a + w * i / n; box(p, XM.panelDark, x - .002, x + .002, y0, top(x), .02, .026, {cast: false}); } }
+  const z = o.s === 'slats' ? .036 : o.s === 'fluted' || o.s === 'frames' ? .032 : .03;
   if (+o.tv) {
-    const wid = Math.min(w - .1, (+o.tv) * .02214), cy = Math.max(1.15, y0 + wid * 9 / 32 + .3), cx = (a + b) / 2;
+    const wid = Math.min(w - .1, (+o.tv) * .02214), cy = u.o?.ty !== undefined ? +o.ty / 100 : Math.max(1.15, y0 + wid * 9 / 32 + .3), cx = (a + b) / 2;
     if (o.led) { box(p, glow('tvglow', '#FFC98A', 5), cx - wid / 2 + .04, cx + wid / 2 - .04, cy - wid * 9 / 32 + .04, cy + wid * 9 / 32 - .04, z, z + .01, {cast: false, recv: false});
       const l = new THREE.RectAreaLight(0xFFC98A, 0, wid + .1, wid * 9 / 16 + .1); l.position.set(cx, cy, z + .012); l.rotation.y = Math.PI; l.userData = {day: 0, eve: 3}; p.add(l); dynLights.push(l); }
     tvScreen(p, cx, cy, wid, z + .04);
   }
-  if (o.led) ledStrip(p, a + .02, b - .02, y1 - .04, .05, 3);
+  // the light strip under the top edge; under an arch it stays inside the curve
+  if (o.led) { const ly = y1 - .04; let la = a + .02, lb = b - .02;
+    if (arch) { const rx = w / 2, ry = Math.min(rx, (y1 - y0) * .45), q = Math.min(1, (ry - .04) / ry); const hw = rx * Math.sqrt(Math.max(0, 1 - q * q)); la = (a + b) / 2 - hw + .02; lb = (a + b) / 2 + hw - .02; }
+    if (lb - la > .1) ledStrip(p, la, lb, ly, .05, 3); }
 }
 function frameUnit(p, c, a, b, u){
   const o = optsOf(u), h = (+o.h) / 100, cy = (+o.y) / 100, w = b - a;
@@ -2195,11 +2281,31 @@ function tableItem(g, c, it){
   if (w >= 1.8) { chair(-w / 2 - .22, 0, -Math.PI / 2); chair(w / 2 + .22, 0, Math.PI / 2); }
   cyl(g, XM.ceramic, .16, .06, 0, h + .03, 0, {seg: 32, r2: .1});
 }
+// coffee table: depth follows the shape (a square or a circle is as deep as it is wide), cm
+function ctDims(it){ const o = iopts(it), w = it.w; return {o, w, d: o.s === 'square' || o.s === 'round' ? w : o.s === 'nest' ? Math.round(w * .62) : +o.dp || 60, h: +o.h || 40}; }
+const ellipse = (cx, cz, rx, rz, n = 48) => Array.from({length: n}, (_, i) => { const a = i / n * Math.PI * 2; return [cx + rx * Math.cos(a), cz + rz * Math.sin(a)]; });
 function ctableItem(g, c, it){
-  const w = it.w / 100, d = .6, h = .4, am = accentMat();
-  box(g, am, -w / 2, w / 2, h - .03, h, -d / 2, d / 2, {r: .01, tile: 1.4}); box(g, am, -w / 2 + .03, w / 2 - .03, .06, .08, -d / 2 + .03, d / 2 - .03);
-  for (const x of [-w / 2 + .05, w / 2 - .05]) for (const z of [-d / 2 + .05, d / 2 - .05]) box(g, XM.metalBlack, x - .012, x + .012, 0, h - .03, z - .012, z + .012);
-  box(g, std('book2', {color: col('#B9A48A'), roughness: .7}), -.25, .05, h, h + .04, -.12, .12); cyl(g, XM.ceramic, .08, .1, .25, h + .05, 0, {seg: 24, r2: .06});
+  const {o, w: W, d: D, h: Hc} = ctDims(it), w = W / 100, d = D / 100, h = Hc / 100, am = accentMat();
+  const top = o.top === 'marble' ? XM.marbleWall : o.top === 'glass' ? std('topglass', {color: col('#CFE0E4'), roughness: .04, transparent: true, opacity: .45, depthWrite: false}) : o.top === 'color' ? frontMat(c.front, c.finish) : am;
+  const legM = o.leg === 'wood' ? am : o.leg === 'solid' ? (o.top === 'color' ? frontMat(c.front, c.finish) : am) : XM.metalBlack, tt = o.top === 'glass' ? .012 : .03;
+  const one = (cx, tw, td, th, round, deco) => {
+    const rnd = round || o.s === 'oval';
+    if (rnd) slab(g, top, ellipse(cx, 0, tw / 2, td / 2), th - tt, th, 1.4); else box(g, top, cx - tw / 2, cx + tw / 2, th - tt, th, -td / 2, td / 2, {r: .01, tile: 1.4, ...(o.top === 'glass' ? {cast: false} : {})});
+    if (o.shelf && th > .22 && o.leg !== 'pedestal') { if (rnd) slab(g, am, ellipse(cx, 0, tw / 2 - .04, td / 2 - .04), .06, .08); else box(g, am, cx - tw / 2 + .03, cx + tw / 2 - .03, .06, .08, -td / 2 + .03, td / 2 - .03); }
+    const lh = th - tt;
+    if (o.leg === 'pedestal') { cyl(g, legM, Math.min(.07, tw * .12), lh, cx, lh / 2, 0, {seg: 24}); cyl(g, legM, Math.min(tw, td) * .32, .02, cx, .01, 0, {seg: 32}); }
+    else if (o.leg === 'solid' && !rnd) { for (const s of [-1, 1]) box(g, legM, cx + s * (tw / 2 - .03) - .015, cx + s * (tw / 2 - .03) + .015, 0, lh, -td / 2 + .02, td / 2 - .02, {tile: 1.4}); }
+    else if (o.leg === 'sled' && !rnd) { for (const s of [-1, 1]) { const x = cx + s * (tw / 2 - .06); box(g, legM, x - .01, x + .01, 0, .02, -td / 2 + .04, td / 2 - .04); for (const z of [-td / 2 + .05, td / 2 - .05]) box(g, legM, x - .01, x + .01, 0, lh, z - .01, z + .01); } }
+    else { const pts = rnd ? [0, 1, 2, 3].map(k => { const a = Math.PI / 4 + k * Math.PI / 2; return [cx + Math.cos(a) * tw * .33, Math.sin(a) * td * .33]; }) : [[cx - tw / 2 + .05, -td / 2 + .05], [cx + tw / 2 - .05, -td / 2 + .05], [cx - tw / 2 + .05, td / 2 - .05], [cx + tw / 2 - .05, td / 2 - .05]];
+      for (const [x, z] of pts) { if (o.leg === 'wood') cyl(g, legM, .022, lh, x, lh / 2, z, {seg: 12, r2: .016}); else box(g, legM, x - .012, x + .012, 0, lh, z - .012, z + .012); } }
+    if (!deco || o.deco === 'none') return;
+    if (o.deco === 'tray') { box(g, std('tray', {color: col('#2B2A28'), roughness: .4}), cx - Math.min(.2, tw * .3), cx + Math.min(.2, tw * .3), th, th + .015, -Math.min(.12, td * .3), Math.min(.12, td * .3), {r: .006});
+      for (const k of [-1, 0, 1]) cyl(g, std('candle', {color: col('#F1EBDD'), roughness: .8}), .025, .06 + (k + 1) * .03, cx + k * Math.min(.09, tw * .12), th + .015 + (.06 + (k + 1) * .03) / 2, 0, {seg: 16}); }
+    else if (o.deco === 'plant') { cyl(g, XM.ceramic, .07, .1, cx, th + .05, 0, {seg: 24, r2: .055}); const r = rng(3); for (let i = 0; i < 9; i++) { const l = new THREE.Mesh(new THREE.SphereGeometry(.05, 8, 6), M.leaf); l.scale.set(.5, 1.5, .25); const a = i / 9 * Math.PI * 2; l.position.set(cx + Math.cos(a) * .04, th + .16 + r() * .08, Math.sin(a) * .04); l.rotation.set(Math.sin(a) * .6, a, Math.cos(a) * .6); l.castShadow = true; g.add(l); } }
+    else { const bx = Math.min(.3, tw * .3); box(g, std('book2', {color: col('#B9A48A'), roughness: .7}), cx - bx, cx + .05 * tw / .6, th, th + .04, -Math.min(.12, td * .25), Math.min(.12, td * .25)); cyl(g, XM.ceramic, .08, .1, cx + Math.min(.25, tw * .3), th + .05, 0, {seg: 24, r2: .06}); }
+  };
+  if (o.s === 'nest') { one(-w * .2, w * .6, w * .6, h, true, true); one(w * .3, w * .4, w * .4, h * .85, true, false); }
+  else one(0, w, d, h, o.s === 'round', true);
 }
 function sofaItem(g, c, it){
   const o = iopts(it), w = it.w / 100, d = .95, fab = fabricMat(c.fabric), x0 = -w / 2, z0 = -d / 2;
@@ -2257,7 +2363,7 @@ function outline(W, D, kL, eL, kR, eR){
   return [[0, 0], [W, 0], ...Rr.slice(1), ...L.slice(0, -1)];
 }
 // open shaped end with shelves, x from 0 (outside) to e (against the body); mirror puts it on the right
-function endPiece(p, c, kind, e, D, y0, y1, levels, mirror, W){
+function endPiece(p, c, kind, e, D, y0, y1, levels, mirror, W, close = 'open'){
   const pts = [[0, 0], [e, 0], ...endEdge(kind, e, D).slice(0, -1)].map(([x, z]) => [mirror ? W - x : x, z]);
   const body = frontMat(c.front, c.finish), t = CAB_T;
   slab(p, body, pts, y0, y0 + t); slab(p, body, pts, y1 - t, y1);
@@ -2266,8 +2372,23 @@ function endPiece(p, c, kind, e, D, y0, y1, levels, mirror, W){
   box(p, body, xa, xb, y0, y1, 0, t);
   if (kind === 'ang' && D - e > .05) box(p, body, mirror ? W - t : 0, mirror ? W : t, y0, y1, 0, D - e);
   const yy = [y0 + t, ...levels.map(y => y + t / 2)];
+  if (close === 'closed' || close === 'door') { endFace(p, c, kind, e, D, y0 + t, y1 - t, pts, close === 'door'); return pts; }
   yy.forEach((y, i) => { if (y < y1 - .22) { const r = rng(Math.round(e * 997) + i * 13 + (mirror ? 7 : 0)); if (r() < .7) cyl(p, r() < .5 ? M.pot : XM.ceramic, .04, .14 + r() * .1, (xa + xb) / 2 + (mirror ? .02 : -.02), y + .09, Math.min(D * .4, .14), {seg: 18}); } });
   return pts;
+}
+// closes a shaped end: front boards along the slant (one) or the curve (several narrow ones), flush with its outline; a door gets a handle
+function endFace(p, c, kind, e, D, ya, yb, pts, door){
+  const fm = frontMat(c.front, c.finish), edge = kind === 'rnd' ? [...pts.slice(2), pts[0]] : pts.slice(2, 4);
+  const cx = pts.reduce((a, q) => a + q[0], 0) / pts.length, cz = pts.reduce((a, q) => a + q[1], 0) / pts.length;
+  let longest = null;
+  for (let i = 0; i < edge.length - 1; i++) {
+    const [x0, z0] = edge[i], [x1, z1] = edge[i + 1], len = Math.hypot(x1 - x0, z1 - z0); if (len < .004) continue;
+    const ux = (x1 - x0) / len, uz = (z1 - z0) / len, mx = (x0 + x1) / 2, mz = (z0 + z1) / 2, out = (-uz) * (mx - cx) + ux * (mz - cz) > 0 ? 1 : -1;
+    const g = new THREE.Group(); g.position.set(mx, 0, mz); g.rotation.y = -Math.atan2(uz, ux) + (out < 0 ? Math.PI : 0); p.add(g);
+    box(g, fm, -len / 2 - .001, len / 2 + .001, ya, yb, -FT, 0, {tile: 1.1, cast: false});
+    if (!longest || len > longest.len) longest = {g, len};
+  }
+  if (door && longest) handle(longest.g, c.handle, 0, clamp(1.05, ya + .1, yb - .1), 0, true, yb - ya > 1.2 ? .3 : .16);
 }
 // one cell front of a custom cabinet; doors, flaps and drawers are hinged so they can open
 function cellFront(p, c, k, x0, x1, y0, y1, z, fid, ci, depth){
@@ -2330,15 +2451,19 @@ function cabBody(p, c, s){
     if (k === 'open' || k === 'glass') {
       if (cell.c) box(p, std('inner-' + cid, {color: col(frontColorCss(cid)).multiplyScalar(.75), roughness: .8}), ix0, ix1, iy0, iy1, .006, .009, {cast: false});
       if (iy1 - iy0 > .2 && ix1 - ix0 > .2) shelfDecorBooks(p, ix0, ix1, iy0, fz - .03, (s.seed || 1) * 37 + n * 11);
-      if (k === 'glass') box(p, body, ix0, ix1, (iy0 + iy1) / 2 - t / 2, (iy0 + iy1) / 2 + t / 2, .01, fz - .03);
       if (s.led) box(p, glow('cabled', '#FFE1B0', 2.5), ix0 + .02, ix1 - .02, iy1 - .008, iy1 - .002, .04, Math.min(.1, fz * .4), {cast: false, recv: false});
     }
+    // loose shelves, evenly spaced in the cell; books on each one in an open or glass cell
+    const ns = cellShelves(cell), sm = cell.sg ? std('shelfglass', {color: col('#CFE0E4'), roughness: .05, transparent: true, opacity: .4, depthWrite: false}) : body, st = cell.sg ? .008 : t;
+    for (let q = 1; q <= ns; q++) { const y = iy0 + (iy1 - iy0) * q / (ns + 1);
+      box(p, sm, ix0, ix1, y - st / 2, y + st / 2, .01, fz - .03, cell.sg ? {cast: false} : {});
+      if (cell.n !== undefined && (k === 'open' || k === 'glass') && (iy1 - iy0) / (ns + 1) > .2 && ix1 - ix0 > .2) shelfDecorBooks(p, ix0, ix1, y + st / 2, fz - .03, (s.seed || 1) * 37 + n * 11 + q * 5); }
     if (k !== 'open') cellFront(p, c, k, fx(j), fx(j + 1), fy(r + 1), fy(r), fz, cid, j, fz);
   });
   // shaped ends: open shelves that line up with the rows
   const levels = []; for (let r = 1; r < rows; r++) levels.push(rowY(r));
-  if (eL) endPiece(p, c, s.endL, eL, fz, p0, y1, levels, false, s.W);
-  if (eR) endPiece(p, c, s.endR, eR, fz, p0, y1, levels, true, s.W);
+  if (eL) endPiece(p, c, s.endL, eL, fz, p0, y1, levels, false, s.W, s.endC);
+  if (eR) endPiece(p, c, s.endR, eR, fz, p0, y1, levels, true, s.W, s.endC);
   if (topT) {
     const tm = s.top === 'stone' ? topMat(c.worktop) : s.top === 'wood' ? accentMat() : std('topglass', {color: col('#CFE0E4'), roughness: .04, transparent: true, opacity: .45, depthWrite: false});
     const m = slab(p, tm, outline(s.W, s.D + .01, s.endL, eL, s.endR, eR), y1, s.H, 1.6); if (m && s.top !== 'glass') m.userData.top = true;
@@ -2349,7 +2474,7 @@ function cabBody(p, c, s){
 function cabItem(g, c, it, i){
   const o = iopts(it), {cols, rows, cells, cf, rf} = cabGrid(it), W = it.w / 100, D = itemDepth(it) / 100;
   const p = new THREE.Group(); p.position.set(-W / 2, 0, -D / 2); g.add(p);
-  cabBody(p, c, {W, H: itemH(it) / 100, D, cols, rows, cells, cf, rf, base: o.base, endL: o.endL, endR: o.endR, ew: o.ew / 100, top: o.top, led: o.led, seed: i + 1});
+  cabBody(p, o.fs && o.fs !== 'flat' ? {...c, fstyle: o.fs} : c, {W, H: itemH(it) / 100, D, cols, rows, cells, cf, rf, base: o.base, endL: o.endL, endR: o.endR, ew: o.ew / 100, endC: o.endC, top: o.top, led: o.led, seed: i + 1});
 }
 // a counter you can sit at: cabinets face the kitchen side (back), stools on the front
 function barItem(g, c, it, i){
@@ -2387,7 +2512,7 @@ function panelItem(g, c, it){
 }
 // a wall unit placed freely: the same builders as on a wall, in a frame whose back is at -d/2
 function unitItem(g, c, it, i){
-  const T = UNIT[it.t], w = it.w / 100, d = (T.d || 4) / 100, H = cfg.height / 100, Ht = Math.min(H - .04, 2.3), o = optsOf(it), a = 0, b = w;
+  const T = UNIT[it.t], w = it.w / 100, d = (it.t === 'shelf' ? unitDepth(it) : T.d || 4) / 100, H = cfg.height / 100, Ht = Math.min(H - .04, 2.3), o = optsOf(it), a = 0, b = w;
   const p = new THREE.Group(); p.position.set(-w / 2, 0, -d / 2); g.add(p);
   if (T.counter) {
     if (it.t === 'washer') washerUnit(p, c, a, b); else baseModule(p, c, a, b, it.t, i, o);
@@ -2860,10 +2985,10 @@ function unitBox(m, Hc, Ht){
     case 'bgap': return [0, 86];
     case 'hood': { const h = hoodSpan(optsOf(m), Hc); return [h.y0, h.y1]; }
     case 'window': return [+o.y, Math.min(m.t && cfg.room === 'kitchen' ? 220 : 230, Hc - 25)];
-    case 'shelf': return [+o.y, +o.y + (+o.n - 1) * 38 + 4];
+    case 'shelf': { const S = shelfDims(o); return [o.s === 'bracket' ? S.y - 16 : S.y, S.y + (S.n - 1) * S.sp + (o.s === 'cube' ? S.ch : S.t + (o.s === 'ledge' ? 4 : 0))]; }
     case 'mcab': return [112, 182];
     case 'mirror': return [+o.y, +o.y + (+o.h)];
-    case 'clad': return [o.full ? 0 : 50, Hc];
+    case 'clad': return cladSpan(o, Hc);
     case 'tv': { const h = m.w * 9 / 16; return [+o.y - h / 2, +o.y + h / 2]; }
     case 'frame': return [+o.y - (+o.h) / 2, +o.y + (+o.h) / 2];
     case 'hooks': return [166, 176];
@@ -2932,10 +3057,20 @@ function unitShape(m, x0, x1, Y, Hc, Ht){
       if (t === 'tgap') rect(x0, y0, x1, y1, 'gap'); else if (t === 'topen') { rect(x0, y0, x1, y1, 'op'); if (y1 - y0 > 45) hl(x0, x1, (y0 + y1) / 2); }
       else if (t === 'tlift') { rect(x0, y0, x1, y1, 'f'); hh(cx, y0 + 5, Math.min(30, w * .5)); } else leaf(y0, y1, y0 + 6, w > 64 ? 2 : 1, Math.min(8, (y1 - y0) * .4));
       break; }
-    case 'shelf': { for (let i = 0; i < +o.n; i++) { const y = +o.y + i * 38; rect(x0, y, x1, y + 4, 'acc'); for (let k = 0; k < Math.floor((w - 10) / 9); k += 2) rect(x0 + 6 + k * 4.5, y + 4, x0 + 9 + k * 4.5, y + 20 + (k % 3) * 3, 'bk'); if (o.led) hl(x0 + 2, x1 - 2, y - 1.5, 'led'); } break; }
+    case 'shelf': { const S = shelfDims(o), cls = o.mat === 'glass' ? 'gl' : o.mat === 'front' ? 'f' : 'acc';
+      for (const r of shelfSpan(o, w)) { const a = x0 + r.a, bb = x0 + r.b, y = r.y;
+        if (o.s === 'cube') { rect(a, y, bb, y + S.ch, 'op'); hl(a, bb, y + 1.8); hl(a, bb, y + S.ch - 1.8); }
+        else { rect(a, y, bb, y + S.t, cls); if (o.s === 'ledge') rect(a, y + S.t, bb, y + S.t + 4, cls); if (o.s === 'bracket') { vl(a + 10, y - 16, y, 'hd'); vl(bb - 10, y - 16, y, 'hd'); } }
+        if (o.deco) for (let k = 0; k < Math.floor((bb - a - 10) / 9); k += 2) rect(a + 6 + k * 4.5, y + S.t, a + 9 + k * 4.5, y + S.t + Math.min(S.sp - 8, 16 + (k % 3) * 3), 'bk');
+        if (o.led) hl(a + 2, bb - 2, y - 1.5, 'led'); } break; }
     case 'mcab': { const n = w > 64 ? 2 : 1; rect(x0, 112, x1, 182, 'f'); for (let i = 0; i < n; i++) { const a = x0 + w * i / n, b = a + w / n; rect(a + 2, 114, b - 2, 180, 'mir'); } if (o.led) hl(x0 + 3, x1 - 3, 110.5, 'led'); break; }
     case 'mirror': rect(x0, +o.y, x1, +o.y + (+o.h), 'dk'); rect(x0 + 1.5, +o.y + 1.5, x1 - 1.5, +o.y + (+o.h) - 1.5, 'mir'); break;
-    case 'clad': { const y0 = o.full ? 0 : 50; rect(x0, y0, x1, Hc, o.s === 'slats' ? 'acc' : o.s === 'marble' ? 'mar' : o.s === 'stone' ? 'stn' : 'f'); if (o.s === 'slats') for (let x = x0 + 5.5; x < x1 - 1; x += 5.5) vl(x, y0, Hc, 'sl'); if (+o.tv) { const tw = Math.min(w - 10, (+o.tv) * 2.214), th = tw * 9 / 16, cy = Math.max(115, y0 + th / 2 + 30); rect(cx - tw / 2, cy - th / 2, cx + tw / 2, cy + th / 2, 'tvs'); } if (o.led) hl(x0 + 2, x1 - 2, Hc - 4, 'led'); break; }
+    case 'clad': { const [y0, y1] = cladSpan(o, Hc), cls = o.s === 'slats' || o.s === 'wood' ? 'acc' : o.s === 'marble' ? 'mar' : o.s === 'stone' ? 'stn' : 'f', top = x => cladTop(o, x0, x1, y0, y1, x);
+      if (o.sh === 'arch') { const rx = w / 2, ry = Math.min(rx, (y1 - y0) * .45); out.push(`<path d="M${x0} ${Y(y0)}H${x1}V${Y(y1 - ry)}A${rx} ${ry} 0 0 0 ${x0} ${Y(y1 - ry)}Z" class="${cls}"/>`); } else rect(x0, y0, x1, y1, cls);
+      if (o.s === 'slats' || o.s === 'fluted') { const pc = (CLAD_PITCH[o.pitch] || CLAD_PITCH.std)[0]; for (let x = x0 + pc; x < x1 - 1; x += pc) vl(x, y0, top(x), 'sl'); }
+      if (o.s === 'frames') { const n = Math.max(1, Math.round(w / 60)); for (let i = 0; i < n; i++) rect(x0 + w * i / n + 6, y0 + 6, x0 + w * (i + 1) / n - 6, Math.min(top(x0 + w * i / n + 6), top(x0 + w * (i + 1) / n - 6)) - 6, 'hl'); }
+      if (+o.tv) { const tw = Math.min(w - 10, (+o.tv) * 2.214), th = tw * 9 / 16, cy = m.o?.ty !== undefined ? +o.ty : Math.max(115, y0 + th / 2 + 30); rect(cx - tw / 2, cy - th / 2, cx + tw / 2, cy + th / 2, 'tvs'); }
+      if (o.led) hl(x0 + 2, x1 - 2, (o.sh === 'arch' ? top(cx) : y1) - 4, 'led'); break; }
     case 'tv': { const th = w * 9 / 16; rect(x0, +o.y - th / 2, x1, +o.y + th / 2, 'tvs'); break; }
     case 'frame': { const h = +o.h, y = +o.y; if (o.s === 'round') out.push(`<circle cx="${cx}" cy="${Y(y)}" r="${Math.min(w, h) / 2}" class="mir"/>`); else if (o.s === 'photo') { const n = Math.max(2, Math.round(w / 35)); for (let i = 0; i < n; i++) { const a = x0 + w * i / n + 3, b = x0 + w * (i + 1) / n - 3, hh2 = h * (i % 2 ? .75 : 1); rect(a, y - hh2 / 2, b, y + hh2 / 2, 'art'); } } else rect(x0, y - h / 2, x1, y + h / 2, 'art'); break; }
     case 'hooks': rect(x0, 166, x1, 176, 'acc'); for (let k = 0; k < Math.max(2, Math.floor(w / 15)); k++) out.push(`<circle cx="${x0 + (k + .5) * w / Math.max(2, Math.floor(w / 15))}" cy="${Y(170)}" r="1.6" class="hd"/>`); break;
@@ -3055,7 +3190,7 @@ function renderUnits(){
       <div class="ued-row"><span>العرض</span><span class="stepper"><button type="button" data-u="w-5" aria-label="أنقص 5 سم">−</button><input id="uw" type="number" min="${T.min}" max="${T.max}" value="${sm.w}" inputmode="numeric" aria-label="العرض بالسنتيمتر"><button type="button" data-u="w+5" aria-label="زد 5 سم">+</button></span><span class="hint">من ${T.min} إلى ${T.max} سم</span></div>
       ${T.opts ? `<div class="opts">${optControls(T.opts, optsOf(sm), 'uo')}</div>` : ''}${tallNote(sm)}
       ${UNIT[sm.t]?.gap || UNIT[sm.t]?.deco ? '' : cornersUI(sm.rc)}
-      <div class="ued-row"><button type="button" class="btn sm" data-u="right" ${sel.i >= L.length - 1 ? 'disabled' : ''}>${arrowR} لليمين</button><button type="button" class="btn sm" data-u="left" ${sel.i === 0 ? 'disabled' : ''}>لليسار ${arrowL}</button><button type="button" class="btn sm" data-u="dup">تكرار</button>${designLock && FREE_UNITS.includes(sm.t) ? `<button type="button" class="btn sm" data-u="ul" aria-pressed="${!!sm.ul}">${sm.ul ? 'تتحرك رغم القفل' : 'فك قفل هذه الوحدة'}</button>` : ''}${FREE_UNITS.includes(sm.t) ? '<button type="button" class="btn sm" data-u="free">تحريك حر</button>' : ''}<button type="button" class="btn sm danger" data-u="del">حذف</button></div>
+      <div class="ued-row"><button type="button" class="btn sm" data-u="right" ${sel.i >= L.length - 1 ? 'disabled' : ''}>${arrowR} لليمين</button><button type="button" class="btn sm" data-u="left" ${sel.i === 0 ? 'disabled' : ''}>لليسار ${arrowL}</button><button type="button" class="btn sm" data-u="dup">تكرار</button>${designLock && FREE_UNITS.includes(sm.t) ? `<button type="button" class="btn sm" data-u="ul" aria-pressed="${!!sm.ul}">${sm.ul ? 'تتحرك رغم القفل' : 'فك قفل هذه الوحدة'}</button>` : ''}${FREE_UNITS.includes(sm.t) ? '<button type="button" class="btn sm" data-u="free">تحريك حر</button>' : ''}${TO_CAB.includes(sm.t) ? '<button type="button" class="btn sm" data-u="cab" title="تصير خزانة مخصصة: نوع كل خانة ولونها والرفوف داخلها">تخصيص كامل</button>' : ''}<button type="button" class="btn sm danger" data-u="del">حذف</button></div>
       <div class="grp"><h3>تغيير النوع</h3><div class="ugrid sm">${palFor(r.id, sel.lvl).map(t => `<button type="button" data-type="${t}" aria-pressed="${t === sm.t}">${unitIcon(t)}<span>${UNIT[t].s}</span></button>`).join('')}</div></div></div>`;
   }
   const lvlSw = `<div class="choice" data-uv="lvl"><button type="button" data-v="b" aria-pressed="${view.lvl === 'b'}">على الأرض</button><button type="button" data-v="u" aria-pressed="${view.lvl === 'u'}">على الجدار</button>${palFor(r.id, 't').length ? `<button type="button" data-v="t" aria-pressed="${view.lvl === 't'}">فوق العلوية</button>` : ''}</div>`;
@@ -3087,9 +3222,12 @@ function customShape(it, x0, Y, yb = 0){
   cells.forEach((c, n) => {
     const r = Math.floor(n / cols), j = n % cols, a = fx(j), b = fx(j + 1), y0 = fy(r + 1), y1 = fy(r), w = b - a, cx = (a + b) / 2, hd = Math.min(20, w * .4);
     const hy = y1 < 105 ? y1 - 10 : y0 > 125 ? y0 + 10 : clamp(105, y0 + 10, y1 - 10), tint = fillOf(c.c || col0);
-    if (c.k === 'open') { rect(a, y0, b, y1, 'op'); return; }
+    const ns = cellShelves(c), shelves = cls => { for (let q = 1; q <= ns; q++) hl(a + 2, b - 2, y0 + (y1 - y0) * q / (ns + 1), cls); };
+    if (c.k === 'open') { rect(a, y0, b, y1, 'op'); shelves(c.sg ? 'hl' : 'ln'); return; }
     rect(a, y0, b, y1, 'f', tint);
-    if (c.k === 'glass') rect(a + 4, y0 + 4, b - 4, y1 - 4, 'gl');
+    if (c.k !== 'glass' && o.fs === 'shaker' && w > 16 && y1 - y0 > 16) rect(a + 6.5, y0 + 6.5, b - 6.5, y1 - 6.5, 'hl');
+    else if (c.k !== 'glass' && (o.fs === 'fluted' || o.fs === 'slats')) { const pc = o.fs === 'fluted' ? 2.2 : 4.5; for (let x = a + pc; x < b - 1; x += pc) vl(x, y0 + 1, y1 - 1, o.fs === 'slats' ? 'sl' : 'hl'); }
+    if (c.k === 'glass') { rect(a + 4, y0 + 4, b - 4, y1 - 4, 'gl'); if (c.n !== undefined) shelves('hl'); }
     if (c.k === 'drawer') hl(cx - hd / 2, cx + hd / 2, y1 - Math.min(7, (y1 - y0) / 3), 'hd');
     else if (c.k === 'flap') hl(cx - hd / 2, cx + hd / 2, y0 + Math.min(6, (y1 - y0) / 3), 'hd');
     else if (c.k === 'double') { vl(cx, y0, y1); vl(cx - 3, hy - 6, hy + 6, 'hd'); vl(cx + 3, hy - 6, hy + 6, 'hd'); }
@@ -3178,19 +3316,21 @@ function renderFree(){
         <div class="optseg"><span>المقابض</span><div class="choice" data-ihd><button type="button" data-v="" aria-pressed="${!o.hd}">حسب التصميم</button>${HANDLES.map(x => `<button type="button" data-v="${x.id}" aria-pressed="${o.hd === x.id}">${x.name}</button>`).join('')}</div></div>
         ${(isUnitItem(si) && (UNIT[si.t].counter || si.t === 'vanity')) || (si.t === 'cab' && iopts(si).top === 'stone') || (si.t === 'bar' && iopts(si).top !== 'wood') ? `<div class="optseg"><span>خامة السطح</span><div class="choice" data-iwt><button type="button" data-v="" aria-pressed="${!o.wt}">حسب التصميم</button>${TOPS.map(x => `<button type="button" data-v="${x.id}" aria-pressed="${o.wt === x.id}">${x.name}</button>`).join('')}</div></div>` : ''}</div>`}
       ${T.opts ? `<div class="sect"><h4>الشكل والخيارات</h4><div class="opts">${optControls(T.opts, iopts(si), 'io')}</div>${tallNote(si)}</div>` : ''}`;
+    if (si.t === 'cab' && itemH(si) <= 100) h += `<div class="sect"><h4>شكل جاهز <small>يبقى العرض والمكان واللون كما هي</small></h4><div class="ued-row spots">${TV_SHAPES.map(k => `<button type="button" class="btn sm" data-shape="${k}">${PIECES[k].n.replace(/^طاولة تلفزيون /, '')}</button>`).join('')}</div></div>`;
     if (si.t === 'cab') {
       const g = cabGrid(si), cs = g.cells[Math.min(cellSel, g.cells.length - 1)];
       h += `<div class="sect"><h4>الواجهة خانة خانة <small>اضغط خانة لتغييرها</small></h4>
         <div class="ued-row"><span class="lab">الأعمدة</span><span class="stepper"><button type="button" data-grid="cols-1" aria-label="أقل">−</button><input id="icols" type="number" min="1" max="10" value="${g.cols}"><button type="button" data-grid="cols+1" aria-label="أكثر">+</button></span><span class="lab">الصفوف</span><span class="stepper"><button type="button" data-grid="rows-1" aria-label="أقل">−</button><input id="irows" type="number" min="1" max="10" value="${g.rows}"><button type="button" data-grid="rows+1" aria-label="أكثر">+</button></span></div>
         <div class="elev">${cellMap(si)}</div>
         <div class="choice" data-cellk>${Object.entries(CELLS).map(([k, n]) => `<button type="button" data-k="${k}" aria-pressed="${cs.k === k}">${n}</button>`).join('')}</div>
+        ${SHELF_K.includes(cs.k) ? `<div class="ued-row"><span class="lab">رفوف داخل الخانة</span><span class="stepper"><button type="button" data-shelf="-1" aria-label="أقل">−</button><input id="ishn" type="number" min="0" max="8" value="${cellShelves(cs)}" inputmode="numeric"><button type="button" data-shelf="1" aria-label="أكثر">+</button></span><span class="choice" data-shelfm><button type="button" data-v="wood" aria-pressed="${!cs.sg}">خشب</button><button type="button" data-v="glass" aria-pressed="${!!cs.sg}">زجاج</button></span></div>` : ''}
         <div class="ued-row"><span class="lab">عرض العمود</span><span class="num"><input id="icw" type="number" value="${Math.round(cabSpans(si).bw * (g.cf[cellSel % g.cols + 1] - g.cf[cellSel % g.cols]))}"><span>سم</span></span><span class="lab">ارتفاع الصف</span><span class="num"><input id="irh" type="number" value="${Math.round(cabSpans(si).bh * (g.rf[Math.floor(cellSel / g.cols) + 1] - g.rf[Math.floor(cellSel / g.cols)]))}"><span>سم</span></span>${g.cw || g.rh ? '<button type="button" class="btn sm" data-even>تقسيم متساوٍ</button>' : ''}</div>
         ${colorRow('cellc', cs.c, 'ccolor', 'لون الخزانة')}
         <div class="ued-row"><button type="button" class="btn sm" data-cellall>طبّق هذه الخانة على كل الخانات</button></div></div>`;
     }
     h += `<div class="ued-row spots"><span class="hint">انقل إلى مكان فارغ على</span>${runsOf(cfg).map(r => `<button type="button" class="btn sm" data-it="spot:${r.id}">${r.name}</button>`).join('')}</div>`;
     h += cornersUI(si.rc);
-    h += `<div class="ued-row acts"><button type="button" class="btn sm" data-it="dup">نسخ</button>${si.t === 'cab' || si.t === 'bar' ? '<button type="button" class="btn sm" data-it="mirror">عكس يمين ويسار</button>' : ''}${si.t === 'cab' || si.t === 'bar' ? `<button type="button" class="btn sm" data-open>${openT ? 'أغلق الأبواب' : 'افتح الأبواب'}</button>` : ''}<button type="button" class="btn sm danger" data-it="del">حذف</button></div>
+    h += `<div class="ued-row acts"><button type="button" class="btn sm" data-it="dup">نسخ</button>${isUnitItem(si) && TO_CAB.includes(si.t) ? '<button type="button" class="btn sm" data-it="cab">تخصيص كامل</button>' : ''}${si.t === 'cab' || si.t === 'bar' ? '<button type="button" class="btn sm" data-it="mirror">عكس يمين ويسار</button>' : ''}${si.t === 'cab' || si.t === 'bar' ? `<button type="button" class="btn sm" data-open>${openT ? 'أغلق الأبواب' : 'افتح الأبواب'}</button>` : ''}<button type="button" class="btn sm danger" data-it="del">حذف</button></div>
       <p class="hint">من لوحة المفاتيح: الأسهم للتحريك سنتيمتراً (مع Shift عشرة)، Q و E للتدوير، PageUp و PageDown للرفع والإنزال، Ctrl+D للنسخ. اضغط Alt أثناء السحب لإلغاء الالتصاق.</p></div>`;
   }
   const issues = checkIssues(); lastIssues = issues;
@@ -3287,6 +3427,7 @@ function setUnitOpt(k, v){ editUnits(u => { const m = curUnit(u); if (!m) return
 function unitAction(act){
   if (!sel || sel.item !== undefined) return; const {run, lvl, i} = sel;
   if (act === 'free') { const k = detachUnit(sel); if (k >= 0) { select({item: k}, true); toast('صارت الوحدة قطعة حرة، اسحبها أينما شئت'); } return; }
+  if (act === 'cab') { const k = customizeUnit(sel); if (k >= 0) { select({item: k}, true); toast('صارت خزانة مخصصة: اضغط أي خانة لتغيير نوعها ولونها ورفوفها'); } return; }
   // a copy that does not fit on its wall goes to the end of the first other wall with room for it, at the same level
   if (act === 'dup') {
     const room = id => { const x = ctxFor(id); return availOf(x.r, x.talls, lvl, x.hoods) - sumW(x.U[lvl] || []); }, m0 = cfg.units[run]?.[lvl]?.[i];
@@ -3342,6 +3483,17 @@ const PIECES = {
   tvStone:  {n:'بسطح حجر', g:'tv', it:{t:'cab', w:200, h:50, d:45, o:{base:'plinth', cols:2, rows:1, cells:[{k:'doorL'}, {k:'doorR'}], top:'stone'}}},
   tvSlim:   {n:'ضيقة بعمق 30', g:'tv', it:{t:'cab', w:160, h:40, d:30, y:30, o:{base:'hang', cols:2, rows:1, cells:ROW('flap', 2), endL:'ang', endR:'ang', ew:25}}},
   tvWide:   {n:'كبيرة بأبواب', g:'tv', it:{t:'cab', w:260, h:60, d:45, o:{base:'legs', cols:4, rows:1, cells:[{k:'doorL'}, {k:'doorR'}, {k:'doorL'}, {k:'doorR'}], top:'wood'}}},
+  tvFluted: {n:'معلّقة بواجهات محفورة', g:'tv', it:{t:'cab', w:220, h:48, d:42, y:22, o:{base:'hang', cols:3, rows:1, cells:ROW('flap', 3), fs:'fluted', top:'wood', led:true}}},
+  tvShaker: {n:'كلاسيك بأبواب بإطار', g:'tv', it:{t:'cab', w:200, h:62, d:45, o:{base:'legs', cols:4, rows:1, cells:[{k:'doorL'}, {k:'doorR'}, {k:'doorL'}, {k:'doorR'}], fs:'shaker', top:'stone'}}},
+  tvSlats:  {n:'بشرائح خشب وطرفين مدوّرين', g:'tv', it:{t:'cab', w:240, h:46, d:42, y:22, o:{base:'hang', cols:3, rows:1, cells:[{k:'flap'}, {k:'open', n:1}, {k:'flap'}], fs:'slats', endL:'rnd', endR:'rnd', ew:30}}},
+  tvOpen:   {n:'رفوف مفتوحة بأرجل', g:'tv', it:{t:'cab', w:180, h:52, d:40, o:{base:'legs', cols:3, rows:1, cells:[{k:'open', n:1}, {k:'open', n:1}, {k:'open', n:1}], top:'wood'}}},
+  tvTwoRow: {n:'معلّقة بصفين: قلابات ورف', g:'tv', it:{t:'cab', w:220, h:58, d:40, y:20, o:{base:'hang', cols:3, rows:2, cells:[...ROW('flap', 3), ...ROW('open', 3)], rh:[1.5, 1], led:true}}},
+  tvMid:    {n:'جوارير في الوسط وأبواب على الطرفين', g:'tv', it:{t:'cab', w:220, h:55, d:45, o:{base:'plinth', cols:3, rows:1, cells:[{k:'doorL'}, {k:'drawer'}, {k:'doorR'}], cw:[1, 1.2, 1], top:'wood'}}},
+  tvGlassL: {n:'معلّقة بأبواب زجاج وإضاءة', g:'tv', it:{t:'cab', w:200, h:45, d:40, y:25, o:{base:'hang', cols:4, rows:1, cells:ROW('glass', 4), led:true}}},
+  tvLow:    {n:'منخفضة بفتحات على طولها', g:'tv', it:{t:'cab', w:280, h:32, d:40, o:{base:'plinth', cols:5, rows:1, cells:ROW('open', 5), top:'wood'}}},
+  tvHigh:   {n:'عالية بثلاث طبقات', g:'tv', it:{t:'cab', w:160, h:80, d:40, o:{base:'legs', cols:2, rows:3, cells:[...ROW('open', 2), ...ROW('flap', 2), ...ROW('drawer', 2)], top:'wood'}}},
+  tvAsym:   {n:'بطرف مدوّر من جهة واحدة', g:'tv', it:{t:'cab', w:200, h:48, d:42, o:{base:'plinth', cols:3, rows:1, cells:[{k:'open'}, {k:'flap'}, {k:'flap'}], endL:'rnd', ew:40, top:'wood'}}},
+  tvStoneF: {n:'معلّقة بسطح حجر وواجهات بإطار', g:'tv', it:{t:'cab', w:240, h:50, d:45, y:22, o:{base:'hang', cols:4, rows:1, cells:ROW('flap', 4), fs:'shaker', top:'stone', led:true}}},
 };
 const PAL_GROUPS = [
   ['custom', 'مخصّص وأشكال خاصة'],
@@ -3352,6 +3504,14 @@ const PAL_GROUPS = [
   ['wall', 'على الجدار', ['clad', 'tv', 'shelf', 'mcab', 'mirror', 'frame', 'hooks']],
   ['furn', 'أثاث', Object.keys(ITEM).filter(t => !ITEM[t].custom)],
 ];
+// ready shapes a low custom cabinet can take in place: every TV table but the corner one
+const TV_SHAPES = Object.keys(PIECES).filter(k => (PIECES[k].g === 'tv' || k === 'tvAng' || k === 'tvOne') && PIECES[k].it.t === 'cab');
+function applyShape(key){
+  const p = pieceOf(key); if (!p || p.t !== 'cab') return;
+  editItems(L => { const t = L[sel.item]; if (!t || t.t !== 'cab') return; const col = t.o?.col;
+    t.h = p.h; t.d = p.d; t.y = p.y || 0; t.o = {...p.o, ...(col ? {col} : {})}; if (p.rc) t.rc = p.rc; else delete t.rc; });
+  cellSel = 0; drawSel(); renderUnits(); toast(I18N.f('shapeSet', {n: PIECES[key].n}, ['n']));
+}
 function pieceOf(key){
   if (PIECES[key]) return JSON.parse(JSON.stringify(PIECES[key].it));
   const T = DEF(key); return T ? {t: key, w: T.w, x: 0, z: 0, r: 0} : null;
@@ -3431,6 +3591,7 @@ function nudge(k, v){
 function itemAction(act){
   if (!sel || sel.item === undefined) return; const i = sel.item, it0 = cfg.items[i]; if (!it0) return;
   if (act === 'close') { select(null); return; }
+  if (act === 'cab') { const k = customizeUnit({item: i}); if (k >= 0) { select({item: k}, true); toast('صارت خزانة مخصصة: اضغط أي خانة لتغيير نوعها ولونها ورفوفها'); } return; }
   if (act === 'ul') { const on = !it0.ul; editItems(L => { if (on) L[i].ul = true; else delete L[i].ul; }); syncQbar(); toast(on ? 'هذه القطعة تتحرك الآن رغم القفل' : 'هذه القطعة مقفلة مع التصميم'); return; }
   if (act === 'del') { editItems(L => { L.splice(i, 1); }); sel = null; drawSel(); renderUnits(); toast('حُذفت القطعة، ويمكنك التراجع'); return; }
   if (act === 'dup') {
@@ -3496,7 +3657,7 @@ function setGrid(k, v){
 }
 function setCell(field, v, all = false){
   editItems(L => { const it = L[sel.item]; if (!it || it.t !== 'cab') return; const g = cabGrid(it);
-    g.cells.forEach((c0, n) => { if (all || n === cellSel) { if (field === 'k') c0.k = v; else if (v) c0.c = v; else delete c0.c; } });
+    g.cells.forEach((c0, n) => { if (all || n === cellSel) { if (field === 'k') c0.k = v; else if (field === 'n') { if (v === undefined) delete c0.n; else c0.n = clamp(Math.round(+v || 0), 0, 8); } else if (field === 'sg') { if (v) c0.sg = true; else delete c0.sg; } else if (v) c0.c = v; else delete c0.c; } });
     it.o = {...(it.o || {}), cols: g.cols, rows: g.rows, cells: g.cells}; });
   drawSel(); renderUnits();
 }
@@ -3912,6 +4073,54 @@ function detachUnit(mod){
   sel = null; build(); renderSpace();
   return cfg.items.length - 1;
 }
+/* a storage unit as a custom cabinet of the same size, height and look: from then on every cell, its colour and the
+   shelves inside it can be changed, and columns and rows can be resized. Rows are listed top first. */
+const TO_CAB = ['bookcase', 'vitrine', 'wdoor', 'wdrawer', 'wopen', 'tvbase', 'sideboard', 'shoe', 'btall', 'door', 'drawers', 'bopen', 'udoor', 'glass', 'lift', 'uopen', 'tdoor', 'tlift', 'topen'];
+function unitAsCab(m, Hc){
+  const o = optsOf(m), w = m.w, [y0, y1] = unitBox(m, Hc, Math.min(Hc - 4, 230)), dbl = w > 60 ? 'double' : 'door', segs = k => Math.max(1, Math.round(w / k));
+  let base = y0 > 3 ? 'hang' : 'plinth', top = 'none', cols = 1, led = false, H = y1 - y0;
+  const rows = [];   // single column: [{h, k, n?}]
+  let grid = null;   // several columns: {rows, cells, rh}
+  switch (m.t) {
+    case 'bookcase': { const b = o.base ? 80 : 10, n = +o.n; for (let i = 0; i < n; i++) rows.push({h: (Hc - b) / n, k: 'open'}); if (o.base) rows.push({h: 70, k: dbl}); led = !!o.led; H = Hc; break; }
+    case 'vitrine': cols = w > 64 ? 2 : 1; grid = {rows: 2, cells: [...Array(cols).fill({k: 'glass', n: 3}), ...Array(cols).fill({k: 'door'})], rh: [H - 78, 68]}; led = !!o.led; break;
+    case 'wdoor': rows.push({h: H - 8, k: dbl}); break;
+    case 'wdrawer': rows.push({h: H - 80, k: dbl}, {h: 24, k: 'drawer'}, {h: 24, k: 'drawer'}, {h: 24, k: 'drawer'}); break;
+    case 'wopen': { const n = Math.max(2, Math.round((H - 8) / 38) - 1); for (let i = 0; i <= n; i++) rows.push({h: 1, k: 'open'}); break; }
+    case 'tvbase': { cols = segs(60); const mid = cols >= 3 ? Math.floor(cols / 2) : -1; top = 'wood'; if (o.f) { base = 'hang'; H = 45; } else H = 55;
+      grid = {rows: 1, cells: Array.from({length: cols}, (_, j) => ({k: o.s === 'open' || j === mid ? 'open' : o.s === 'flaps' ? 'flap' : 'drawer'}))}; break; }
+    case 'sideboard': { cols = Math.max(2, segs(50)); base = 'legs'; top = 'wood'; const mid = Math.floor(cols / 2);
+      grid = o.s === 'drawers' ? {rows: 3, cells: Array(cols * 3).fill({k: 'drawer'})} : {rows: 1, cells: Array.from({length: cols}, (_, j) => ({k: o.s === 'mixed' && j === mid ? 'drawer' : 'door'}))}; break; }
+    case 'shoe': { cols = segs(60); const n = +o.n === 3 ? 3 : 2; top = 'wood'; grid = {rows: n, cells: Array(cols * n).fill({k: 'flap'})}; break; }
+    case 'btall': rows.push({h: 1, k: 'door'}, {h: 1, k: 'door'}); break;
+    case 'door': top = 'stone'; rows.push({h: 1, k: dbl}); break;
+    case 'drawers': { top = 'stone'; for (let i = 0; i < +o.n; i++) rows.push({h: 1, k: 'drawer'}); break; }
+    case 'bopen': top = 'stone'; rows.push({h: 1, k: 'open', n: +o.n}); break;
+    case 'udoor': case 'tdoor': rows.push({h: 1, k: dbl}); break;
+    case 'glass': cols = w > 60 ? 2 : 1; grid = {rows: 1, cells: Array(cols).fill({k: 'glass'})}; break;
+    case 'lift': case 'tlift': rows.push({h: 1, k: 'flap'}); break;
+    case 'uopen': case 'topen': rows.push({h: 1, k: 'open'}); break;
+    default: return null;
+  }
+  if (!grid) grid = {rows: rows.length, cells: rows.map(r => ({k: r.k, ...(r.n !== undefined ? {n: r.n} : {})})), rh: rows.map(r => Math.round(r.h * 10) / 10)};
+  const L = CUST.cab, out = {t: 'cab', w, h: Math.round(clamp(H, L.h[0], L.h[1])), d: Math.round(clamp(unitDepth(m), L.d[0], L.d[1])), y: base === 'hang' ? Math.round(y0) : 0,
+    o: {base, top, cols, rows: grid.rows, cells: grid.cells.map(c => ({...c})), ...(grid.rh && grid.rows > 1 ? {rh: grid.rh} : {}), ...(led ? {led: true} : {})}};
+  // a wall cabinet in its own colour keeps it
+  if (UNIT[m.t].lvl !== 'b' && cfg.upperFront && cfg.upperFront !== 'same') out.o.col = cfg.upperFront;
+  if (m.o?.col) out.o.col = m.o.col;
+  return out;
+}
+// wall unit (sel has run, lvl, i) or free piece (sel has item) to custom cabinet, one undo step
+function customizeUnit(s0){
+  let k = s0.item;
+  if (k === undefined) { k = detachUnit(s0); if (k < 0) return -1; } else record();
+  const it = cfg.items[k], cab = it && TO_CAB.includes(it.t) && unitAsCab(it, cfg.height); if (!cab) return -1;
+  const L = JSON.parse(JSON.stringify(cfg.items));
+  L[k] = {...cab, x: it.x, z: it.z, r: it.r, y: cab.y + (it.y || 0), ...(it.sy ? {sy: it.sy} : {}), ...(it.ul ? {ul: true} : {}), ...(it.rc ? {rc: it.rc} : {})};
+  if (it.o?.col && !cab.o.col) L[k].o.col = it.o.col;
+  cfg = {...cfg, itemsAuto: false, items: sanitizeItems(L, cfg)}; cellSel = 0; sel = null; build(); renderSpace();
+  return k;
+}
 function startItemDrag(i, f){
   const it = cfg.items[i], g = itemGroup(i); if (!it || !g || !f) return null;
   world.traverse(o => { if (o.userData.freeTop?.includes(i)) o.visible = false; });
@@ -4068,7 +4277,7 @@ function frontHeight(m, c){
     case 'wdoor': case 'wmirror': case 'wdrawer': case 'wopen': return (H - 8) / 100;
     case 'bookcase': return H / 100;
     case 'vitrine': case 'coat': return Math.min(H - 4, 220) / 100;
-    case 'clad': return (H - (o.full ? 0 : 50)) / 100;
+    case 'clad': { const [y0, y1] = cladSpan(o, H); return (y1 - y0) / 100; }
     case 'mirror': return (+o.h) / 100;
     default: return 1;
   }
@@ -4112,7 +4321,8 @@ function estimate(){ return saleLines().sub - (+prices.install || 0); }
 
 /* ================= cut list (mm) ================= */
 const HW = {radius:'زاوية مدوّرة (CNC أو قالب)', hinge:'مفصلة', runner:'سكة جارور (زوج)', dbox:'جسم جارور', handle:'مقبض', leg:'رجل قابلة للتعديل', lift:'آلية باب قلاب', rod:'قضيب تعليق', pin:'حامل رف', gola:'بروفيل Gola (متر)',
-  bracket:'حامل تعليق للجدار', flap:'مسند باب قلاب', tilt:'مفصلة جزامة قلابة', led:'شريط LED (متر)', legMetal:'رجل معدنية', cushion:'وسادة منجّدة', floatbr:'حامل رف مخفي', hook:'شمّاعة', upholstery:'تنجيد (م²)', slats:'قاعدة سرير شرائح'};
+  bracket:'حامل تعليق للجدار', flap:'مسند باب قلاب', tilt:'مفصلة جزامة قلابة', led:'شريط LED (متر)', legMetal:'رجل معدنية', cushion:'وسادة منجّدة', floatbr:'حامل رف مخفي', hook:'شمّاعة', upholstery:'تنجيد (م²)', slats:'قاعدة سرير شرائح',
+  route:'حفر واجهات CNC (م²)', roundcut:'قص سطح دائري أو بيضاوي', pedestal:'قاعدة طاولة وسطية', sled:'إطار أرجل معدني', glassclip:'حامل رف زجاج', shelfbr:'حامل رف معدني (زاوية)', moulding:'كرنيش إطارات (متر)', archcut:'قص قوس للديكور (CNC أو قالب)', frontSlat:'شرائح خشب على الواجهات (م²)'};
 const APPL = {sink:'مجلى', hob:'هوب', oven:'فرن مدمج', dw:'جلاية مدمجة', fridge:'ثلاجة مدمجة', micro:'مايكرويف مدمج', hood:'شفاط', washer:'غسالة', dryer:'نشافة', fridgeFree:'ثلاجة مستقلة', basin:'حوض مغسلة', tv:'شاشة', idoor:'باب داخلي', chairs:'كراسي سفرة', stools:'كراسي بار'};
 const NOSHEET = ['glass', 'mirror', 'stone', 'worktop'];
 // workshop fabrication settings (thicknesses, gaps, sheet, saw), kept on this device
@@ -4221,13 +4431,24 @@ function cutList(c){
         case 'lift': carcass(code, W, 720, 350, {shelves: 1}); add(code, 'باب قلاب', W - GAP, 732, TF, 1, F(ufid), 2, 2); addHw('lift'); if (!gola) addHw('handle'); break;
         case 'uopen': carcass(code, W, 720, 350, {shelves: 1, mat: F(ufid)}); break;
         case 'mcab': carcass(code, W, 700, 130, {shelves: 2}); add(code, 'باب مرآة', W / n2 - GAP, 697, 4, n2, 'mirror'); addHw('hinge', 2 * n2); if (o.led) addHw('led', W / 1000); break;
-        case 'shelf': { const n = +o.n; add(code, 'رف عائم', W, 250, 38, n, 'accent', 2, 2); addHw('floatbr', n * Math.max(2, Math.ceil(W / 600))); if (o.led) addHw('led', n * W / 1000); break; }
+        case 'shelf': { const S = shelfDims(o), n = S.n, D = S.d * 10, mat = o.mat === 'front' ? F(fid) : 'accent', rows = shelfSpan(o, W), per = Math.max(2, Math.ceil(W / 600)), byLen = Object.entries(rows.reduce((m, r) => (m[r.b - r.a] = (m[r.b - r.a] || 0) + 1, m), {})).map(([L, q]) => [+L, q]);
+          if (o.s === 'cube') { const ch = S.ch * 10; for (const r of rows) { const L = r.b - r.a; add(code, 'قاعدة وسقف مكعب', L, D, T, 2, mat, 1, 0); add(code, 'جانب مكعب', ch - 2 * T, D, T, 2, mat, 1, 0); } addHw('bracket', 2 * n); }
+          else if (o.mat === 'glass') { for (const [L, q] of byLen) add(code, 'رف زجاج', L, D, 10, q, 'glass'); addHw(o.s === 'bracket' ? 'shelfbr' : 'glassclip', n * per); }
+          else { const th = S.t * 10 - 2; for (const [L, q] of byLen) add(code, 'رف عائم', L, D, th, q, mat, 2, 2);
+            if (o.s === 'ledge') add(code, 'حافة رف', W, 40, T, n, mat, 1, 0);
+            if (o.s === 'round') addHw('radius', 2 * n);
+            addHw(o.s === 'bracket' ? 'shelfbr' : 'floatbr', n * per); }
+          if (o.led) addHw('led', rows.reduce((a, r) => a + (r.b - r.a), 0) / 1000); break; }
         case 'mirror': add(code, 'مرآة', W, (+o.h) * 10, 4, 1, 'mirror'); break;
         case 'hooks': add(code, 'لوح العلاقة', W, 100, T, 1, 'accent', 2, 2); addHw('hook', Math.max(2, Math.floor(m.w / 15))); break;
-        case 'clad': { const h = H - (o.full ? 0 : 500);
-          if (o.s === 'slats') { add(code, 'لوح خلفي', W, h, 12, 1, 'panel'); add(code, 'شريحة', h, 32, T, Math.max(2, Math.floor(W / 55)), 'accent', 0, 2); }
+        case 'clad': { const [cy0, cy1] = cladSpan(o, H / 10), h = (cy1 - cy0) * 10, [pc, sw] = (CLAD_PITCH[o.pitch] || CLAD_PITCH.std).map(v => v * 10);
+          if (o.s === 'slats') { add(code, 'لوح خلفي', W, h, 12, 1, 'panel'); add(code, 'شريحة', h, sw, T, Math.max(2, Math.floor(W / pc)), 'accent', 0, 2); }
           else if (o.s === 'flat') add(code, 'لوح ديكور', W, h, T, 1, F(fid), 2, 2);
+          else if (o.s === 'wood') add(code, 'لوح ديكور خشب', W, h, T, 1, 'accent', 2, 2);
+          else if (o.s === 'fluted') { add(code, 'لوح ديكور محفور', W, h, T, 1, F(fid), 2, 2); addHw('route', W * h / 1e6); }
+          else if (o.s === 'frames') { add(code, 'لوح ديكور', W, h, T, 1, F(fid), 2, 2); const n = Math.max(1, Math.round(W / 600)), rows = h > 1600 ? 2 : 1; addHw('moulding', n * rows * 2 * ((W / n - 120) + (h / rows - 120)) / 1000); }
           else add(code, o.s === 'marble' ? 'لوح رخام' : 'لوح حجر', W, h, 20, 1, 'stone');
+          if (o.sh === 'arch') addHw('archcut', 1);
           if (o.led) addHw('led', W / 1000 + (+o.tv ? 2 * (+o.tv) * .0221 * (1 + 9 / 16) : 0));
           if (+o.tv) addAp('tv'); break; }
       }
@@ -4287,12 +4508,23 @@ function cutList(c){
           case 'flap': add(code, 'باب قلاب', cw - GAP, rh - GAP, TF, 1, F(cf), 2, 2); addHw('flap'); addHw('hinge', 2); if (!gola) addHw('handle'); break;
           case 'glass': add(code, 'باب إطار للزجاج', cw - GAP, rh - GAP, TF, 1, F(cf), 2, 2); add(code, 'زجاج باب', cw - 93, rh - 93, 4, 1, 'glass'); addHw('hinge', hingesFor(rh)); if (!gola) addHw('handle'); break;
           case 'panel': add(code, 'لوح ثابت', cw - GAP, rh - GAP, TF, 1, F(cf), 2, 2); break;
-        } });
-      for (const [k, e] of [[o.endL, eL], [o.endR, eR]]) if (e) { add(code, k === 'rnd' ? 'رف طرف مدوّر (قص منحني)' : 'رف طرف مائل (قص مائل)', e, cd, T, 1 + g.rows, F(f), 1, 0); add(code, 'ظهر الطرف', e, ch, T, 1, F(f), 1, 0); if (k === 'ang' && cd - e > 50) add(code, 'جانب الطرف', ch, cd - e, T, 1, F(f), 2, 1); }
+        }
+        // loose shelves of the cell: the cell's inside width less 2 mm to slide in, 20 mm back from the front edge, on four pins each
+        const ns = cellShelves(cell); if (ns) { const iw = Math.round((bw - 2 * T - (g.cols - 1) * T) * (g.cf[j + 1] - g.cf[j])) - 2;
+          if (cell.sg) add(code, 'رف زجاج', iw, cd - 20, 6, ns, 'glass'); else add(code, 'رف داخلي', iw, cd - 20, T, ns, F(f), 1, 0);
+          addHw('pin', 4 * ns); } });
+      for (const [k, e] of [[o.endL, eL], [o.endR, eR]]) if (e) { add(code, k === 'rnd' ? 'رف طرف مدوّر (قص منحني)' : 'رف طرف مائل (قص مائل)', e, cd, T, 1 + g.rows, F(f), 1, 0); add(code, 'ظهر الطرف', e, ch, T, 1, F(f), 1, 0); if (k === 'ang' && cd - e > 50) add(code, 'جانب الطرف', ch, cd - e, T, 1, F(f), 2, 1);
+        // a closed end: one board on the slant (edges cut at 45°), or a bent front on the curve
+        if (o.endC === 'closed' || o.endC === 'door') { const sl = k === 'rnd' ? Math.round(Math.PI * (e + cd) / 4) : Math.round(Math.hypot(e, Math.min(e, cd - 20)));
+          add(code, o.endC === 'door' ? (k === 'rnd' ? 'باب طرف منحني' : 'باب طرف مائل') : (k === 'rnd' ? 'واجهة طرف منحنية (خشب مرن أو CNC)' : 'واجهة طرف مائلة (حافتان بزاوية)'), sl, ch - 2 * T, TF, 1, F(f), 2, 2);
+          if (o.endC === 'door') { addHw('hinge', hingesFor(ch)); if (!gola) addHw('handle'); } } }
       if (o.base === 'plinth') { add(code, 'وزرة', W, 100, T, 1, F(f), 1, 0); addHw('leg', 4 + (eL ? 1 : 0) + (eR ? 1 : 0)); }
       else if (o.base === 'legs') addHw('legMetal', 4 + 2 * Math.floor(bw / 800) + (eL ? 2 : 0) + (eR ? 2 : 0)); else if (o.base === 'hang') addHw('bracket', 2 + Math.floor(W / 600));
       if (o.top === 'wood') add(code, 'سطح', W + 10, D + 10, 25, 1, 'accent', 2, 2); else if (o.top === 'glass') add(code, 'سطح زجاج', W, D + 10, 12, 1, 'glass');
       if (o.led) addHw('led', W / 1000);
+      // shaped fronts are cut at the same sizes; routing or glued slats come on top
+      if (o.fs === 'shaker' || o.fs === 'fluted' || o.fs === 'slats') { const fa = g.cells.reduce((a, cell, n) => { if (cell.k === 'open' || cell.k === 'glass') return a; const j = n % g.cols, r = Math.floor(n / g.cols); return a + bw * (g.cf[j + 1] - g.cf[j]) * ch * (g.rf[r + 1] - g.rf[r]); }, 0) / 1e6;
+        if (fa) addHw(o.fs === 'slats' ? 'frontSlat' : 'route', fa); }
       return;
     }
     if (it.t === 'bar') {
@@ -4324,7 +4556,13 @@ function cutList(c){
       case 'dresser': units++; carcass(code, W, 640, 430, {}); for (let k = 0; k < 4; k++) drawer(code, W / 2, 320, fid); add(code, 'سطح', W + 10, 460, 25, 1, 'accent', 2, 2); add(code, 'مرآة', Math.min(W * .7, 800), 880, 4, 1, 'mirror'); addHw('legMetal', 4); break;
       case 'commode': { units++; const cols = W > 900 ? 2 : 1; carcass(code, W, 740, 480, {}); for (let k = 0; k < cols * 4; k++) drawer(code, W / cols, 185, fid); add(code, 'سطح', W + 10, 510, 25, 1, 'accent', 2, 2); addHw('legMetal', 4); break; }
       case 'dtable': units++; add(code, 'سطح الطاولة', W, 1000, 36, 1, 'accent', 2, 2); if (o.s === 'oval') add(code, 'رجل', 720, 120, 36, 2, 'accent', 2, 2); else add(code, 'رجل', 724, 80, 80, 4, 'accent', 2, 2); if (o.ch) addAp('chairs', 2 * Math.max(1, Math.floor(W / 620)) + (W >= 1800 ? 2 : 0)); break;
-      case 'ctable': units++; add(code, 'سطح', W, 600, 30, 1, 'accent', 2, 2); add(code, 'رف سفلي', W - 60, 540, T, 1, 'accent', 2, 2); addHw('legMetal', 4); break;
+      case 'ctable': { units++; const {o: q, d: Dc, h: Hh} = ctDims(it), D = Dc * 10, H = Hh * 10, tm = q.top === 'marble' ? 'stone' : q.top === 'glass' ? 'glass' : q.top === 'color' ? F(f) : 'accent', tth = q.top === 'glass' ? 12 : q.top === 'marble' ? 20 : 30;
+        const tops = q.s === 'nest' ? [[W * .6, W * .6, H], [W * .4, W * .4, H * .85]] : [[W, D, H]], rnd = q.s === 'round' || q.s === 'oval' || q.s === 'nest';
+        for (const [a, b, hh] of tops) { add(code, q.s === 'oval' ? 'سطح بيضاوي' : rnd ? 'سطح دائري' : 'سطح', a, b, tth, 1, tm, rnd ? 0 : 2, rnd ? 0 : 2); if (rnd) addHw('roundcut', 1);
+          if (q.shelf && q.leg !== 'pedestal' && hh > 220) add(code, rnd ? 'رف سفلي دائري' : 'رف سفلي', a - (rnd ? 80 : 60), b - (rnd ? 80 : 60), T, 1, 'accent', rnd ? 0 : 2, rnd ? 0 : 2);
+          if (q.leg === 'pedestal') addHw('pedestal', 1); else if (q.leg === 'sled' && !rnd) addHw('sled', 2);
+          else if (q.leg === 'solid' && !rnd) add(code, 'جانب مصمت', hh - tth, b - 40, T, 2, q.top === 'color' ? F(f) : 'accent', 1, 0);
+          else if (q.leg === 'wood') add(code, 'رجل خشب', hh - tth, 45, 45, 4, 'accent', 0, 0); else addHw('legMetal', 4); } break; }
     }
   });
   if (gola && golaM) hw.gola = Math.round(golaM / 100) / 10;
@@ -4737,8 +4975,11 @@ document.addEventListener('click', e => {
   const al = e.target.closest('[data-al]'); if (al) { alignItem(al.dataset.al); return; }
   const gr = e.target.closest('[data-grid]'); if (gr) { const [k, v] = [gr.dataset.grid.slice(0, 4), +gr.dataset.grid.slice(4)], g = cabGrid(curItem()); setGrid(k, g[k] + v); return; }
   const ce = e.target.closest('[data-cell]'); if (ce) { cellSel = +ce.dataset.cell; renderFree(); return; }
+  const shp = e.target.closest('[data-shape]'); if (shp) { applyShape(shp.dataset.shape); return; }
   const ck = e.target.closest('[data-cellk] [data-k]'); if (ck) { setCell('k', ck.dataset.k); return; }
-  if (e.target.closest('[data-cellall]')) { const it = curItem(), cs = it && cabGrid(it).cells[cellSel]; if (cs) { setCell('k', cs.k, true); setCell('c', cs.c || '', true); } return; }
+  if (e.target.closest('[data-cellall]')) { const it = curItem(), cs = it && cabGrid(it).cells[cellSel]; if (cs) { setCell('k', cs.k, true); setCell('c', cs.c || '', true); setCell('n', cs.n, true); setCell('sg', !!cs.sg, true); } return; }
+  const shb = e.target.closest('[data-shelf]'); if (shb) { const it = curItem(), cs = it && cabGrid(it).cells[cellSel]; if (cs) setCell('n', cellShelves(cs) + +shb.dataset.shelf); return; }
+  const shm = e.target.closest('[data-shelfm] [data-v]'); if (shm) { setCell('sg', shm.dataset.v === 'glass'); return; }
   const cc = e.target.closest('[data-cellc] [data-c]'); if (cc) { setCell('c', cc.dataset.c); return; }
   const ic = e.target.closest('[data-icol] [data-c]'); if (ic) { setItemColor(ic.dataset.c); return; }
   const fi = e.target.closest('[data-ifin] [data-f]'); if (fi) { setItemFinish(fi.dataset.f); return; }
@@ -4784,6 +5025,7 @@ document.addEventListener('change', e => {
   if (t.id === 'irows') setGrid('rows', Math.round(+t.value) || 1);
   if (t.id === 'icolor') setItemColor(t.value);
   if (t.id === 'icw') setSpan('col', +t.value);
+  if (t.id === 'ishn') setCell('n', +t.value);
   if (t.id === 'irh') setSpan('row', +t.value);
   if (t.id === 'ccolor') setCell('c', t.value);
 });

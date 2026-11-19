@@ -587,5 +587,345 @@ globalThis.I18N?.extend?.({
 "فتحة في أرضية الخزانة وظهرها لأنبوب الشفاط، حسب دليل الجهاز": [
 "Ouverture dans le fond et le dos du caisson pour le conduit de la hotte, selon la notice de l'appareil",
 "Davlumbaz borusu için dolabın tabanında ve arkasında açıklık, cihaz kılavuzuna göre"
+],
+"تخصيص كامل": [
+"Personnaliser entièrement",
+"Tamamen özelleştir"
+],
+"تصير خزانة مخصصة: نوع كل خانة ولونها والرفوف داخلها": [
+"Devient un meuble sur mesure : type et couleur de chaque case, étagères à l'intérieur",
+"Özel dolaba dönüşür: her bölmenin türü, rengi ve içindeki raflar"
+],
+"رفوف داخل الخانة": [
+"Étagères dans la case",
+"Bölmedeki raflar"
+],
+"صارت خزانة مخصصة: اضغط أي خانة لتغيير نوعها ولونها ورفوفها": [
+"C'est maintenant un meuble sur mesure : touchez une case pour changer son type, sa couleur et ses étagères",
+"Artık özel bir dolap: türünü, rengini ve raflarını değiştirmek için bir bölmeye dokunun"
+],
+"رف داخلي": [
+"Étagère intérieure",
+"İç raf"
+],
+"خشب أملس": [
+"Bois lisse",
+"Düz ahşap"
+],
+"محفور طولياً": [
+"Cannelé",
+"Dikey oluklu"
+],
+"ألواح بإطارات": [
+"Panneaux à moulures",
+"Çıtalı paneller"
+],
+"عرض الشرائح": [
+"Largeur des lames",
+"Çıta genişliği"
+],
+"رفيعة": [
+"Fines",
+"İnce"
+],
+"عريضة": [
+"Larges",
+"Geniş"
+],
+"الشكل من فوق": [
+"Forme du haut",
+"Üst biçimi"
+],
+"يبدأ من ارتفاع": [
+"Commence à",
+"Başlangıç yüksekliği"
+],
+"منتصف الشاشة من الأرض": [
+"Centre de l'écran depuis le sol",
+"Ekran ortasının yerden yüksekliği"
+],
+"شكل الواجهات": [
+"Style des façades",
+"Kapak stili"
+],
+"ملساء": [
+"Lisses",
+"Düz"
+],
+"بإطار": [
+"À cadre",
+"Çerçeveli"
+],
+"محفورة طولياً": [
+"Cannelées",
+"Dikey oluklu"
+],
+"شكل جاهز": [
+"Forme prête",
+"Hazır biçim"
+],
+"يبقى العرض والمكان واللون كما هي": [
+"La largeur, la place et la couleur restent",
+"Genişlik, yer ve renk aynı kalır"
+],
+"معلّقة بواجهات محفورة": [
+"Suspendu, façades cannelées",
+"Asma, oluklu kapaklı"
+],
+"كلاسيك بأبواب بإطار": [
+"Classique, portes à cadre",
+"Klasik, çerçeveli kapaklı"
+],
+"بشرائح خشب وطرفين مدوّرين": [
+"Lames de bois, deux bouts arrondis",
+"Ahşap çıtalı, iki ucu yuvarlak"
+],
+"رفوف مفتوحة بأرجل": [
+"Étagères ouvertes sur pieds",
+"Ayaklı açık raflar"
+],
+"معلّقة بصفين: قلابات ورف": [
+"Suspendu sur deux rangs : abattants et étagère",
+"Asma, iki sıra: kapaklar ve raf"
+],
+"جوارير في الوسط وأبواب على الطرفين": [
+"Tiroirs au centre, portes aux côtés",
+"Ortada çekmeceler, yanlarda kapaklar"
+],
+"معلّقة بأبواب زجاج وإضاءة": [
+"Suspendu, portes vitrées éclairées",
+"Asma, aydınlatmalı cam kapaklı"
+],
+"منخفضة بفتحات على طولها": [
+"Bas, niches sur toute la longueur",
+"Alçak, boydan boya nişli"
+],
+"عالية بثلاث طبقات": [
+"Haut, trois niveaux",
+"Yüksek, üç katlı"
+],
+"بطرف مدوّر من جهة واحدة": [
+"Un bout arrondi",
+"Tek ucu yuvarlak"
+],
+"معلّقة بسطح حجر وواجهات بإطار": [
+"Suspendu, dessus pierre, façades à cadre",
+"Asma, taş tezgâhlı, çerçeveli kapaklı"
+],
+"حفر واجهات CNC (م²)": [
+"Usinage CNC des façades (m²)",
+"Kapak CNC işleme (m²)"
+],
+"كرنيش إطارات (متر)": [
+"Moulures (m)",
+"Çerçeve çıtası (metre)"
+],
+"قص قوس للديكور (CNC أو قالب)": [
+"Découpe en arc du décor (CNC ou gabarit)",
+"Dekor kemer kesimi (CNC veya şablon)"
+],
+"شرائح خشب على الواجهات (م²)": [
+"Lames de bois sur façades (m²)",
+"Kapak üstü ahşap çıta (m²)"
+],
+"لوح ديكور خشب": [
+"Panneau décor bois",
+"Ahşap dekor paneli"
+],
+"لوح ديكور محفور": [
+"Panneau décor cannelé",
+"Oluklu dekor paneli"
+],
+"حفر واجهات": [
+"Usinage des façades",
+"Kapak işleme"
+],
+"قص قوس للديكور": [
+"Découpe en arc du décor",
+"Dekor kemer kesimi"
+],
+"بأطراف مدوّرة": [
+"Bouts arrondis",
+"Yuvarlak uçlu"
+],
+"بحافة أمامية": [
+"Avec rebord",
+"Ön kenarlı"
+],
+"على حوامل معدنية": [
+"Sur équerres métal",
+"Metal konsollu"
+],
+"متدرجة يمين ويسار": [
+"Décalées gauche et droite",
+"Sağa sola kaydırmalı"
+],
+"مكعبات مفتوحة": [
+"Cubes ouverts",
+"Açık küpler"
+],
+"مستقيمة": [
+"Droites",
+"Düz"
+],
+"المسافة بين الرفوف": [
+"Espace entre étagères",
+"Raflar arası mesafe"
+],
+"كتب وديكور": [
+"Livres et déco",
+"Kitap ve dekor"
+],
+"حامل رف معدني (زاوية)": [
+"Équerre métal d'étagère",
+"Metal raf konsolu (köşebent)"
+],
+"حامل رف زجاج": [
+"Support d'étagère en verre",
+"Cam raf tutucu"
+],
+"قاعدة وسقف مكعب": [
+"Fond et dessus de cube",
+"Küp alt ve üst"
+],
+"جانب مكعب": [
+"Côté de cube",
+"Küp yanı"
+],
+"حافة رف": [
+"Rebord d'étagère",
+"Raf kenarı"
+],
+"مستطيلة": [
+"Rectangulaire",
+"Dikdörtgen"
+],
+"مربعة": [
+"Carrée",
+"Kare"
+],
+"دائرية": [
+"Ronde",
+"Yuvarlak"
+],
+"بيضاوية": [
+"Ovale",
+"Oval"
+],
+"طاولتان متداخلتان": [
+"Deux tables gigognes",
+"İki zigon sehpa"
+],
+"باللون المختار": [
+"Couleur choisie",
+"Seçilen renk"
+],
+"الأرجل": [
+"Pieds",
+"Ayaklar"
+],
+"معدن رفيع": [
+"Métal fin",
+"İnce metal"
+],
+"قاعدة في الوسط": [
+"Pied central",
+"Orta ayak"
+],
+"إطار معدني": [
+"Piètement luge",
+"Metal çerçeve"
+],
+"جانبان مصمتان": [
+"Deux flancs pleins",
+"İki dolu yan"
+],
+"رف سفلي": [
+"Étagère basse",
+"Alt raf"
+],
+"فوق الطاولة": [
+"Sur la table",
+"Sehpanın üstü"
+],
+"كتب ومزهرية": [
+"Livres et vase",
+"Kitap ve vazo"
+],
+"صينية وشموع": [
+"Plateau et bougies",
+"Tepsi ve mumlar"
+],
+"نبتة صغيرة": [
+"Petite plante",
+"Küçük bitki"
+],
+"بلا شيء": [
+"Rien",
+"Hiçbir şey"
+],
+"سطح دائري": [
+"Plateau rond",
+"Yuvarlak tabla"
+],
+"رف سفلي دائري": [
+"Étagère basse ronde",
+"Yuvarlak alt raf"
+],
+"جانب مصمت": [
+"Flanc plein",
+"Dolu yan"
+],
+"رجل خشب": [
+"Pied en bois",
+"Ahşap ayak"
+],
+"قص سطح دائري أو بيضاوي": [
+"Découpe ronde ou ovale du plateau",
+"Yuvarlak veya oval tabla kesimi"
+],
+"قاعدة طاولة وسطية": [
+"Pied central de table",
+"Sehpa orta ayağı"
+],
+"إطار أرجل معدني": [
+"Piètement métal",
+"Metal ayak çerçevesi"
+],
+"سطح بيضاوي": [
+"Plateau ovale",
+"Oval tabla"
+],
+"واجهة الطرف المائل أو المدوّر": [
+"Façade du bout biais ou arrondi",
+"Eğik veya yuvarlak ucun önü"
+],
+"مسكّرة بلوح": [
+"Fermée par un panneau",
+"Panelle kapalı"
+],
+"واجهة طرف منحنية (خشب مرن أو": [
+"Façade de bout cintrée (bois flexible ou",
+"Kavisli uç önü (esnek ahşap veya"
+],
+"واجهة طرف مائلة (حافتان بزاوية)": [
+"Façade de bout biaise (deux chants en angle)",
+"Eğik uç önü (iki kenar açılı)"
+],
+"واجهة طرف منحنية (خشب مرن أو CNC)": [
+"Façade de bout cintrée (bois flexible ou CNC)",
+"Kavisli uç önü (esnek ahşap veya CNC)"
+],
+"باب طرف مائل": [
+"Porte de bout biaise",
+"Eğik uç kapağı"
+],
+"باب طرف منحني": [
+"Porte de bout cintrée",
+"Kavisli uç kapağı"
+],
+"بباب": [
+"Avec porte",
+"Kapaklı"
 ]
 });

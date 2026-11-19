@@ -132,6 +132,7 @@
     imported: {ar: 'استُورد {n} مشروع', fr: '{n} projet(s) importé(s)', tr: '{n} proje içe aktarıldı'},
     importedFail: {ar: 'استُورد {n} مشروع، وتعذّر {f}', fr: '{n} projet(s) importé(s), {f} en échec', tr: '{n} proje içe aktarıldı, {f} başarısız'},
     variantMade: {ar: 'أُنشئت النسخة البديلة {v} لـ {n}', fr: 'Variante {v} créée pour {n}', tr: '{n} için {v} alternatifi oluşturuldu'},
+    shapeSet: {ar: 'صار الشكل: {n}', fr: 'Nouvelle forme : {n}', tr: 'Yeni biçim: {n}'},
   };
   function f(key, vars = {}, raw = []) {
     const T = TPL[key]; if (!T) return key;
