@@ -927,5 +927,29 @@ globalThis.I18N?.extend?.({
 "بباب": [
 "Avec porte",
 "Kapaklı"
+],
+"لوح إغلاق زاوية مائلة": [
+"Panneau de fermeture d'angle biais",
+"Eğik köşe kapama paneli"
+],
+"لوح إغلاق زاوية مدوّرة (خشب مرن)": [
+"Panneau de fermeture d'angle arrondi (bois cintrable)",
+"Yuvarlak köşe kapama paneli (esnek ahşap)"
+],
+"اللون وكل التفاصيل": [
+"Couleur et tous les détails",
+"Renk ve tüm ayrıntılar"
+],
+"تخصيص كامل: الخانات والرفوف والأبواب": [
+"Personnaliser entièrement : cases, étagères et portes",
+"Tamamen özelleştir: bölmeler, raflar ve kapaklar"
+],
+"اختيار لون أو «تخصيص كامل» يجعل الوحدة خزانة مخصصة في مكانها نفسه، فتعدّل لون كل خانة ونوعها والرفوف داخلها وعرض الأعمدة وارتفاع الصفوف": [
+"Choisir une couleur ou « Personnaliser entièrement » en fait un meuble sur mesure à la même place : couleur et type de chaque case, étagères à l'intérieur, largeur des colonnes et hauteur des rangs",
+"Bir renk seçmek veya «Tamamen özelleştir» modülü aynı yerde özel dolaba çevirir: her bölmenin rengi ve türü, içindeki raflar, sütun genişliği ve sıra yüksekliği"
+],
+"صارت خزانة مخصصة بهذا اللون: اضغط أي خانة لتغيير نوعها ولونها ورفوفها": [
+"Meuble sur mesure dans cette couleur : touchez une case pour changer son type, sa couleur et ses étagères",
+"Bu renkte özel dolap oldu: türünü, rengini ve raflarını değiştirmek için bir bölmeye dokunun"
 ]
 });
