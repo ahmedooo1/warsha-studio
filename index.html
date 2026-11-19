@@ -3187,10 +3187,13 @@ function renderUnits(){
   if (sm) {
     const T = UNIT[sm.t], L = U[sel.lvl];
     h += `<div class="ued" id="unitEditor"><div class="ued-h"><b>${T.n}</b><span>${sm.w} سم</span></div>
+      ${TO_CAB.includes(sm.t) ? `<div class="sect ucz"><h4>اللون وكل التفاصيل</h4>${colorRow('ucol', '', 'ucolor')}
+        <div class="ued-row"><button type="button" class="btn sm primary" data-u="cab" title="تصير خزانة مخصصة: نوع كل خانة ولونها والرفوف داخلها">تخصيص كامل: الخانات والرفوف والأبواب</button></div>
+        <p class="hint">اختيار لون أو «تخصيص كامل» يجعل الوحدة خزانة مخصصة في مكانها نفسه، فتعدّل لون كل خانة ونوعها والرفوف داخلها وعرض الأعمدة وارتفاع الصفوف.</p></div>` : ''}
       <div class="ued-row"><span>العرض</span><span class="stepper"><button type="button" data-u="w-5" aria-label="أنقص 5 سم">−</button><input id="uw" type="number" min="${T.min}" max="${T.max}" value="${sm.w}" inputmode="numeric" aria-label="العرض بالسنتيمتر"><button type="button" data-u="w+5" aria-label="زد 5 سم">+</button></span><span class="hint">من ${T.min} إلى ${T.max} سم</span></div>
       ${T.opts ? `<div class="opts">${optControls(T.opts, optsOf(sm), 'uo')}</div>` : ''}${tallNote(sm)}
       ${UNIT[sm.t]?.gap || UNIT[sm.t]?.deco ? '' : cornersUI(sm.rc)}
-      <div class="ued-row"><button type="button" class="btn sm" data-u="right" ${sel.i >= L.length - 1 ? 'disabled' : ''}>${arrowR} لليمين</button><button type="button" class="btn sm" data-u="left" ${sel.i === 0 ? 'disabled' : ''}>لليسار ${arrowL}</button><button type="button" class="btn sm" data-u="dup">تكرار</button>${designLock && FREE_UNITS.includes(sm.t) ? `<button type="button" class="btn sm" data-u="ul" aria-pressed="${!!sm.ul}">${sm.ul ? 'تتحرك رغم القفل' : 'فك قفل هذه الوحدة'}</button>` : ''}${FREE_UNITS.includes(sm.t) ? '<button type="button" class="btn sm" data-u="free">تحريك حر</button>' : ''}${TO_CAB.includes(sm.t) ? '<button type="button" class="btn sm" data-u="cab" title="تصير خزانة مخصصة: نوع كل خانة ولونها والرفوف داخلها">تخصيص كامل</button>' : ''}<button type="button" class="btn sm danger" data-u="del">حذف</button></div>
+      <div class="ued-row"><button type="button" class="btn sm" data-u="right" ${sel.i >= L.length - 1 ? 'disabled' : ''}>${arrowR} لليمين</button><button type="button" class="btn sm" data-u="left" ${sel.i === 0 ? 'disabled' : ''}>لليسار ${arrowL}</button><button type="button" class="btn sm" data-u="dup">تكرار</button>${designLock && FREE_UNITS.includes(sm.t) ? `<button type="button" class="btn sm" data-u="ul" aria-pressed="${!!sm.ul}">${sm.ul ? 'تتحرك رغم القفل' : 'فك قفل هذه الوحدة'}</button>` : ''}${FREE_UNITS.includes(sm.t) ? '<button type="button" class="btn sm" data-u="free">تحريك حر</button>' : ''}<button type="button" class="btn sm danger" data-u="del">حذف</button></div>
       <div class="grp"><h3>تغيير النوع</h3><div class="ugrid sm">${palFor(r.id, sel.lvl).map(t => `<button type="button" data-type="${t}" aria-pressed="${t === sm.t}">${unitIcon(t)}<span>${UNIT[t].s}</span></button>`).join('')}</div></div></div>`;
   }
   const lvlSw = `<div class="choice" data-uv="lvl"><button type="button" data-v="b" aria-pressed="${view.lvl === 'b'}">على الأرض</button><button type="button" data-v="u" aria-pressed="${view.lvl === 'u'}">على الجدار</button>${palFor(r.id, 't').length ? `<button type="button" data-v="t" aria-pressed="${view.lvl === 't'}">فوق العلوية</button>` : ''}</div>`;
@@ -3963,6 +3966,21 @@ function shapeCorners(root, rc, span = null){
     g.applyMatrix4(T.clone().invert());
     m.geometry.dispose(); m.geometry = g; rcStats.cut++;
   }
+  // corners from above: the cut leaves the inside open, so a board closes it along the arc (several narrow strips,
+  // a bent board in the workshop) or the slant (one board), from the bottom to the top of the carcass sides
+  if (F) {
+    let side = null; for (const x of info) { if (hidden.has(x.m) || Array.isArray(x.m.material) || x.m.material?.userData?.decor) continue; const b = x.b, dx = b.max.x - b.min.x, dy = b.max.y - b.min.y, dz = b.max.z - b.min.z;
+      if (dx < .03 && dy > .1 && dz > .1 && (!side || dy * dz > side.a)) side = {a: dy * dz, m: x.m, y0: b.min.y, y1: b.max.y}; }
+    if (side) {
+      const t = .018, C = {bl: [H.min.x + rp, H.min.z + rp, 180], br: [H.max.x - rp, H.min.z + rp, 270], fr: [H.max.x - rp, H.max.z - rp, 0], fl: [H.min.x + rp, H.max.z - rp, 90]};
+      for (const k of ['bl', 'br', 'fr', 'fl']) { if (!has(k) || rp < .02) continue; const [ox, oz, a0] = C[k], pts = [];
+        for (let i = 0; i <= seg; i++) { const a = (a0 + 90 * i / seg) * Math.PI / 180; pts.push([ox + rp * Math.cos(a), oz + rp * Math.sin(a)]); }
+        for (let i = 0; i < pts.length - 1; i++) { const [x0, z0] = pts[i], [x1, z1] = pts[i + 1], len = Math.hypot(x1 - x0, z1 - z0); if (len < .003) continue;
+          const mx = (x0 + x1) / 2, mz = (z0 + z1) / 2, nx = mx - ox, nz = mz - oz, g = new THREE.Group();
+          g.position.set(mx, 0, mz); g.rotation.y = Math.atan2(nx, nz); root.add(g);   // local +z points out of the corner
+          const mesh = box(g, side.m.material, -len / 2 - .002, len / 2 + .002, side.y0, side.y1, -t, 0, {cast: false}); if (mesh) mesh.userData.rcSkin = true; } }
+    }
+  }
   // a door or drawer whose face is gone goes with its handle and box
   for (const a of anims) { let inside = false; for (let p = a.o; p; p = p.parent) if (p === root) { inside = true; break; } if (!inside) continue;
     let big = null, area = 0; a.o.traverse(m => { if (m.isMesh && (m.geometry.type === 'BoxGeometry' || m.geometry.type === 'RoundedBoxGeometry' || m.geometry.type === 'ExtrudeGeometry')) { const bb = new THREE.Box3().setFromObject(m), s = bb.getSize(new THREE.Vector3()), ar = Math.max(s.x * s.y, s.x * s.z, s.y * s.z); if (ar > area) { area = ar; big = m; } } });
@@ -4111,6 +4129,8 @@ function unitAsCab(m, Hc){
   return out;
 }
 // wall unit (sel has run, lvl, i) or free piece (sel has item) to custom cabinet, one undo step
+// a colour picked on a wall unit: it becomes a custom cabinet in place, in that colour
+function unitColor(v){ if (!sel || sel.item !== undefined) return; const k = customizeUnit(sel); if (k < 0) return; select({item: k}, true); setItemColor(v); toast('صارت خزانة مخصصة بهذا اللون: اضغط أي خانة لتغيير نوعها ولونها ورفوفها'); }
 function customizeUnit(s0){
   let k = s0.item;
   if (k === undefined) { k = detachUnit(s0); if (k < 0) return -1; } else record();
@@ -4351,7 +4371,9 @@ function cutList(c){
   };
   const T = fab.t, TF = fab.tf, TB = fab.back, GAP = fab.gap, BI = fab.backInset * 2, PL = fab.plinthH;
   // rounded corners: the parts keep their full size, the sheet says what to cut and a radius job is counted per corner
-  const shaping = [], noteRC = (rc, code) => { if (!rc?.c?.length) return; addHw('radius', rc.c.length); shaping.push({code, msg: rcNote(rc), rc}); };
+  const shaping = [], noteRC = (rc, code, hh = 0, mat = F(fid)) => { if (!rc?.c?.length) return; addHw('radius', rc.c.length); shaping.push({code, msg: rcNote(rc), rc});
+    // a corner rounded or cut from above is closed by a board along the arc (bent) or the slant
+    const pc = rc.c.filter(k => ['fl', 'fr', 'bl', 'br'].includes(k)); if (pc.length && hh > 10 && rc.r >= 2) add(code, rc.k === 'cut' ? 'لوح إغلاق زاوية مائلة' : 'لوح إغلاق زاوية مدوّرة (خشب مرن)', Math.round((rc.k === 'cut' ? Math.SQRT2 : Math.PI / 2) * rc.r * 10), Math.round(hh * 10), rc.k === 'cut' ? T : 8, pc.length, mat, 0, 2); };
   const carcass = (code, W, H, D, o = {}) => {
     const m = o.mat || 'carcass', vis = !!o.mat;
     add(code, 'جانب', H, D, T, 2, m, vis ? 2 : 1, vis ? 1 : 0);
@@ -4458,19 +4480,19 @@ function cutList(c){
     if (K && r.id === 'A') { const corners = (hasB ? 1 : 0) + (hasC ? 1 : 0); for (let k = 0; k < corners; k++) { const code = 'AZ' + (k + 1); units++; carcass(code, 600, 760, 560, {rails: true, shelves: 1}); doors(code, 600, fh, 1, fid); addHw('leg', 4); plinth += 600; } }
     for (const m of pb) {
       if (!m.fit || UNIT[m.t].gap || UNIT[m.t].deco) { if (m.fit && m.t === 'rdoor') addAp('idoor'); continue; }
-      { const cd = r.id + (++bi); cutBase(m, cd, fid); noteRC(c.units?.[r.id]?.b?.[m.i]?.rc, cd); }
+      { const cd = r.id + (++bi); cutBase(m, cd, fid); noteRC(c.units?.[r.id]?.b?.[m.i]?.rc, cd, (q => q[1] - q[0] - 14)(unitBox(m, c.height, Math.min(c.height - 4, 230)))); }
     }
     if (plinth) add(r.id, 'وزرة أمامية', plinth, PL, T, 1, F(fid), 1, 0); if (gola) golaM += plinth;
     for (const m of pu) {
       if (!m.fit || UNIT[m.t].gap) continue;
-      if (m.t === 'hood') { addAp('hood'); if (['under', 'tele'].includes(optsOf(m).s)) { units++; const cd = r.id + '^' + (++ui); cutHoodCab(m, cd, ufid); noteRC(c.units?.[r.id]?.u?.[m.i]?.rc, cd); } continue; }
+      if (m.t === 'hood') { addAp('hood'); if (['under', 'tele'].includes(optsOf(m).s)) { units++; const cd = r.id + '^' + (++ui); cutHoodCab(m, cd, ufid); noteRC(c.units?.[r.id]?.u?.[m.i]?.rc, cd, (q => q[1] - q[0])(unitBox(m, c.height, Math.min(c.height - 4, 230))), F(ufid)); } continue; }
       if (m.t === 'tv') { addAp('tv'); continue; }
       if (!UNIT[m.t].cat) continue;
-      units++; { const cd = r.id + '^' + (++ui); cutUpper(m, cd, ufid); noteRC(c.units?.[r.id]?.u?.[m.i]?.rc, cd); }
+      units++; { const cd = r.id + '^' + (++ui); cutUpper(m, cd, ufid); noteRC(c.units?.[r.id]?.u?.[m.i]?.rc, cd, (q => q[1] - q[0])(unitBox(m, c.height, Math.min(c.height - 4, 230))), F(ufid)); }
     }
     for (const m of pt) {
       if (!m.fit || UNIT[m.t].gap) continue;
-      units++; { const cd = r.id + 'T' + (++ti); cutTop(m, cd, ufid); noteRC(c.units?.[r.id]?.t?.[m.i]?.rc, cd); }
+      units++; { const cd = r.id + 'T' + (++ti); cutTop(m, cd, ufid); noteRC(c.units?.[r.id]?.t?.[m.i]?.rc, cd, (q => q[1] - q[0])(unitBox(m, c.height, Math.min(c.height - 4, 230))), F(ufid)); }
     }
   }
   if (K && c.island && c.wallA >= 280) {
@@ -4484,7 +4506,8 @@ function cutList(c){
     // the radius the workshop cuts: never more than half the piece's height or width (the 3D does the same)
     noteRC(it.rc && it.t !== 'panel' && (CUST[it.t] || isUnitItem(it)) ? (rc => { const hh = CUST[it.t] ? itemH(it) : (q => q[1] - q[0])(unitBox(it, c.height, Math.min(c.height - 4, 230)));
       const fc = rc.c.some(k => ['tl', 'tr', 'dl', 'dr'].includes(k)) ? Math.min(hh, it.w) / 2 : Infinity, pc = rc.c.some(k => ['fl', 'fr', 'bl', 'br'].includes(k)) ? Math.min(it.w, itemDepth(it)) / 2 : Infinity;
-      return {...rc, r: Math.min(rc.r, Math.floor(Math.min(fc, pc)))}; })(it.rc) : it.rc, code);
+      return {...rc, r: Math.min(rc.r, Math.floor(Math.min(fc, pc)))}; })(it.rc) : it.rc, code,
+      it.t === 'cab' ? (q => itemH(it) - (q.base === 'plinth' ? 10 : q.base === 'legs' ? 12 : 0) - (q.top === 'stone' || q.top === 'wood' ? 3 : q.top === 'glass' ? 1.2 : 0))(iopts(it)) : CUST[it.t] ? itemH(it) : isUnitItem(it) ? (q => q[1] - q[0])(unitBox(it, c.height, Math.min(c.height - 4, 230))) : 0, F(it.o?.col || fid));
     if (isUnitItem(it)) {
       // U, not T: T is the carcass thickness of the workshop settings, used just below for the plinth
       const U = UNIT[it.t];
@@ -4978,6 +5001,7 @@ document.addEventListener('click', e => {
   const shm = e.target.closest('[data-shelfm] [data-v]'); if (shm) { setCell('sg', shm.dataset.v === 'glass'); return; }
   const cc = e.target.closest('[data-cellc] [data-c]'); if (cc) { setCell('c', cc.dataset.c); return; }
   const ic = e.target.closest('[data-icol] [data-c]'); if (ic) { setItemColor(ic.dataset.c); return; }
+  const uc = e.target.closest('[data-ucol] [data-c]'); if (uc) { if (uc.dataset.c) unitColor(uc.dataset.c); return; }
   const fi = e.target.closest('[data-ifin] [data-f]'); if (fi) { setItemFinish(fi.dataset.f); return; }
   const ih = e.target.closest('[data-ihd] [data-v]'); if (ih) { setItemPart('hd', ih.dataset.v); return; }
   const iw2 = e.target.closest('[data-iwt] [data-v]'); if (iw2) { setItemPart('wt', iw2.dataset.v); return; }
@@ -5020,6 +5044,7 @@ document.addEventListener('change', e => {
   if (t.id === 'icols') setGrid('cols', Math.round(+t.value) || 1);
   if (t.id === 'irows') setGrid('rows', Math.round(+t.value) || 1);
   if (t.id === 'icolor') setItemColor(t.value);
+  if (t.id === 'ucolor') unitColor(t.value);
   if (t.id === 'icw') setSpan('col', +t.value);
   if (t.id === 'ishn') setCell('n', +t.value);
   if (t.id === 'irh') setSpan('row', +t.value);
