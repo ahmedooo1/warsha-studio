@@ -392,6 +392,63 @@ body.present .pres-vars:not([hidden]){display:flex;position:absolute;bottom:84px
   .sheet .box{border-radius:16px 16px 0 0;width:100%;max-height:88%}
 }
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* ---- sidebar: width set by the grip, folds, editor head, compact swatches ---- */
+.app{grid-template-columns:var(--pw,400px) minmax(0,1fr)}
+.det>summary{list-style:none;display:flex;align-items:center;gap:10px}
+.det>summary::-webkit-details-marker{display:none}
+.det>summary::after{content:"";margin-inline-start:auto;width:7px;height:7px;border-right:1.8px solid var(--muted);border-bottom:1.8px solid var(--muted);transform:rotate(45deg);margin-top:-4px;transition:transform .18s}
+.det[open]>summary::after{transform:rotate(-135deg);margin-top:3px}
+.filebox{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
+.filebox .btn{align-self:flex-start}
+.ued{border:1px solid var(--line);border-radius:14px;padding:0 14px 4px;gap:0;background:var(--panel);box-shadow:0 14px 34px -24px rgba(0,0,0,.35)}
+.ued-h{position:sticky;top:45px;z-index:1;background:var(--panel);margin-inline:-14px;padding:11px 14px 10px;border-bottom:2px solid var(--tape);border-radius:14px 14px 0 0;align-items:center;gap:8px}
+.ued-h b{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:17px}
+.ued-h .code{font-family:var(--f-num);font-size:12px;color:var(--muted);background:var(--sunk);border-radius:6px;padding:2px 7px;white-space:nowrap}
+.hacts{display:inline-flex;gap:4px;flex:none}
+.ib{width:32px;height:32px;border:1px solid var(--line);border-radius:8px;background:var(--panel);display:inline-grid;place-items:center;color:var(--ink);padding:0;cursor:pointer}
+.ib svg{width:16px;height:16px}
+.ib:hover{background:var(--sunk)}
+.ib.danger{color:var(--bad)}
+.fold{border-top:1px solid var(--line)}
+.ued-h + .fold{border-top:0}
+.fold>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:12px 0;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
+.fold>summary::-webkit-details-marker{display:none}
+.fold>summary b{font-size:14px;font-weight:600;white-space:nowrap}
+.fold>summary .sum{margin-inline-start:auto;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.fold>summary::after{content:"";flex:none;width:7px;height:7px;border-right:1.8px solid var(--muted);border-bottom:1.8px solid var(--muted);transform:rotate(45deg);margin-top:-4px;transition:transform .18s}
+.fold>summary b:last-child{margin-inline-end:auto}
+.fold[open]>summary::after{transform:rotate(-135deg);margin-top:3px}
+.fold>summary:hover b{color:var(--ink)}
+.fold-b{display:flex;flex-direction:column;gap:12px;padding-bottom:14px;min-width:0}
+.fold-b > .opts{border-top:0;padding-top:0}
+.fold-b > .grp.rcg{gap:10px}
+.fold.top{border:1px solid var(--line);border-radius:14px;padding:0 14px}
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:10px 22px;align-items:start}
+.sw.sm{grid-template-columns:repeat(auto-fill,minmax(32px,1fr));gap:7px}
+.sw.sm .n{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.sw.sm button{gap:0;position:relative}
+.sw.sm i{border-radius:8px}
+.sw.sm label{font-size:0;gap:0}
+.cell-ed{display:flex;flex-direction:column;gap:10px;background:var(--sunk);border-radius:12px;padding:12px}
+.cell-ed .cell-t{font-size:13px}
+.cell-ed .choice button,.cell-ed .num,.cell-ed .stepper{background:var(--panel)}
+.ued-row.duo{display:grid;grid-template-columns:auto auto;justify-content:start;gap:8px 10px}
+@media (min-width:0){.ued-row.duo{grid-template-columns:repeat(auto-fill,minmax(150px,auto))}}
+/* the grip on the edge between the sidebar and the scene: drag to widen or narrow, double-click for the default */
+.pgrip{position:absolute;z-index:7;inset-block:0;inset-inline-start:0;width:14px;cursor:col-resize;touch-action:none;display:flex;align-items:center;justify-content:flex-start;outline:none}
+.pgrip::before{content:"";position:absolute;inset-block:0;inset-inline-start:0;width:3px;background:transparent;transition:background .15s}
+.pgrip:hover::before,.pgrip:focus-visible::before,.pgrip.on::before{background:var(--tape)}
+.pgrip i{position:relative;width:6px;height:46px;border-radius:4px;background:var(--panel);border:1px solid var(--line);box-shadow:0 2px 10px rgba(0,0,0,.14);margin-inline-start:3px}
+body.resizing,body.resizing *{cursor:col-resize!important;user-select:none!important}
+body.resizing.rows,body.resizing.rows *{cursor:row-resize!important}
+@media (max-width:860px){
+  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto var(--sh,minmax(260px,50%)) 1fr}
+  .pgrip{inset-inline:0;inset-block:auto 0;width:auto;height:22px;cursor:row-resize;justify-content:center;align-items:flex-end}
+  .pgrip::before{inset-inline:0;inset-block:auto 0;width:auto;height:3px}
+  .pgrip i{width:48px;height:6px;margin:0 0 5px}
+  .ued-h{top:44px}
+}
 </style>
 
 <div class="app">
@@ -408,6 +465,7 @@ body.present .pres-vars:not([hidden]){display:flex;position:absolute;bottom:84px
   </header>
 
   <section class="stage" id="stage">
+    <div class="pgrip" id="pgrip" role="separator" tabindex="0" aria-label="اسحب لتغيير حجم اللوحة" title="اسحب لتغيير حجم اللوحة، ونقرتان للحجم الافتراضي"><i></i></div>
     <canvas id="gl" aria-label="المشهد ثلاثي الأبعاد"></canvas>
     <canvas id="dims" aria-hidden="true"></canvas>
     <div class="tag" id="tag"></div>
@@ -493,7 +551,7 @@ body.present .pres-vars:not([hidden]){display:flex;position:absolute;bottom:84px
 
 <div class="sheet" id="clientsSheet" hidden>
   <div class="box" role="dialog" aria-label="الزبائن">
-    <header><h2>الزبائن</h2><div style="display:flex;gap:8px"><button class="btn" id="newClient">زبون جديد</button><button class="x" data-close aria-label="إغلاق">×</button></div></header>
+    <header><h2>الزبائن</h2><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><label class="btn" title="افتح تصميماً حفظته كملف على هذا الجهاز">فتح ملف تصميم<input type="file" id="openFileIn" accept=".json,application/json" hidden></label><button class="btn" id="newClient">زبون جديد</button><button class="x" data-close aria-label="إغلاق">×</button></div></header>
     <div class="body" id="clientList"></div>
   </div>
 </div>
@@ -510,6 +568,8 @@ body.present .pres-vars:not([hidden]){display:flex;position:absolute;bottom:84px
         <button class="btn" type="button" id="saveAsNew" hidden>حفظ كنسخة جديدة</button>
       </div>
       <p class="hint" id="saveHint"></p>
+      <div class="filebox"><button class="btn" type="button" id="saveFileBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>حفظ كملف على الجهاز</button>
+        <p class="hint">ملف تصميم واحد تحفظه على الكمبيوتر أو الهاتف أو ترسله، وتفتحه لاحقاً من «الزبائن» ثم «فتح ملف تصميم»، على هذا الجهاز أو على غيره.</p></div>
     </form>
   </div>
 </div>
@@ -775,8 +835,8 @@ const ITEM = {
   commode: {n:'كومودا جوارير', w:100, min:60, max:200, d:50, cat:'commode'},
   dtable:  {n:'طاولة سفرة', w:200, min:120, max:320, d:100, cat:'dtable', opts:[opt.seg('s', 'الشكل', {rect:'مستطيلة', oval:'بيضاوية'}, 'rect'), opt.bool('ch', 'كراسي', true)]},
   ctable:  {n:'طاولة وسط', w:110, min:40, max:200, d:60, cat:'ctable', opts:[opt.seg('s', 'الشكل', {rect:'مستطيلة', square:'مربعة', round:'دائرية', oval:'بيضاوية', nest:'طاولتان متداخلتان'}, 'rect'),
-    opt.seg('top', 'السطح', {wood:'خشب', marble:'رخام', glass:'زجاج', color:'باللون المختار'}, 'wood'), opt.seg('leg', 'الأرجل', {metal:'معدن رفيع', wood:'خشب', pedestal:'قاعدة في الوسط', sled:'إطار معدني', solid:'جانبان مصمتان'}, 'metal'),
-    {...opt.num('dp', 'العمق', 35, 110, 60, 5), if: v => v.s === 'rect' || v.s === 'oval'}, opt.num('h', 'الارتفاع', 25, 60, 40, 1), opt.bool('shelf', 'رف سفلي', true),
+    opt.seg('top', 'السطح', {wood:'خشب', marble:'رخام', glass:'زجاج', color:'باللون المختار'}, 'wood'), {...opt.seg('leg', 'الأرجل', {metal:'معدن رفيع', wood:'خشب', pedestal:'قاعدة في الوسط', sled:'إطار معدني', solid:'جانبان مصمتان'}, 'metal'), hideV: v => ['round', 'oval', 'nest'].includes(v.s) ? ['sled', 'solid'] : []},
+    {...opt.num('dp', 'العمق', 35, 110, 60, 5), if: v => v.s === 'rect' || v.s === 'oval'}, opt.num('h', 'الارتفاع', 25, 60, 40, 1), {...opt.bool('shelf', 'رف سفلي', true), if: v => v.leg !== 'pedestal' && +v.h > 22},
     opt.seg('deco', 'فوق الطاولة', {set:'كتب ومزهرية', tray:'صينية وشموع', plant:'نبتة صغيرة', none:'بلا شيء'}, 'set')]},
   sofa:    {n:'كنبة', w:240, min:150, max:360, d:95, deco:true, opts:[opt.seg('s', 'الشكل', {line:'مستقيمة', L:'زاوية'}, 'line')]},
   armchair:{n:'كرسي استرخاء', w:80, min:70, max:100, d:82, deco:true},
@@ -791,9 +851,9 @@ const ITEM = {
   cab:     {n:'خزانة مخصصة', w:120, min:20, max:480, d:45, cat:'custom', custom:true, opts:[
     opt.seg('base', 'تحت الخزانة', {plinth:'قاعدة', legs:'أرجل', hang:'معلّقة', none:'بلا'}, 'plinth'),
     opt.seg('endL', 'الطرف الأيسر من فوق', {sq:'مستقيم', ang:'مائل', rnd:'مدوّر'}, 'sq'), opt.seg('endR', 'الطرف الأيمن من فوق', {sq:'مستقيم', ang:'مائل', rnd:'مدوّر'}, 'sq'),
-    opt.num('ew', 'عرض الطرف', 15, 90, 35, 5), {...opt.seg('endC', 'واجهة الطرف المائل أو المدوّر', {open:'رفوف مفتوحة', closed:'مسكّرة بلوح', door:'بباب'}, 'open'), if: v => v.endL !== 'sq' || v.endR !== 'sq'},
+    {...opt.num('ew', 'عرض الطرف', 15, 90, 35, 5), if: v => v.endL !== 'sq' || v.endR !== 'sq'}, {...opt.seg('endC', 'واجهة الطرف المائل أو المدوّر', {open:'رفوف مفتوحة', closed:'مسكّرة بلوح', door:'بباب'}, 'open'), if: v => v.endL !== 'sq' || v.endR !== 'sq'},
     opt.seg('top', 'السطح', {none:'من الخشب نفسه', stone:'حجر', wood:'خشب', glass:'زجاج'}, 'none'), opt.bool('led', 'إضاءة LED', false),
-    opt.seg('fs', 'شكل الواجهات', {flat:'ملساء', shaker:'بإطار', fluted:'محفورة طولياً', slats:'شرائح خشب'}, 'flat')]},
+    {...opt.seg('fs', 'شكل الواجهات', {flat:'ملساء', shaker:'بإطار', fluted:'محفورة طولياً', slats:'شرائح خشب'}, 'flat'), if: v => !Array.isArray(v.cells) || v.cells.some(c => c && !['open', 'glass'].includes(c.k))}]},
   bar:     {n:'بار ومطبخ أمريكي', w:180, min:80, max:480, d:90, cat:'custom', custom:true, opts:[
     opt.seg('base', 'تحت السطح', {cab:'خزائن', open:'رفوف مفتوحة', legs:'أرجل', water:'جانبا شلال'}, 'cab'),
     opt.seg('endL', 'الطرف الأيسر', {sq:'مستقيم', ang:'مائل', rnd:'مدوّر'}, 'sq'), opt.seg('endR', 'الطرف الأيمن', {sq:'مستقيم', ang:'مائل', rnd:'مدوّر'}, 'rnd'),
@@ -2855,6 +2915,31 @@ function resize(){
   const pr = Math.min(devicePixelRatio || 1, 2); dimCv.width = W * pr; dimCv.height = Hh * pr; dirty = true;
 }
 new ResizeObserver(() => { const fresh = W === 1; resize(); if (fresh) setCam(camMode, true); }).observe(stageEl);
+/* sidebar size: on a wide screen the grip sets the sidebar's width, on a phone the height of the scene above it.
+   Both are kept on this device; a double-click (or Home) goes back to the default. */
+(() => {
+  const grip = $('#pgrip'), root = document.documentElement, phone = () => matchMedia('(max-width:860px)').matches;
+  const W0 = 400, apply = () => { const w = lsGet('wr_pw', 0), h = lsGet('wr_sh', 0);
+    if (w) root.style.setProperty('--pw', clamp(w, 300, Math.max(320, innerWidth - 360)) + 'px'); else root.style.removeProperty('--pw');
+    if (h) root.style.setProperty('--sh', clamp(h, 170, Math.max(200, innerHeight - 200)) + 'px'); else root.style.removeProperty('--sh'); };
+  apply(); addEventListener('resize', apply);
+  if (!grip) return;
+  let drag = null;
+  const setW = w => { w = Math.round(clamp(w, 300, Math.max(320, innerWidth - 360))); root.style.setProperty('--pw', w + 'px'); return w; };
+  const setH = h => { h = Math.round(clamp(h, 170, Math.max(200, innerHeight - 200))); root.style.setProperty('--sh', h + 'px'); return h; };
+  grip.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); grip.setPointerCapture(e.pointerId); const pr = $('#panel').getBoundingClientRect(), sr = stageEl.getBoundingClientRect();
+    drag = {ph: phone(), rtl: getComputedStyle(root).direction === 'rtl', pr, sr, v: 0}; grip.classList.add('on'); document.body.classList.add('resizing'); document.body.classList.toggle('rows', drag.ph); });
+  grip.addEventListener('pointermove', e => { if (!drag) return; e.preventDefault();
+    drag.v = drag.ph ? setH(e.clientY - drag.sr.top) : setW(drag.rtl ? drag.pr.right - e.clientX : e.clientX - drag.pr.left); });
+  const end = () => { if (!drag) return; if (drag.v) lsSet(drag.ph ? 'wr_sh' : 'wr_pw', drag.v); drag = null; grip.classList.remove('on'); document.body.classList.remove('resizing', 'rows'); };
+  grip.addEventListener('pointerup', end); grip.addEventListener('pointercancel', end);
+  grip.addEventListener('dblclick', () => { lsSet(phone() ? 'wr_sh' : 'wr_pw', 0); apply(); });
+  grip.addEventListener('keydown', e => { const ph = phone(), rtl = getComputedStyle(root).direction === 'rtl';
+    const cur = ph ? stageEl.getBoundingClientRect().height : $('#panel').getBoundingClientRect().width;
+    let d = 0; if (ph) d = e.key === 'ArrowDown' ? 20 : e.key === 'ArrowUp' ? -20 : 0; else d = e.key === 'ArrowLeft' ? (rtl ? 20 : -20) : e.key === 'ArrowRight' ? (rtl ? -20 : 20) : 0;
+    if (e.key === 'Home') { lsSet(ph ? 'wr_sh' : 'wr_pw', 0); apply(); e.preventDefault(); return; }
+    if (!d) return; e.preventDefault(); const v = ph ? setH(cur + d) : setW(cur + d); lsSet(ph ? 'wr_sh' : 'wr_pw', v); });
+})();
 controls.addEventListener('change', () => { dirty = true; });
 // the piece's toolbar steps aside while the view turns, so it never sits over what you are looking at
 controls.addEventListener('start', () => $('#qbar')?.classList.add('away'));
@@ -3171,7 +3256,8 @@ function optControls(defs, vals, attr){
     const v = vals[d.k];
     if (d.type === 'bool') return `<div class="sw-row"><label for="${attr}-${d.k}">${d.n}</label><span class="toggle"><input type="checkbox" id="${attr}-${d.k}" data-${attr}="${d.k}" ${v ? 'checked' : ''}><i></i></span></div>`;
     if (d.type === 'num') return `<div class="sw-row"><label for="${attr}-${d.k}">${d.n}</label><span class="num"><input id="${attr}-${d.k}" data-${attr}="${d.k}" type="number" min="${d.min}" max="${d.max}" step="${d.step}" value="${v}"><span>سم</span></span></div>`;
-    return `<div class="optseg"><span>${d.n}</span><div class="choice" data-${attr}seg="${d.k}">${Object.entries(d.vals).map(([k, n]) => `<button type="button" data-v="${k}" aria-pressed="${String(v) === k}">${n}</button>`).join('')}</div></div>`;
+    const off = d.hideV ? d.hideV(vals) : [];
+    return `<div class="optseg"><span>${d.n}</span><div class="choice" data-${attr}seg="${d.k}">${Object.entries(d.vals).filter(([k]) => !off.includes(k) || String(v) === k).map(([k, n]) => `<button type="button" data-v="${k}" aria-pressed="${String(v) === k}">${n}</button>`).join('')}</div></div>`;
   }).join('');
 }
 function renderUnits(){
@@ -3186,15 +3272,15 @@ function renderUnits(){
     <div class="ued-row">${c.auto ? '<p class="hint grow">التوزيع تلقائي حسب المقاسات، وأي تعديل هنا يجعله يدوياً.</p>' : '<p class="hint grow">التوزيع يدوي.</p><button type="button" class="btn sm" data-act="auto">توزيع تلقائي</button>'}</div></div>`;
   if (sm) {
     const T = UNIT[sm.t], L = U[sel.lvl];
-    h += `<div class="ued" id="unitEditor"><div class="ued-h"><b>${T.n}</b><span>${sm.w} سم</span></div>
-      ${TO_CAB.includes(sm.t) ? `<div class="sect ucz"><h4>اللون وكل التفاصيل</h4>${colorRow('ucol', '', 'ucolor')}
+    h += `<div class="ued" id="unitEditor">${edHead(T.n, sm.w + ' سم', 'u')}
+      ${fold('usize', 'المقاس والخيارات', [sm.w + ' سم', optSummary(T.opts, optsOf(sm))].filter(Boolean).join(' · '), `<div class="ued-row"><span class="lab">العرض</span><span class="stepper"><button type="button" data-u="w-5" aria-label="أنقص 5 سم">−</button><input id="uw" type="number" min="${T.min}" max="${T.max}" value="${sm.w}" inputmode="numeric" aria-label="العرض بالسنتيمتر"><button type="button" data-u="w+5" aria-label="زد 5 سم">+</button></span><span class="hint">من ${T.min} إلى ${T.max} سم</span></div>
+      ${T.opts ? `<div class="opts">${optControls(T.opts, optsOf(sm), 'uo')}</div>` : ''}${tallNote(sm)}`)}
+      ${TO_CAB.includes(sm.t) ? fold('ulook', 'اللون وكل التفاصيل', 'حسب التصميم', `${colorRow('ucol', '', 'ucolor')}
         <div class="ued-row"><button type="button" class="btn sm primary" data-u="cab" title="تصير خزانة مخصصة: نوع كل خانة ولونها والرفوف داخلها">تخصيص كامل: الخانات والرفوف والأبواب</button></div>
-        <p class="hint">اختيار لون أو «تخصيص كامل» يجعل الوحدة خزانة مخصصة في مكانها نفسه، فتعدّل لون كل خانة ونوعها والرفوف داخلها وعرض الأعمدة وارتفاع الصفوف.</p></div>` : ''}
-      <div class="ued-row"><span>العرض</span><span class="stepper"><button type="button" data-u="w-5" aria-label="أنقص 5 سم">−</button><input id="uw" type="number" min="${T.min}" max="${T.max}" value="${sm.w}" inputmode="numeric" aria-label="العرض بالسنتيمتر"><button type="button" data-u="w+5" aria-label="زد 5 سم">+</button></span><span class="hint">من ${T.min} إلى ${T.max} سم</span></div>
-      ${T.opts ? `<div class="opts">${optControls(T.opts, optsOf(sm), 'uo')}</div>` : ''}${tallNote(sm)}
-      ${UNIT[sm.t]?.gap || UNIT[sm.t]?.deco ? '' : cornersUI(sm.rc)}
-      <div class="ued-row"><button type="button" class="btn sm" data-u="right" ${sel.i >= L.length - 1 ? 'disabled' : ''}>${arrowR} لليمين</button><button type="button" class="btn sm" data-u="left" ${sel.i === 0 ? 'disabled' : ''}>لليسار ${arrowL}</button><button type="button" class="btn sm" data-u="dup">تكرار</button>${designLock && FREE_UNITS.includes(sm.t) ? `<button type="button" class="btn sm" data-u="ul" aria-pressed="${!!sm.ul}">${sm.ul ? 'تتحرك رغم القفل' : 'فك قفل هذه الوحدة'}</button>` : ''}${FREE_UNITS.includes(sm.t) ? '<button type="button" class="btn sm" data-u="free">تحريك حر</button>' : ''}<button type="button" class="btn sm danger" data-u="del">حذف</button></div>
-      <div class="grp"><h3>تغيير النوع</h3><div class="ugrid sm">${palFor(r.id, sel.lvl).map(t => `<button type="button" data-type="${t}" aria-pressed="${t === sm.t}">${unitIcon(t)}<span>${UNIT[t].s}</span></button>`).join('')}</div></div></div>`;
+        <p class="hint">اختيار لون أو «تخصيص كامل» يجعل الوحدة خزانة مخصصة في مكانها نفسه، فتعدّل لون كل خانة ونوعها والرفوف داخلها وعرض الأعمدة وارتفاع الصفوف.</p>`) : ''}
+      ${fold('umove', 'الترتيب', '', `<div class="ued-row"><button type="button" class="btn sm" data-u="right" ${sel.i >= L.length - 1 ? 'disabled' : ''}>${arrowR} لليمين</button><button type="button" class="btn sm" data-u="left" ${sel.i === 0 ? 'disabled' : ''}>لليسار ${arrowL}</button>${designLock && FREE_UNITS.includes(sm.t) ? `<button type="button" class="btn sm" data-u="ul" aria-pressed="${!!sm.ul}">${sm.ul ? 'تتحرك رغم القفل' : 'فك قفل هذه الوحدة'}</button>` : ''}${FREE_UNITS.includes(sm.t) ? '<button type="button" class="btn sm" data-u="free">تحريك حر</button>' : ''}</div>`)}
+      ${UNIT[sm.t]?.gap || UNIT[sm.t]?.deco ? '' : fold('ucorners', 'الزوايا المدوّرة', rcSummary(sm.rc), cornersUI(sm.rc, true))}
+      ${fold('utype', 'تغيير النوع', T.s || T.n, `<div class="ugrid sm">${palFor(r.id, sel.lvl).map(t => `<button type="button" data-type="${t}" aria-pressed="${t === sm.t}">${unitIcon(t)}<span>${UNIT[t].s}</span></button>`).join('')}</div>`)}</div>`;
   }
   const lvlSw = `<div class="choice" data-uv="lvl"><button type="button" data-v="b" aria-pressed="${view.lvl === 'b'}">على الأرض</button><button type="button" data-v="u" aria-pressed="${view.lvl === 'u'}">على الجدار</button>${palFor(r.id, 't').length ? `<button type="button" data-v="t" aria-pressed="${view.lvl === 't'}">فوق العلوية</button>` : ''}</div>`;
   const after = isUnit && sel.run === r.id && sel.lvl === view.lvl;
@@ -3262,9 +3348,40 @@ function cellMap(it){
     out += `<g data-cell="${n}"><rect x="${a}" y="${Y(y1)}" width="${b - a}" height="${y1 - y0}" class="${n === cellSel ? 'selr' : 'hit'}"/><text x="${(a + b) / 2}" y="${Y((y0 + y1) / 2) + fs * .35}" class="lb" font-size="${fs}">${CELL_S[c.k]}</text></g>`; });
   return `<svg class="uv cellmap" viewBox="-4 -4 ${W + 8} ${H + 8}" role="img" aria-label="واجهة الخزانة">${out}</svg>`;
 }
+/* ---- sidebar building blocks ----
+   A fold is a section that opens and closes; its line shows the current value, so a closed fold still says what is set.
+   Each fold remembers on this device whether it was left open. */
+const FOLD_OPEN = {size: true, shape: true, cells: true, look: true, usize: true, ulook: true, umove: true, lib: true, inroom: true, add: true};
+const foldState = lsGet('wr_folds', {});
+const fold = (key, title, sum, body, cls = '') => `<details class="fold ${cls}" data-det="${key}" ${(foldState[key] ?? FOLD_OPEN[key] ?? false) ? 'open' : ''}><summary><b>${title}</b>${sum ? `<span class="sum">${sum}</span>` : ''}</summary><div class="fold-b">${body}</div></details>`;
+// head of an editor: name, code and the three actions every piece has
+const IC = {dup: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>',
+  del: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>', close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>'};
+const edHead = (name, code, a) => `<div class="ued-h"><b>${name}</b><span class="code">${code}</span><span class="hacts"><button type="button" class="ib" data-${a}="dup" title="${a === 'u' ? 'تكرار' : 'نسخ'}">${IC.dup}</button><button type="button" class="ib danger" data-${a}="del" title="حذف">${IC.del}</button><button type="button" class="ib" data-${a}="close" title="إغلاق">${IC.close}</button></span></div>`;
+const colorName = id => !id ? 'حسب التصميم' : isHex(id) ? id.toUpperCase() : FRONTS.find(f => f.id === id)?.name || id;
+const rcSummary = rc => rc?.c?.length ? `${rc.c.length} × ${rc.r} سم` : 'كلها مستقيمة';
+// the values of the first choices of a piece's options, as the line of its fold
+const optSummary = (defs, vals) => (defs || []).filter(d => d.type === 'seg' && (!d.if || d.if(vals))).slice(0, 3).map(d => d.vals[vals[d.k]]).filter(Boolean).join(' · ');
+// which looks apply: a colour, the matte or gloss of fronts, handles; a piece with no door or drawer has no handle,
+// a coffee table in wood or marble takes no front colour
+const NO_FRONT_UNITS = ['shelf', 'clad', 'tv', 'frame', 'mirror', 'window', 'uopen', 'topen', 'wopen', 'bopen', 'coat', 'rdoor', 'bgap', 'ugap', 'tgap', 'washer', 'bench', 'desk'];
+function itemNeeds(si){
+  const o = iopts(si);
+  if (si.t === 'cab') { const cells = cabGrid(si).cells, fr = cells.some(c => c.k !== 'open'); return {col: true, fin: fr || o.fs !== 'flat', hd: cells.some(c => !['open', 'panel'].includes(c.k))}; }
+  if (si.t === 'bar') return {col: true, fin: true, hd: o.base !== 'legs'};
+  if (si.t === 'ctable') return {col: o.top === 'color', fin: o.top === 'color', hd: false};
+  if (si.t === 'panel') return {col: o.mat === 'front', fin: o.mat === 'front', hd: false};
+  if (si.t === 'sofa' || si.t === 'armchair') return {col: true, fin: false, hd: false};
+  if (si.t === 'bed') return {col: true, fin: true, hd: false};
+  if (['night', 'dresser', 'commode'].includes(si.t)) return {col: true, fin: true, hd: true};
+  if (isUnitItem(si)) { if (si.t === 'shelf') return {col: o.mat === 'front', fin: o.mat === 'front', hd: false};
+    if (si.t === 'clad') { const f = ['flat', 'fluted', 'frames'].includes(o.s); return {col: f, fin: f, hd: false}; }
+    const nf = NO_FRONT_UNITS.includes(si.t); return {col: !UNIT[si.t].gap, fin: !nf, hd: !nf}; }
+  return {col: !NO_COLOR.includes(si.t) && !['dtable', 'bunk'].includes(si.t), fin: false, hd: false};
+}
 function colorRow(attr, cur, inputId, auto = 'حسب التصميم'){
   const hex = isHex(cur) ? cur : frontColorCss(cur || cfg.front);
-  return `<div class="sw sm" data-${attr}><button type="button" data-c="" aria-pressed="${!cur}"><i class="auto"></i>${auto}</button>${FRONTS.map(f => `<button type="button" data-c="${f.id}" aria-pressed="${cur === f.id}"><i style="${f.wood ? `background-image:url(${sURL[f.wood] || ''});background-color:${frontColorCss(f.id)}` : `background:${f.color}`}"></i>${f.name}</button>`).join('')}<label class="pick" aria-pressed="${isHex(cur)}"><input type="color" id="${inputId}" value="${hex}"><i style="background:${hex}"></i>لون آخر</label></div>`;
+  return `<div class="sw sm" data-${attr}><button type="button" data-c="" aria-pressed="${!cur}" title="${auto}"><i class="auto"></i><span class="n">${auto}</span></button>${FRONTS.map(f => `<button type="button" data-c="${f.id}" aria-pressed="${cur === f.id}" title="${f.name}"><i style="${f.wood ? `background-image:url(${sURL[f.wood] || ''});background-color:${frontColorCss(f.id)}` : `background:${f.color}`}"></i><span class="n">${f.name}</span></button>`).join('')}<label class="pick" aria-pressed="${isHex(cur)}"><input type="color" id="${inputId}" value="${hex}"><i style="background:${hex}"></i>لون آخر</label></div>`;
 }
 function stepRow(label, key, val, min, max, step = 5){
   return `<div class="ued-row"><span class="lab">${label}</span><span class="stepper"><button type="button" data-it="${key}-${step}" aria-label="أنقص">−</button><input id="i${key}" type="number" min="${min}" max="${max}" value="${val}" inputmode="numeric" aria-label="${label}"><button type="button" data-it="${key}+${step}" aria-label="زد">+</button></span><span class="hint">سم</span></div>`;
@@ -3304,49 +3421,53 @@ function renderFree(){
   let h = '';
   if (si) {
     const T = DEF(si.t), [w0, w1] = limW(si), cu = CUST[si.t], b = itemBoxes[i], bottom = b ? Math.max(0, Math.round(b.y0)) : 0, o = si.o || {};
-    const name = si.t === 'cab' || si.t === 'bar' || si.t === 'panel' ? T.n : (T.n || ''), isPanelH = si.t === 'panel' && iopts(si).or === 'h';
-    h += `<div class="ued" id="itemEditor"><div class="ued-h"><b>${name}</b><span>P${i + 1}</span></div>
-      <div class="sect"><h4>المقاسات</h4>
+    const name = si.t === 'cab' || si.t === 'bar' || si.t === 'panel' ? T.n : (T.n || ''), isPanelH = si.t === 'panel' && iopts(si).or === 'h', need = itemNeeds(si);
+    const hasTop = (isUnitItem(si) && (UNIT[si.t].counter || si.t === 'vanity')) || (si.t === 'cab' && iopts(si).top === 'stone') || (si.t === 'bar' && iopts(si).top !== 'wood');
+    h += `<div class="ued" id="itemEditor">${edHead(name, `P${i + 1}`, 'it')}
+      ${fold('size', 'المقاسات', `${si.w} × ${Math.round(cu ? itemH(si) : b ? b.y1 - b.y0 : 0)} × ${cu ? si.d : itemDepth(si)}`, `
       ${w0 === w1 ? `<p class="hint">العرض ${si.w} سم</p>` : stepRow('العرض', 'w', si.w, w0, w1)}
-      ${cu ? stepRow(isPanelH ? 'العمق' : 'الارتفاع', 'h', itemH(si), cu.h[0], cu.h[1]) + stepRow(si.t === 'panel' ? 'السماكة' : 'العمق', 'd', si.d, cu.d[0], cu.d[1], si.t === 'panel' ? 1 : 5) : `<p class="hint">العمق ${itemDepth(si)} سم${b ? `، الارتفاع ${Math.round(b.y1 - b.y0)} سم` : ''}</p>`}</div>
-      <div class="sect"><h4>المكان</h4>
-      <div class="ued-row pos"><label><span>من اليسار</span><span class="num"><input id="ix" type="number" value="${si.x}"><span>سم</span></span></label><label><span>من الخلف</span><span class="num"><input id="iz" type="number" value="${si.z}"><span>سم</span></span></label><label><span>عن الأرض</span><span class="num"><input id="ibottom" type="number" value="${bottom}"><span>سم</span></span></label></div>
-      <div class="ued-row"><div class="seg2"><button type="button" data-al="right">${arrowR} لليمين</button><button type="button" data-al="mid">في الوسط</button><button type="button" data-al="left">لليسار ${arrowL}</button></div></div>
-      <div class="ued-row"><button type="button" class="btn sm" data-it="wall">ألصق بالجدار</button><button type="button" class="btn sm" data-it="floor">أنزل إلى الأرض</button><button type="button" class="btn sm" data-it="spot">مكان فارغ</button><span class="hint">${si.sy ? `مركّبة فوق قطعة أخرى (${si.sy} سم)` : ''}</span></div></div>
-      <div class="sect"><h4>الدوران</h4><div class="ued-row"><div class="seg2"><button type="button" data-it="r-15">−15°</button><button type="button" data-it="r-45">−45°</button></div><span class="num"><input id="ir" type="number" step="1" value="${Math.round(si.r)}"><span>درجة</span></span><div class="seg2"><button type="button" data-it="r+45">+45°</button><button type="button" data-it="r+15">+15°</button><button type="button" data-it="r+90">90°</button></div></div></div>
-      ${NO_COLOR.includes(si.t) ? '' : `<div class="sect"><h4>اللون</h4>${colorRow('icol', o.col, 'icolor')}
-        <div class="choice" data-ifin><button type="button" data-f="" aria-pressed="${!o.fin}">حسب التصميم</button><button type="button" data-f="matte" aria-pressed="${o.fin === 'matte'}">مطفي</button><button type="button" data-f="gloss" aria-pressed="${o.fin === 'gloss'}">لامع</button></div>
-        <div class="optseg"><span>المقابض</span><div class="choice" data-ihd><button type="button" data-v="" aria-pressed="${!o.hd}">حسب التصميم</button>${HANDLES.map(x => `<button type="button" data-v="${x.id}" aria-pressed="${o.hd === x.id}">${x.name}</button>`).join('')}</div></div>
-        ${(isUnitItem(si) && (UNIT[si.t].counter || si.t === 'vanity')) || (si.t === 'cab' && iopts(si).top === 'stone') || (si.t === 'bar' && iopts(si).top !== 'wood') ? `<div class="optseg"><span>خامة السطح</span><div class="choice" data-iwt><button type="button" data-v="" aria-pressed="${!o.wt}">حسب التصميم</button>${TOPS.map(x => `<button type="button" data-v="${x.id}" aria-pressed="${o.wt === x.id}">${x.name}</button>`).join('')}</div></div>` : ''}</div>`}
-      ${T.opts ? `<div class="sect"><h4>الشكل والخيارات</h4><div class="opts">${optControls(T.opts, iopts(si), 'io')}</div>${tallNote(si)}</div>` : ''}`;
-    if (si.t === 'cab' && itemH(si) <= 100) h += `<div class="sect"><h4>شكل جاهز <small>يبقى العرض والمكان واللون كما هي</small></h4><div class="ued-row spots">${TV_SHAPES.map(k => `<button type="button" class="btn sm" data-shape="${k}">${PIECES[k].n.replace(/^طاولة تلفزيون /, '')}</button>`).join('')}</div></div>`;
+      ${cu ? stepRow(isPanelH ? 'العمق' : 'الارتفاع', 'h', itemH(si), cu.h[0], cu.h[1]) + stepRow(si.t === 'panel' ? 'السماكة' : 'العمق', 'd', si.d, cu.d[0], cu.d[1], si.t === 'panel' ? 1 : 5) : `<p class="hint">العمق ${itemDepth(si)} سم${b ? `، الارتفاع ${Math.round(b.y1 - b.y0)} سم` : ''}</p>`}`)}
+      ${T.opts ? fold('shape', 'الشكل والخيارات', optSummary(T.opts, iopts(si)), `<div class="opts">${optControls(T.opts, si.t === 'cab' ? {...iopts(si), cells: cabGrid(si).cells} : iopts(si), 'io')}</div>${tallNote(si)}`) : ''}`;
     if (si.t === 'cab') {
       const g = cabGrid(si), cs = g.cells[Math.min(cellSel, g.cells.length - 1)];
-      h += `<div class="sect"><h4>الواجهة خانة خانة <small>اضغط خانة لتغييرها</small></h4>
-        <div class="ued-row"><span class="lab">الأعمدة</span><span class="stepper"><button type="button" data-grid="cols-1" aria-label="أقل">−</button><input id="icols" type="number" min="1" max="10" value="${g.cols}"><button type="button" data-grid="cols+1" aria-label="أكثر">+</button></span><span class="lab">الصفوف</span><span class="stepper"><button type="button" data-grid="rows-1" aria-label="أقل">−</button><input id="irows" type="number" min="1" max="10" value="${g.rows}"><button type="button" data-grid="rows+1" aria-label="أكثر">+</button></span></div>
+      h += fold('cells', 'الخانات', `${g.cols} × ${g.rows}`, `<p class="hint">اضغط خانة في الرسم لتغيير نوعها ولونها والرفوف داخلها</p>
+        <div class="ued-row duo"><span class="lab">الأعمدة</span><span class="stepper"><button type="button" data-grid="cols-1" aria-label="أقل">−</button><input id="icols" type="number" min="1" max="10" value="${g.cols}"><button type="button" data-grid="cols+1" aria-label="أكثر">+</button></span><span class="lab">الصفوف</span><span class="stepper"><button type="button" data-grid="rows-1" aria-label="أقل">−</button><input id="irows" type="number" min="1" max="10" value="${g.rows}"><button type="button" data-grid="rows+1" aria-label="أكثر">+</button></span></div>
         <div class="elev">${cellMap(si)}</div>
+        <div class="cell-ed"><b class="cell-t">الخانة المحددة</b>
         <div class="choice" data-cellk>${Object.entries(CELLS).map(([k, n]) => `<button type="button" data-k="${k}" aria-pressed="${cs.k === k}">${n}</button>`).join('')}</div>
-        ${SHELF_K.includes(cs.k) ? `<div class="ued-row"><span class="lab">رفوف داخل الخانة</span><span class="stepper"><button type="button" data-shelf="-1" aria-label="أقل">−</button><input id="ishn" type="number" min="0" max="8" value="${cellShelves(cs)}" inputmode="numeric"><button type="button" data-shelf="1" aria-label="أكثر">+</button></span><span class="choice" data-shelfm><button type="button" data-v="wood" aria-pressed="${!cs.sg}">خشب</button><button type="button" data-v="glass" aria-pressed="${!!cs.sg}">زجاج</button></span></div>` : ''}
-        <div class="ued-row"><span class="lab">عرض العمود</span><span class="num"><input id="icw" type="number" value="${Math.round(cabSpans(si).bw * (g.cf[cellSel % g.cols + 1] - g.cf[cellSel % g.cols]))}"><span>سم</span></span><span class="lab">ارتفاع الصف</span><span class="num"><input id="irh" type="number" value="${Math.round(cabSpans(si).bh * (g.rf[Math.floor(cellSel / g.cols) + 1] - g.rf[Math.floor(cellSel / g.cols)]))}"><span>سم</span></span>${g.cw || g.rh ? '<button type="button" class="btn sm" data-even>تقسيم متساوٍ</button>' : ''}</div>
-        ${colorRow('cellc', cs.c, 'ccolor', 'لون الخزانة')}
-        <div class="ued-row"><button type="button" class="btn sm" data-cellall>طبّق هذه الخانة على كل الخانات</button></div></div>`;
+        ${SHELF_K.includes(cs.k) ? `<div class="ued-row"><span class="lab">رفوف داخل الخانة</span><span class="stepper"><button type="button" data-shelf="-1" aria-label="أقل">−</button><input id="ishn" type="number" min="0" max="8" value="${cellShelves(cs)}" inputmode="numeric"><button type="button" data-shelf="1" aria-label="أكثر">+</button></span>${cellShelves(cs) ? `<span class="choice" data-shelfm><button type="button" data-v="wood" aria-pressed="${!cs.sg}">خشب</button><button type="button" data-v="glass" aria-pressed="${!!cs.sg}">زجاج</button></span>` : ''}</div>` : ''}
+        <div class="ued-row duo"><span class="lab">عرض العمود</span><span class="num"><input id="icw" type="number" value="${Math.round(cabSpans(si).bw * (g.cf[cellSel % g.cols + 1] - g.cf[cellSel % g.cols]))}"><span>سم</span></span>${g.rows > 1 ? `<span class="lab">ارتفاع الصف</span><span class="num"><input id="irh" type="number" value="${Math.round(cabSpans(si).bh * (g.rf[Math.floor(cellSel / g.cols) + 1] - g.rf[Math.floor(cellSel / g.cols)]))}"><span>سم</span></span>` : ''}</div>
+        ${g.cw || g.rh ? '<div class="ued-row"><button type="button" class="btn sm" data-even>تقسيم متساوٍ</button></div>' : ''}
+        <div class="optseg"><span>لون الخانة</span>${colorRow('cellc', cs.c, 'ccolor', 'لون الخزانة')}</div>
+        ${g.cells.length > 1 ? '<div class="ued-row"><button type="button" class="btn sm" data-cellall>طبّق هذه الخانة على كل الخانات</button></div>' : ''}</div>`);
     }
-    h += `<div class="ued-row spots"><span class="hint">انقل إلى مكان فارغ على</span>${runsOf(cfg).map(r => `<button type="button" class="btn sm" data-it="spot:${r.id}">${r.name}</button>`).join('')}</div>`;
-    h += cornersUI(si.rc);
-    h += `<div class="ued-row acts"><button type="button" class="btn sm" data-it="dup">نسخ</button>${isUnitItem(si) && TO_CAB.includes(si.t) ? '<button type="button" class="btn sm" data-it="cab">تخصيص كامل</button>' : ''}${si.t === 'cab' || si.t === 'bar' ? '<button type="button" class="btn sm" data-it="mirror">عكس يمين ويسار</button>' : ''}${si.t === 'cab' || si.t === 'bar' ? `<button type="button" class="btn sm" data-open>${openT ? 'أغلق الأبواب' : 'افتح الأبواب'}</button>` : ''}<button type="button" class="btn sm danger" data-it="del">حذف</button></div>
-      <p class="hint">من لوحة المفاتيح: الأسهم للتحريك سنتيمتراً (مع Shift عشرة)، Q و E للتدوير، PageUp و PageDown للرفع والإنزال، Ctrl+D للنسخ. اضغط Alt أثناء السحب لإلغاء الالتصاق.</p></div>`;
+    if (need.col || need.fin || need.hd || hasTop) h += fold('look', 'اللون والتشطيب', colorName(o.col), `
+      ${need.col ? colorRow('icol', o.col, 'icolor') : ''}
+      ${need.fin ? `<div class="optseg"><span>اللمعة</span><div class="choice" data-ifin><button type="button" data-f="" aria-pressed="${!o.fin}">حسب التصميم</button><button type="button" data-f="matte" aria-pressed="${o.fin === 'matte'}">مطفي</button><button type="button" data-f="gloss" aria-pressed="${o.fin === 'gloss'}">لامع</button></div></div>` : ''}
+      ${need.hd ? `<div class="optseg"><span>المقابض</span><div class="choice" data-ihd><button type="button" data-v="" aria-pressed="${!o.hd}">حسب التصميم</button>${HANDLES.map(x => `<button type="button" data-v="${x.id}" aria-pressed="${o.hd === x.id}">${x.name}</button>`).join('')}</div></div>` : ''}
+      ${hasTop ? `<div class="optseg"><span>خامة السطح</span><div class="choice" data-iwt><button type="button" data-v="" aria-pressed="${!o.wt}">حسب التصميم</button>${TOPS.map(x => `<button type="button" data-v="${x.id}" aria-pressed="${o.wt === x.id}">${x.name}</button>`).join('')}</div></div>` : ''}`);
+    if (si.t === 'cab' && itemH(si) <= 100) h += fold('presets', 'أشكال جاهزة', 'يبقى العرض والمكان واللون', `<div class="ued-row spots">${TV_SHAPES.map(k => `<button type="button" class="btn sm" data-shape="${k}">${PIECES[k].n.replace(/^طاولة تلفزيون /, '')}</button>`).join('')}</div>`);
+    h += fold('place', 'المكان والدوران', `${si.x} · ${si.z}${bottom ? ' · ↑' + bottom : ''} · ${Math.round(si.r)}°`, `
+      <div class="ued-row pos"><label><span>من اليسار</span><span class="num"><input id="ix" type="number" value="${si.x}"><span>سم</span></span></label><label><span>من الخلف</span><span class="num"><input id="iz" type="number" value="${si.z}"><span>سم</span></span></label><label><span>عن الأرض</span><span class="num"><input id="ibottom" type="number" value="${bottom}"><span>سم</span></span></label></div>
+      <div class="ued-row"><div class="seg2"><button type="button" data-al="right">${arrowR} لليمين</button><button type="button" data-al="mid">في الوسط</button><button type="button" data-al="left">لليسار ${arrowL}</button></div></div>
+      <div class="ued-row"><button type="button" class="btn sm" data-it="wall">ألصق بالجدار</button><button type="button" class="btn sm" data-it="floor">أنزل إلى الأرض</button><button type="button" class="btn sm" data-it="spot">مكان فارغ</button>${si.sy ? `<span class="hint">مركّبة فوق قطعة أخرى (${si.sy} سم)</span>` : ''}</div>
+      <div class="ued-row spots"><span class="hint">انقل إلى مكان فارغ على</span>${runsOf(cfg).map(r => `<button type="button" class="btn sm" data-it="spot:${r.id}">${r.name}</button>`).join('')}</div>
+      <div class="optseg"><span>الدوران</span><div class="ued-row"><div class="seg2"><button type="button" data-it="r-15">−15°</button><button type="button" data-it="r-45">−45°</button></div><span class="num"><input id="ir" type="number" step="1" value="${Math.round(si.r)}"><span>درجة</span></span><div class="seg2"><button type="button" data-it="r+45">+45°</button><button type="button" data-it="r+15">+15°</button><button type="button" data-it="r+90">90°</button></div></div></div>`);
+    h += fold('corners', 'الزوايا المدوّرة', rcSummary(si.rc), cornersUI(si.rc, true));
+    h += fold('tools', 'أدوات', '', `<div class="ued-row acts">${isUnitItem(si) && TO_CAB.includes(si.t) ? '<button type="button" class="btn sm" data-it="cab">تخصيص كامل</button>' : ''}${si.t === 'cab' || si.t === 'bar' ? '<button type="button" class="btn sm" data-it="mirror">عكس يمين ويسار</button>' : ''}${si.t === 'cab' || si.t === 'bar' ? `<button type="button" class="btn sm" data-open>${openT ? 'أغلق الأبواب' : 'افتح الأبواب'}</button>` : ''}<button type="button" class="btn sm" data-it="dup">نسخ</button><button type="button" class="btn sm danger" data-it="del">حذف</button></div>
+      <p class="hint">من لوحة المفاتيح: الأسهم للتحريك سنتيمتراً (مع Shift عشرة)، Q و E للتدوير، PageUp و PageDown للرفع والإنزال، Ctrl+D للنسخ. اضغط Alt أثناء السحب لإلغاء الالتصاق.</p>`);
+    h += `</div>`;
   }
   const issues = checkIssues(); lastIssues = issues;
   h += `<div class="grp"><label class="tog"><input type="checkbox" id="noClash" ${noClash ? 'checked' : ''}> <b>منع التداخل</b></label><p class="hint">القطع لا تدخل في بعضها: القطعة المسحوبة تنزاح إلى أقرب مكان فارغ، والتعديل الذي يُدخل خشباً في خشب لا يُطبّق. التداخل يظهر بالأحمر مع عمقه.</p></div>`;
   $('[data-tab="free"]').innerHTML = 'تصميم حر' + (issues.length ? `<i class="badge">${issues.length}</i>` : '');
   if (issues.length) h += `<div class="grp issues"><h3>فحص التصميم <small>${issues.length} ملاحظة</small></h3>${issues.map(x => x.clash ? `<div class="iss"><button type="button" data-pickitem="${x.i}">${x.msg}</button><span><button type="button" class="btn sm" data-isspot="${x.i}">مكان فارغ</button><button type="button" class="btn sm danger" data-isdel="${x.i}">حذف</button></span></div>` : `<button type="button" data-pickitem="${x.i}">${x.msg}</button>`).join('')}</div>`;
   const grp = PAL_GROUPS.find(g => g[0] === palGroup) || PAL_GROUPS[0], keys = grp[0] === 'custom' ? Object.keys(PIECES).filter(k => PIECES[k].g === 'custom') : grp[2];
-  h += `<div class="grp"><h3>مكتبة القطع <small>اسحبها إلى المشهد أو اضغطها؛ على الهاتف اضغط مطولاً ثم اسحب</small></h3>
+  h += fold('lib', 'مكتبة القطع', grp[1], `<p class="hint">اسحبها إلى المشهد أو اضغطها؛ على الهاتف اضغط مطولاً ثم اسحب</p>
     <div class="choice pg" data-pg>${PAL_GROUPS.map(g => `<button type="button" data-g="${g[0]}" aria-pressed="${g[0] === grp[0]}">${g[1]}</button>`).join('')}</div>
-    <div class="ugrid pal">${keys.map(k => `<button type="button" data-pal="${k}">${pieceIcon(k)}<span>${PIECES[k]?.n || DEF(k).n}</span></button>`).join('')}</div></div>`;
-  h += `<div class="grp"><h3>القطع في الغرفة <small>${items.length}</small></h3>
-    ${items.length ? `<div class="chips">${items.map((it, k) => `<button type="button" class="chip" data-pickitem="${k}" aria-pressed="${i === k}">${pieceIcon(it.t)}<span>${DEF(it.t).n}</span></button>`).join('')}</div>` : '<p class="hint">لا توجد قطع حرة بعد. اسحب قطعة من المكتبة إلى المشهد.</p>'}
-    </div>`;
+    <div class="ugrid pal">${keys.map(k => `<button type="button" data-pal="${k}">${pieceIcon(k)}<span>${PIECES[k]?.n || DEF(k).n}</span></button>`).join('')}</div>`, 'top');
+  h += fold('inroom', 'القطع في الغرفة', String(items.length),
+    items.length ? `<div class="chips">${items.map((it, k) => `<button type="button" class="chip" data-pickitem="${k}" aria-pressed="${i === k}">${pieceIcon(it.t)}<span>${DEF(it.t).n}</span></button>`).join('')}</div>` : '<p class="hint">لا توجد قطع حرة بعد. اسحب قطعة من المكتبة إلى المشهد.</p>', 'top');
   pane.innerHTML = h;
   syncQbar();
 }
@@ -3428,6 +3549,7 @@ function setType(t){ editUnits(u => { const m = curUnit(u); if (!m) return; m.t 
 function setWidth(v){ editUnits(u => { const m = curUnit(u); if (m) m.w = Math.round(clamp(v || m.w, UNIT[m.t].min, UNIT[m.t].max)); }); }
 function setUnitOpt(k, v){ editUnits(u => { const m = curUnit(u); if (!m) return; m.o = {...optKeep(UNIT[m.t]?.opts, m), [k]: v}; }); }
 function unitAction(act){
+  if (act === 'close') { select(null); return; }
   if (!sel || sel.item !== undefined) return; const {run, lvl, i} = sel;
   if (act === 'free') { const k = detachUnit(sel); if (k >= 0) { select({item: k}, true); toast('صارت الوحدة قطعة حرة، اسحبها أينما شئت'); } return; }
   if (act === 'cab') { const k = customizeUnit(sel); if (k >= 0) { select({item: k}, true); toast('صارت خزانة مخصصة: اضغط أي خانة لتغيير نوعها ولونها ورفوفها'); } return; }
@@ -3980,9 +4102,9 @@ function applyCorners(){
 const rcCount = c => (c.items || []).reduce((s, it) => s + (it.rc?.c.length || 0), 0) + Object.values(c.units || {}).reduce((s, r) => s + [...(r.b || []), ...(r.u || []), ...(r.t || [])].reduce((t, u) => t + (u.rc?.c.length || 0), 0), 0);
 function rcNote(rc){ return I18N.f(rc.k === 'cut' ? 'rcNoteCut' : 'rcNote', {c: rc.c.map(k => I18N.t(RC_CORNERS[k])).join(I18N.lang === 'ar' ? '، ' : ', '), r: rc.r}); }
 // panel controls: the corners laid out as they are, from above and from the front
-function cornersUI(rc){
+function cornersUI(rc, bare = false){
   const on = k => rc?.c?.includes(k), b = k => `<button type="button" data-rc="${k}" aria-pressed="${!!on(k)}">${RC_CORNERS[k]}</button>`;
-  return `<div class="grp rcg"><h3>الزوايا المدوّرة <small>${rc?.c?.length ? rc.c.length + ' × ' + rc.r + ' سم' : 'كلها مستقيمة'}</small></h3>
+  return `<div class="grp rcg">${bare ? '' : `<h3>الزوايا المدوّرة <small>${rc?.c?.length ? rc.c.length + ' × ' + rc.r + ' سم' : 'كلها مستقيمة'}</small></h3>`}
     <div class="rc-box"><span class="lab">من فوق</span><div class="rc-plan">${b('bl')}${b('br')}<i>الأمام</i>${b('fl')}${b('fr')}</div></div>
     <div class="rc-box"><span class="lab">من الأمام</span><div class="rc-front">${b('tl')}${b('tr')}${b('dl')}${b('dr')}</div></div>
     <div class="ued-row rc-kind"><span class="lab">الشكل</span><span class="choice"><button type="button" data-rck="round" aria-pressed="${rc?.k !== 'cut'}">قوس</button><button type="button" data-rck="cut" aria-pressed="${rc?.k === 'cut'}">مائل</button></span><button type="button" class="btn sm" data-rc-ends>طرفان مدوّران من الأمام ( ___ )</button></div>
@@ -4272,7 +4394,7 @@ if (!lsGet('wr_cur_eur', false)) { if (prices.cur === '$') { prices.cur = '€';
 const numLocale = () => I18N.lang === 'ar' ? 'en-US' : I18N.locale;
 const fmt = n => Math.round(n).toLocaleString(numLocale()).replace(/[\u202F\u00A0]/g, ' ');
 const openDetails = {sale: false, work: false};
-document.addEventListener('toggle', e => { const k = e.target?.dataset?.det; if (k) openDetails[k] = e.target.open; }, true);
+document.addEventListener('toggle', e => { const k = e.target?.dataset?.det; if (!k) return; openDetails[k] = e.target.open; if (e.target.classList.contains('fold')) { foldState[k] = e.target.open; lsSet('wr_folds', foldState); } }, true);
 
 /* what the client pays, grouped by price category */
 function frontHeight(m, c){
@@ -5202,6 +5324,11 @@ async function doSave(asNew){
   $('#saveGo').disabled = false;
 }
 $('#saveForm').addEventListener('submit', e => { e.preventDefault(); doSave(false); });
+$('#saveFileBtn').onclick = async () => {
+  const name = $('#fName').value.trim() || current?.name || 'تصميم';
+  const d = {id: current?.id || 'f' + Date.now().toString(36), name, phone: $('#fPhone').value.trim(), note: $('#fNote').value.trim(), cfg: {...cfg}, thumb: snapshot(360, 225, false).toDataURL('image/jpeg', .72), updatedAt: Date.now(), ...(current?.variant ? {variant: current.variant} : {})};
+  try { const st = await exportFile([d], false); if (st === 'declined') return; toast(st === 'failed' || st === 'unavailable' ? 'تعذّر حفظ الملف' : 'حُفظ ملف التصميم على الجهاز'); } catch { toast('تعذّر حفظ الملف'); }
+};
 $('#saveAsNew').onclick = () => doSave(true);
 
 /* ================= projects: autosave, variants, export, backup, import ================= */
@@ -5225,19 +5352,20 @@ async function exportFile(list, full){
   const strip = d => { const o = {...d}; return o; };
   const data = {...PROJECT_FILE, kind: full ? 'backup' : 'project', exportedAt: new Date().toISOString(), projects: list.map(strip), ...(full ? {prices, fab} : {})};
   const name = full ? `ورشة العرض نسخة احتياطية ${new Date().toISOString().slice(0, 10)}.json` : `مشروع ${list[0]?.name || 'تصميم'}${list[0]?.variant ? ' ' + list[0].variant : ''}.json`;
-  await saveFile(name, new Blob([JSON.stringify(data)], {type: 'application/json'}));
+  const st = await saveFile(name, new Blob([JSON.stringify(data)], {type: 'application/json'}));
+  if (st === 'declined' || st === 'failed' || st === 'unavailable') return st;
   if (full) { lsSafeSet('wr_lastBackup', Date.now()); toast('نُزّلت النسخة الاحتياطية'); }
 }
 async function importFile(file){
   let data; try { data = JSON.parse(await file.text()); } catch { toast('الملف ليس مشروعاً من ورشة العرض'); return; }
   if (data?.cfg && !data.projects) data = {...PROJECT_FILE, kind: 'project', projects: [data]};
   if (data?.app !== 'warsha-studio' || !Array.isArray(data.projects)) { toast('الملف ليس مشروعاً من ورشة العرض'); return; }
-  let n = 0, fail = 0;
+  let n = 0, fail = 0, lastId = null;
   for (const d of data.projects.slice(0, 500)) {
     if (!d || typeof d !== 'object' || !d.cfg) { fail++; continue; }
     const row = {name: String(d.name || 'بلا اسم').slice(0, 80), phone: String(d.phone || '').slice(0, 40), note: String(d.note || '').slice(0, 1000), cfg: sanitize(d.cfg, DEFAULT), thumb: typeof d.thumb === 'string' && d.thumb.startsWith('data:image/') ? d.thumb : '', updatedAt: +d.updatedAt || Date.now(), ...(d.variant ? {variant: String(d.variant).slice(0, 8)} : {})};
     const keep = data.kind === 'backup' && typeof d.id === 'string' && /^[\w-]{3,40}$/.test(d.id);
-    try { await store.save(keep ? d.id : newId(), row); n++; } catch { fail++; }
+    const id = keep ? d.id : newId(); try { await store.save(id, row); n++; lastId = id; } catch { fail++; }
   }
   if (data.kind === 'backup') {
     if (data.prices && typeof data.prices === 'object') { prices = {...PRICE_DEF, ...data.prices}; lsSet('wr_prices', prices); }
@@ -5245,6 +5373,7 @@ async function importFile(file){
     renderCost();
   }
   renderClients(); toast(fail ? I18N.f('importedFail', {n, f: fail}) : I18N.f('imported', {n}));
+  return {n, last: n ? lastId : null};
 }
 document.addEventListener('click', e => { if (e.target.closest('#backupBtn')) exportFile(store.list, true); });
 document.addEventListener('click', e => { const b = e.target.closest('[data-rc]'); if (!b || !sel) return; const k = b.dataset.rc;
@@ -5261,6 +5390,9 @@ document.addEventListener('click', e => { if (!e.target.closest('[data-rc-ends]'
   setRC(rc => ({r, c: [...new Set([...(rc?.c || []).filter(k => !['tl', 'tr', 'dl', 'dr'].includes(k)), 'tl', 'tr', 'dl', 'dr'])], ...(rc?.k === 'cut' ? {k: 'cut'} : {})})); });
 document.addEventListener('change', e => { if (e.target.id === 'noClash') { noClash = e.target.checked; lsSet('wr_noclash', noClash); toast(I18N.t(noClash ? 'منع التداخل' : 'التداخل مسموح، ويظهر بالأحمر')); } });
 document.addEventListener('change', e => { if (e.target.id === 'importIn' && e.target.files[0]) { importFile(e.target.files[0]); e.target.value = ''; } });
+// open a design file: it joins the list and opens on screen (a full backup only fills the list)
+document.addEventListener('change', async e => { if (e.target.id !== 'openFileIn' || !e.target.files[0]) return; const f = e.target.files[0]; e.target.value = '';
+  const r = await importFile(f); if (r?.n === 1 && r.last) $('#clientList').querySelector(`[data-open="${CSS.escape(r.last)}"]`)?.click(); });
 
 /* demo projects for showing the tool to a workshop; client names are invented */
 const DEMOS = [

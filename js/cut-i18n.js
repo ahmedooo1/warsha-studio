@@ -951,5 +951,85 @@ globalThis.I18N?.extend?.({
 "صارت خزانة مخصصة بهذا اللون: اضغط أي خانة لتغيير نوعها ولونها ورفوفها": [
 "Meuble sur mesure dans cette couleur : touchez une case pour changer son type, sa couleur et ses étagères",
 "Bu renkte özel dolap oldu: türünü, rengini ve raflarını değiştirmek için bir bölmeye dokunun"
+],
+"اسحب لتغيير حجم اللوحة": [
+"Glissez pour redimensionner le panneau",
+"Paneli boyutlandırmak için sürükleyin"
+],
+"اسحب لتغيير حجم اللوحة، ونقرتان للحجم الافتراضي": [
+"Glissez pour redimensionner le panneau, double-clic pour la taille par défaut",
+"Paneli boyutlandırmak için sürükleyin, varsayılan boyut için çift tıklayın"
+],
+"أشكال جاهزة": [
+"Formes prêtes",
+"Hazır biçimler"
+],
+"اضغط خانة في الرسم لتغيير نوعها ولونها والرفوف داخلها": [
+"Touchez une case sur le dessin pour changer son type, sa couleur et ses étagères",
+"Türünü, rengini ve raflarını değiştirmek için çizimde bir bölmeye dokunun"
+],
+"الترتيب": [
+"Ordre",
+"Sıralama"
+],
+"الخانات": [
+"Cases",
+"Bölmeler"
+],
+"الخانة المحددة": [
+"Case sélectionnée",
+"Seçili bölme"
+],
+"اللون والتشطيب": [
+"Couleur et finition",
+"Renk ve yüzey"
+],
+"المقاس والخيارات": [
+"Dimensions et options",
+"Ölçü ve seçenekler"
+],
+"لون الخانة": [
+"Couleur de la case",
+"Bölme rengi"
+],
+"يبقى العرض والمكان واللون": [
+"Largeur, place et couleur gardées",
+"Genişlik, yer ve renk korunur"
+],
+"المكان والدوران": [
+"Position et rotation",
+"Konum ve döndürme"
+],
+"أدوات": [
+"Outils",
+"Araçlar"
+],
+"اللمعة": [
+"Brillance",
+"Parlaklık"
+],
+"افتح تصميماً حفظته كملف على هذا الجهاز": [
+"Ouvrir un projet enregistré comme fichier sur cet appareil",
+"Bu cihaza dosya olarak kaydedilmiş bir tasarımı aç"
+],
+"حفظ كملف على الجهاز": [
+"Enregistrer comme fichier sur l'appareil",
+"Cihaza dosya olarak kaydet"
+],
+"حُفظ ملف التصميم على الجهاز": [
+"Fichier du projet enregistré sur l'appareil",
+"Tasarım dosyası cihaza kaydedildi"
+],
+"فتح ملف تصميم": [
+"Ouvrir un fichier de projet",
+"Tasarım dosyası aç"
+],
+"ملف تصميم واحد تحفظه على الكمبيوتر أو الهاتف أو ترسله، وتفتحه لاحقاً من «الزبائن» ثم «فتح ملف تصميم»، على هذا الجهاز أو على غيره": [
+"Un seul fichier de projet à garder sur l'ordinateur ou le téléphone, ou à envoyer ; rouvrez-le plus tard depuis « Clients » puis « Ouvrir un fichier de projet », sur cet appareil ou un autre",
+"Bilgisayarda veya telefonda saklayacağınız ya da göndereceğiniz tek bir tasarım dosyası; daha sonra «Müşteriler» ve «Tasarım dosyası aç» ile bu cihazda veya başka bir cihazda açın"
+],
+"تعذّر حفظ الملف": [
+"Impossible d'enregistrer le fichier",
+"Dosya kaydedilemedi"
 ]
 });
