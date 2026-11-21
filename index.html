@@ -526,6 +526,10 @@ html[dir=ltr] .choice.pg{-webkit-mask-image:linear-gradient(to right,#000 calc(1
 .choice.pg button{flex:none;border-radius:999px}
 /* the wall drawing: units stand out from the wall in the dark theme too */
 .elev svg.uv .f,.elev svg.uv .op{fill:var(--unit)}
+/* dark theme: swatch edges light, so a black or dark wood swatch still stands out from the panel */
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .sw i,:root:not([data-theme="light"]) .fold .sum .dot{box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}}
+:root[data-theme="dark"] .sw i,:root[data-theme="dark"] .fold .sum .dot{box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
+@media (max-width:860px){.panel.editing .pricebar{display:none}}
 .fold .sum .dot{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-3px;margin-inline-end:6px;background-size:cover;background-position:center;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
 </style>
 
@@ -3104,6 +3108,8 @@ function selBounds(){
 }
 function itemGroup(i){ let g = null; world.traverse(o => { if (o.userData.item === i && !g) g = o; }); return g; }
 function drawSel(){
+  // on a phone the price bar steps aside while a piece is being edited, to leave the panel its room
+  $('#panel')?.classList.toggle('editing', !!sel);
   if (selHelper) { selHelper.parent?.remove(selHelper); selHelper.geometry.dispose(); selHelper = null; }
   selDim = null; dirty = true;
   if (sel && sel.item !== undefined) {
